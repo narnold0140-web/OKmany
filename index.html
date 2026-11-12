@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Okmány">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Okmányvizsgáló</title>
+<style>
+  :root {
+    --accent: #40d9c4;
+    --on-accent: #04221f;
+    --glass: rgba(20, 26, 27, 0.58);
+    --glass-strong: rgba(255, 255, 255, 0.14);
+    --text: #f2f7f7;
+    --muted: rgba(242, 247, 247, 0.68);
+    --warn: #ffab40;
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: #000; color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #app { position: fixed; inset: 0; overflow: hidden; background: #000; }
+
+  /* Kép */
+  #viewport { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
+  #stage { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
+  #video, #frozen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+  #frozen { display: none; }
+  .is-frozen #video { display: none; }
+  .is-frozen #frozen { display: block; }
+
+  /* Okmánykeret */
+  #guide {
+    position: absolute; left: 50%; top: 38%; width: calc(100% - 48px); max-width: 520px;
+    aspect-ratio: 1.586; transform: translate(-50%, -50%); pointer-events: none;
+    transition: opacity .25s;
+  }
+  .is-frozen #guide, .no-guide #guide { opacity: 0; }
+  #guide i { position: absolute; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,.88); filter: drop-shadow(0 0 6px rgba(0,0,0,.4)); }
+  #guide .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 16px; }
+  #guide .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 16px; }
+  #guide .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 16px; }
+  #guide .br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 16px; }
+  #guide span {
+    position: absolute; left: 50%; top: calc(100% + 18px); transform: translateX(-50%); white-space: nowrap;
+    font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 999px; background: rgba(0,0,0,.38);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s ease-out; }
+  #flash.on { opacity: .8; transition: opacity .06s; }
+
+  /* Felső sáv */
+  #top {
+    position: absolute; left: 0; right: 0; top: 0;
+    padding: calc(var(--sat) + 10px) calc(var(--sar) + 16px) 0 calc(var(--sal) + 16px);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; pointer-events: none;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    background: var(--glass); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  }
+  .pill small { font-weight: 400; color: var(--muted); font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .is-frozen .dot { background: var(--warn); }
+  .round {
+    width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; pointer-events: auto;
+    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  }
+  .round.on { background: var(--accent); color: var(--on-accent); }
+  .round svg { width: 20px; height: 20px; }
+
+  /* Alsó panel */
+  #bottom {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 18px calc(var(--sar) + 20px) calc(var(--sab) + 14px) calc(var(--sal) + 20px);
+    border-radius: 32px 32px 0 0; background: var(--glass);
+    -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5);
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .presets { justify-content: space-between; }
+  .presets .group { display: flex; gap: 8px; }
+  .chip { min-width: 40px; padding: 7px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--glass-strong); }
+  .chip.active { background: var(--accent); color: var(--on-accent); }
+  #zoomLabel { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .step {
+    width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--glass-strong); font-size: 20px; line-height: 1;
+  }
+  input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 34px; }
+
+  #shutterWrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #shutter {
+    width: 76px; height: 76px; border-radius: 50%; border: 4px solid #fff; display: grid; place-items: center; transition: transform .12s;
+  }
+  #shutter::after { content: ""; width: 60px; height: 60px; border-radius: 50%; background: #fff; }
+  #shutter:active { transform: scale(.92); }
+  #shutterWrap small { font-size: 12px; color: var(--muted); }
+  #actions { display: none; gap: 12px; }
+  .is-frozen #actions { display: flex; }
+  .is-frozen #shutterWrap { display: none; }
+  .btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 15px 18px; border-radius: 999px; font-weight: 600; font-size: 16px;
+    background: var(--glass-strong);
+  }
+  .btn.primary { background: var(--accent); color: var(--on-accent); }
+  .btn svg { width: 20px; height: 20px; }
+  .btn:active { filter: brightness(.85); }
+
+  /* Teljes képernyős üzenetek */
+  .screen {
+    position: absolute; inset: 0; z-index: 5; background: #05090a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    padding: calc(var(--sat) + 32px) calc(var(--sar) + 28px) calc(var(--sab) + 32px) calc(var(--sal) + 28px); text-align: center;
+  }
+  .screen[hidden], #shareView[hidden] { display: none; }
+  .screen h1 { margin: 0; font-size: 28px; letter-spacing: -.01em; }
+  .screen p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 340px; }
+  .screen .btn { flex: none; width: 100%; max-width: 340px; }
+  .logo { width: 84px; height: 84px; border-radius: 22px; }
+  .tip { margin-top: 6px; font-size: 13px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.07); max-width: 340px; color: var(--muted); line-height: 1.5; }
+  .tip b { color: var(--text); font-weight: 600; }
+
+  #shareView {
+    position: absolute; inset: 0; z-index: 6; background: rgba(0,0,0,.94); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    padding: calc(var(--sat) + 24px) 20px calc(var(--sab) + 24px);
+    -webkit-user-select: auto; user-select: auto;
+  }
+  #shareView img { max-width: 100%; max-height: 62%; border-radius: 12px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
+  #shareView p { margin: 0; text-align: center; color: var(--muted); max-width: 320px; line-height: 1.5; }
+
+  #toast {
+    position: absolute; left: 50%; top: calc(var(--sat) + 64px); transform: translate(-50%, -10px); opacity: 0; pointer-events: none; z-index: 7;
+    padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; background: rgba(255,255,255,.95); color: #111; transition: all .25s; max-width: calc(100% - 32px); text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="viewport">
+    <div id="stage">
+      <video id="video" playsinline muted autoplay></video>
+      <canvas id="frozen"></canvas>
+    </div>
+  </div>
+
+  <div id="guide" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i><span>Igazítsd az okmányt a keretbe</span></div>
+  <div id="flash"></div>
+
+  <div id="top">
+    <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small>· nincs mentve</small></div>
+    <button class="round" id="torch" hidden aria-label="Zseblámpa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v4l-1.5 2v3.5a1.5 1.5 0 0 1-3 0V8L9 6z"/><path d="M12 15v7"/></svg>
+    </button>
+  </div>
+
+  <div id="bottom">
+    <div class="row presets">
+      <div class="group" id="presets">
+        <button class="chip" data-z="1">1×</button>
+        <button class="chip" data-z="2">2×</button>
+        <button class="chip" data-z="4">4×</button>
+        <button class="chip" data-z="8">8×</button>
+      </div>
+      <span id="zoomLabel">1.0×</span>
+    </div>
+    <div class="row">
+      <button class="step" id="zoomOut" aria-label="Kicsinyítés">−</button>
+      <input type="range" id="slider" min="1" max="10" step="0.01" value="1" aria-label="Nagyítás">
+      <button class="step" id="zoomIn" aria-label="Nagyítás">+</button>
+    </div>
+    <div id="shutterWrap">
+      <button id="shutter" aria-label="Pillanatkép rögzítése"></button>
+      <small>Pillanatkép rögzítése</small>
+    </div>
+    <div id="actions">
+      <button class="btn" id="live">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+        Élő kép
+      </button>
+      <button class="btn primary" id="save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Mentés
+      </button>
+    </div>
+  </div>
+
+  <section class="screen" id="start">
+    <img class="logo" src="icon-180.png" alt="">
+    <h1>Okmányvizsgáló</h1>
+    <p>Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
+    <button class="btn primary" id="startBtn">Kamera indítása</button>
+    <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
+  </section>
+
+  <section class="screen" id="denied" hidden>
+    <h1 id="deniedTitle">Nincs kamera engedély</h1>
+    <p id="deniedText">Az okmányvizsgálathoz kell a kamera. Engedélyezd: Beállítások, Safari, Kamera, majd válaszd az Engedélyezés lehetőséget.</p>
+    <button class="btn primary" id="retryBtn">Újrapróbálom</button>
+  </section>
+
+  <section id="shareView" hidden>
+    <img id="shareImg" alt="Rögzített kép">
+    <p>Nyomd hosszan a képet, és válaszd a Mentés a Fotókba lehetőséget.</p>
+    <button class="btn" id="shareClose" style="flex:none;width:100%;max-width:320px">Bezárás</button>
+  </section>
+
+  <div id="toast" role="status"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var app = $('app'), viewport = $('viewport'), stage = $('stage'), video = $('video'), frozen = $('frozen');
+  var slider = $('slider'), zoomLabel = $('zoomLabel'), torchBtn = $('torch');
+  var MAX_ZOOM = 10;
+
+  var stream = null, track = null, torchOn = false, wakeLock = null, shareUrl = null;
+  var state = { s: 1, x: 0, y: 0 };
+
+  /* ---------- Nagyítás és mozgatás ---------- */
+
+  function clampPan() {
+    var w = viewport.clientWidth, h = viewport.clientHeight;
+    var mx = (state.s - 1) * w / 2, my = (state.s - 1) * h / 2;
+    state.x = Math.max(-mx, Math.min(mx, state.x));
+    state.y = Math.max(-my, Math.min(my, state.y));
+  }
+
+  function render() {
+    clampPan();
+    stage.style.transform = 'translate(' + state.x + 'px,' + state.y + 'px) scale(' + state.s + ')';
+    slider.value = state.s;
+    zoomLabel.textContent = state.s.toFixed(1) + '×';
+    var chips = document.querySelectorAll('#presets .chip');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle('active', Math.abs(state.s - Number(chips[i].dataset.z)) < 0.25);
+    }
+  }
+
+  // A (mx, my) pont (a képernyő közepéhez képest) a helyén marad nagyítás közben.
+  function zoomTo(newS, mx, my) {
+    newS = Math.max(1, Math.min(MAX_ZOOM, newS));
+    var k = newS / state.s;
+    state.x = mx - (mx - state.x) * k;
+    state.y = my - (my - state.y) * k;
+    state.s = newS;
+    render();
+  }
+
+  function resetView() { state.s = 1; state.x = 0; state.y = 0; render(); }
+
+  function centerRel(clientX, clientY) {
+    var r = viewport.getBoundingClientRect();
+    return { x: clientX - r.left - r.width / 2, y: clientY - r.top - r.height / 2 };
+  }
+
+  var pointers = new Map();
+  var lastTap = { t: 0, x: 0, y: 0 };
+  var gesture = null;
+
+  viewport.addEventListener('pointerdown', function (e) {
+    viewport.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    gesture = { moved: false, startX: e.clientX, startY: e.clientY, t: Date.now() };
+  });
+
+  viewport.addEventListener('pointermove', function (e) {
+    var p = pointers.get(e.pointerId);
+    if (!p) return;
+    var prev = { x: p.x, y: p.y };
+    p.x = e.clientX; p.y = e.clientY;
+
+    if (pointers.size === 1) {
+      state.x += p.x - prev.x;
+      state.y += p.y - prev.y;
+      if (Math.abs(p.x - gesture.startX) + Math.abs(p.y - gesture.startY) > 8) gesture.moved = true;
+      render();
+    } else if (pointers.size === 2) {
+      gesture.moved = true;
+      var pts = Array.from(pointers.values());
+      var other = pts[0] === p ? pts[1] : pts[0];
+      var dPrev = Math.hypot(prev.x - other.x, prev.y - other.y);
+      var dNow = Math.hypot(p.x - other.x, p.y - other.y);
+      var mid = centerRel((p.x + other.x) / 2, (p.y + other.y) / 2);
+      var midPrev = centerRel((prev.x + other.x) / 2, (prev.y + other.y) / 2);
+      state.x += mid.x - midPrev.x;
+      state.y += mid.y - midPrev.y;
+      if (dPrev > 0) zoomTo(state.s * dNow / dPrev, mid.x, mid.y);
+    }
+  });
+
+  function endPointer(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    if (pointers.size === 0 && gesture && !gesture.moved && Date.now() - gesture.t < 300) {
+      var now = Date.now();
+      if (now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+        var c = centerRel(e.clientX, e.clientY);
+        if (state.s > 1.05) { state.x = 0; state.y = 0; zoomTo(1, 0, 0); } else { zoomTo(3, c.x, c.y); }
+        lastTap.t = 0;
+      } else {
+        lastTap = { t: now, x: e.clientX, y: e.clientY };
+      }
+    }
+  }
+  viewport.addEventListener('pointerup', endPointer);
+  viewport.addEventListener('pointercancel', endPointer);
+
+  viewport.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var c = centerRel(e.clientX, e.clientY);
+    zoomTo(state.s * Math.exp(-e.deltaY * 0.0015), c.x, c.y);
+  }, { passive: false });
+
+  slider.addEventListener('input', function () { zoomTo(Number(slider.value), 0, 0); });
+  $('zoomIn').addEventListener('click', function () { zoomTo(state.s * 1.25, 0, 0); });
+  $('zoomOut').addEventListener('click', function () { zoomTo(state.s / 1.25, 0, 0); });
+  $('presets').addEventListener('click', function (e) {
+    var z = e.target && e.target.dataset && e.target.dataset.z;
+    if (z) zoomTo(Number(z), 0, 0);
+  });
+
+  /* ---------- Kamera ---------- */
+
+  function showScreen(id) {
+    ['start', 'denied'].forEach(function (n) { $(n).hidden = (n !== id); });
+  }
+
+  function showDenied(title, text) {
+    $('deniedTitle').textContent = title;
+    $('deniedText').textContent = text;
+    showScreen('denied');
+  }
+
+  async function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showDenied('A kamera itt nem érhető el', 'A kamerához biztonságos (https) kapcsolat kell. Nyisd meg az app https címét Safariban.');
+      return;
+    }
+    try {
+      stopCamera();
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }
+      });
+    } catch (err) {
+      if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
+        showDenied('Nincs kamera engedély', 'Az okmányvizsgálathoz kell a kamera. Engedélyezd: Beállítások, Safari, Kamera, majd válaszd az Engedélyezés lehetőséget.');
+      } else if (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError')) {
+        showDenied('Nem található kamera', 'Ezen az eszközön nem találtam használható kamerát.');
+      } else {
+        showDenied('A kamera nem indult el', 'Zárd be a kamerát használó többi appot, majd próbáld újra.');
+      }
+      return;
+    }
+    video.srcObject = stream;
+    try { await video.play(); } catch (e) { /* a muted autoplay általában elindul */ }
+    track = stream.getVideoTracks()[0];
+    var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
+    torchBtn.hidden = !(caps && caps.torch);
+    showScreen(null);
+    requestWakeLock();
+  }
+
+  function stopCamera() {
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
+    stream = null; track = null; torchOn = false;
+    torchBtn.classList.remove('on');
+  }
+
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) { /* nem kötelező */ }
+  }
+
+  torchBtn.addEventListener('click', async function () {
+    if (!track) return;
+    try {
+      torchOn = !torchOn;
+      await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+      torchBtn.classList.toggle('on', torchOn);
+    } catch (e) {
+      torchOn = false;
+      torchBtn.classList.remove('on');
+      toast('A zseblámpa nem kapcsolható be.');
+    }
+  });
+
+  $('startBtn').addEventListener('click', startCamera);
+  $('retryBtn').addEventListener('click', startCamera);
+
+  /* ---------- Pillanatkép (csak memóriában) ---------- */
+
+  function isFrozen() { return app.classList.contains('is-frozen'); }
+
+  function freeze() {
+    var w = video.videoWidth, h = video.videoHeight;
+    if (!w || !h) { toast('A kép még nem áll készen.'); return; }
+    frozen.width = w; frozen.height = h;
+    frozen.getContext('2d').drawImage(video, 0, 0, w, h);
+    app.classList.add('is-frozen');
+    $('modeLabel').textContent = 'Rögzített kép';
+    var f = $('flash'); f.classList.add('on');
+    setTimeout(function () { f.classList.remove('on'); }, 90);
+    if (navigator.vibrate) navigator.vibrate(15);
+  }
+
+  function unfreeze() {
+    frozen.width = 1; frozen.height = 1; // felszabadítja a kép memóriáját
+    app.classList.remove('is-frozen');
+    $('modeLabel').textContent = 'Élő kép';
+    closeShareView();
+    resetView();
+  }
+
+  $('shutter').addEventListener('click', freeze);
+  $('live').addEventListener('click', unfreeze);
+
+  /* ---------- Mentés (csak ha a felhasználó kéri) ---------- */
+
+  function closeShareView() {
+    $('shareView').hidden = true;
+    $('shareImg').removeAttribute('src');
+    if (shareUrl) { URL.revokeObjectURL(shareUrl); shareUrl = null; }
+  }
+  $('shareClose').addEventListener('click', closeShareView);
+
+  $('save').addEventListener('click', function () {
+    if (!isFrozen()) return;
+    frozen.toBlob(async function (blob) {
+      if (!blob) { toast('A mentés nem sikerült.'); return; }
+      var name = 'okmany-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.jpg';
+      var file = new File([blob], name, { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file] }); return; }
+        catch (err) { if (err && err.name === 'AbortError') return; }
+      }
+      shareUrl = URL.createObjectURL(blob);
+      $('shareImg').src = shareUrl;
+      $('shareView').hidden = false;
+    }, 'image/jpeg', 0.95);
+  });
+
+  /* ---------- Háttérbe váltás: a pillanatkép törlődik ---------- */
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      if (isFrozen()) unfreeze();
+      if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+    } else if ($('start').hidden && $('denied').hidden) {
+      if (!track || track.readyState === 'ended') startCamera(); else requestWakeLock();
+    }
+  });
+
+  /* ---------- Segédek ---------- */
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+
+  var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS && !standalone) $('installTip').hidden = false;
+
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
