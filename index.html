@@ -190,8 +190,9 @@
   .up #guide { opacity: 0; }
   .up #chipRow { display: none; }
   #upRow[hidden] { display: none; }
-  #chBase { display: none; }
+  #chBase, #chState { display: none; }
   .chg #chBase { display: inline-flex; }
+  .chg #chState { display: inline-block; font-size: 13px; color: var(--muted); padding: 0 4px; align-self: center; text-align: center; }
   .chg #upModes { display: none; }
   #upRow { justify-content: center; flex-wrap: wrap; gap: 6px; }
   #upModes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
@@ -379,7 +380,8 @@
         <button class="chip" data-u="line" aria-pressed="false">Vonal</button>
         <button class="chip" data-u="rainbow" aria-pressed="false">Szivárvány</button>
       </div>
-      <button class="chip" id="chBase">Alapkép</button>
+      <span id="chState" aria-live="polite"></span>
+      <button class="chip" id="chBase">Törlés</button>
       <button class="step" id="upClose" aria-label="Alnyomat-nézet bezárása">×</button>
     </div>
     <div class="row" id="cmpRow" hidden>
@@ -1375,11 +1377,13 @@
   /* PURE-END */
 
 
-  /* ----- Változás-térkép: a billentésre változó részek kiemelése ----- */
-  var chg = false, chBaseData = null, chPrevMode = 'sharp', CHW = 160, CHR = 6;
+  /* ----- Változás-térkép: a billentésre változó részek kiemelése -----
+     Gomb nélkül, folyamatosan: az élő képet a néhány tizedmásodperccel korábbihoz hasonlítja (a két kép közti mozgás kicsi,
+     így jól igazítható), a kéz mozgását kiigazítja, a vékony élnyomokat elnyeli, és a tartósan változó foltokat egy darabig megtartja. */
+  var chg = false, chPrevMode = 'sharp', CHW = 160, CHR = 6, CH_LAG = 350;
   var chSmall = document.createElement('canvas'), chSmallCtx = chSmall.getContext('2d', { willReadFrequently: true });
   var chHeat = document.createElement('canvas'), chHeatCtx = chHeat.getContext('2d');
-  var chTmp = null;
+  var chTmp = null, chHist = [], chAcc = null, chState = '', chLastKey = '';
 
   function chPrep(d, w, h) {
     var n = w * h, out = { r: new Float32Array(n), g: new Float32Array(n), b: new Float32Array(n), l: new Float32Array(n) };
@@ -1397,69 +1401,88 @@
     return chPrep(chSmallCtx.getImageData(0, 0, w, h).data, w, h);
   }
 
-  function setChBase() {
-    var sw = video.videoWidth, sh = video.videoHeight;
-    if (!sw || !sh) return;
-    var r = viewport.getBoundingClientRect();
-    var a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
-    var rect = { x: a.x, y: a.y, w: Math.max(8, b.x - a.x), h: Math.max(8, b.y - a.y) };
-    var h = Math.max(24, Math.round(CHW * rect.h / rect.w));
-    chBaseData = { rect: rect, w: CHW, h: h, px: chGrab(rect, CHW, h) };
-    $('chBase').textContent = 'Új alapkép';
-    toast('Alapkép rögzítve. Most billentsd meg az okmányt.');
+  function chSetState(t) {
+    if (t === chState) return;
+    chState = t; var el = $('chState'); if (el) el.textContent = t;
+  }
+
+  function chReset() {
+    chHist = []; chAcc = null; chLastKey = ''; chSetState('Billentsd lassan az okmányt');
   }
 
   function renderChange() {
     if (isFrozen() || !video.videoWidth) return;
-    var sw = video.videoWidth, sh = video.videoHeight, rect, w, h, base = chBaseData;
-    if (base) { rect = base.rect; w = base.w; h = base.h; }
-    else {
-      var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
-      rect = { x: a.x, y: a.y, w: Math.max(8, b.x - a.x), h: Math.max(8, b.y - a.y) };
-      w = CHW; h = Math.max(24, Math.round(CHW * rect.h / rect.w));
-    }
+    var sw = video.videoWidth, sh = video.videoHeight;
+    var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
+    var rect = { x: a.x, y: a.y, w: Math.max(8, b.x - a.x), h: Math.max(8, b.y - a.y) };
+    var w = CHW, h = Math.max(24, Math.round(CHW * rect.h / rect.w));
+    var key = [w, h, Math.round(rect.x), Math.round(rect.y), Math.round(rect.w)].join();
+    if (key !== chLastKey) { chHist = []; chAcc = null; chLastKey = key; }   // nagyítás vagy mozgatás után tiszta lappal indul
     var OW = 480, OH = Math.max(24, Math.round(OW * rect.h / rect.w));
     if (upCv.width !== OW || upCv.height !== OH) { upCv.width = OW; upCv.height = OH; }
     try { upCtx.drawImage(video, rect.x, rect.y, rect.w, rect.h, 0, 0, OW, OH); } catch (e) { return; }
-    if (!base) return;
-    var live = chGrab(rect, w, h), B = base.px, m = CHR + 3, x, y, dx, dy;
-    // 1) igazítás: a kéz mozgása ne számítson változásnak (legkisebb eltérésű eltolás)
-    var bestD = 1e12, bdx = 0, bdy = 0;
-    for (dy = -CHR; dy <= CHR; dy++) {
-      for (dx = -CHR; dx <= CHR; dx++) {
-        var sad = 0;
-        for (y = m; y < h - m; y += 2) { var ro = y * w, rl = (y + dy) * w + dx; for (x = m; x < w - m; x += 2) sad += Math.abs(live.l[rl + x] - B.l[ro + x]); }
-        if (sad < bestD) { bestD = sad; bdx = dx; bdy = dy; }
+    var now = performance.now(), live = chGrab(rect, w, h);
+    chHist.push({ t: now, px: live });
+    while (chHist.length > 12) chHist.shift();
+    // a hasonlítás alapja: a legközelebbi, legalább CH_LAG ms-mal korábbi kép
+    var ref = null, i;
+    for (i = chHist.length - 2; i >= 0; i--) { if (now - chHist[i].t >= CH_LAG) { ref = chHist[i].px; break; } }
+    var n = w * h, x, y, dx, dy, m = CHR + 3;
+    if (!chAcc || chAcc.length !== n) chAcc = new Float32Array(n);
+    var bad = false;
+    if (ref) {
+      // 1) igazítás: a kéz mozgását ne tekintse változásnak
+      var bestD = 1e12, bdx = 0, bdy = 0, cells = 0;
+      for (dy = -CHR; dy <= CHR; dy++) {
+        for (dx = -CHR; dx <= CHR; dx++) {
+          var sad = 0; cells = 0;
+          for (y = m; y < h - m; y += 2) { var ro = y * w, rl = (y + dy) * w + dx; for (x = m; x < w - m; x += 2) { sad += Math.abs(live.l[rl + x] - ref.l[ro + x]); cells++; } }
+          if (sad < bestD) { bestD = sad; bdx = dx; bdy = dy; }
+        }
       }
-    }
-    // 2) a globális fényerő-eltolódás levonása (medián, hogy egy nagy változó folt ne vigye el), majd képpontonkénti színkülönbség
-    function med3(P, Q) {
-      var hist = new Uint32Array(511), c2 = 0, yy, xx, t, acc = 0;
-      for (yy = m; yy < h - m; yy++) for (xx = m; xx < w - m; xx++) { hist[Math.round(P[(yy + bdy) * w + xx + bdx] - Q[yy * w + xx]) + 255]++; c2++; }
-      for (t = 0; t < 511; t++) { acc += hist[t]; if (acc >= c2 / 2) return t - 255; }
-      return 0;
-    }
-    var mr = med3(live.r, B.r), mg = med3(live.g, B.g), mb = med3(live.b, B.b);
+      if (Math.abs(bdx) >= CHR || Math.abs(bdy) >= CHR) bad = true;     // túl gyors mozgás: az igazítás nem megbízható
+      // 2) fényerő-eltolódás (medián), majd színkülönbség fél képpontos tűréssel
+      var med3 = function (P, Q) {
+        var hist = new Uint32Array(511), c2 = 0, yy, xx, t, acc = 0;
+        for (yy = m; yy < h - m; yy++) for (xx = m; xx < w - m; xx++) { hist[Math.max(0, Math.min(510, Math.round(P[(yy + bdy) * w + xx + bdx] - Q[yy * w + xx]) + 255))]++; c2++; }
+        for (t = 0; t < 511; t++) { acc += hist[t]; if (acc >= c2 / 2) return t - 255; }
+        return 0;
+      };
+      var mr = med3(live.r, ref.r), mg = med3(live.g, ref.g), mb = med3(live.b, ref.b);
+      var V = new Float32Array(n), OFFS = [-1, -0.5, 0, 0.5, 1], oi, oj, over = 0, tot = 0;
+      for (y = m; y < h - m; y++) for (x = m; x < w - m; x++) {
+        var j0 = y * w + x, dmin = 1e9, br = ref.r[j0] + mr, bg = ref.g[j0] + mg, bb = ref.b[j0] + mb;
+        for (oi = 0; oi < 5; oi++) for (oj = 0; oj < 5; oj++) {
+          var fx = x + bdx + OFFS[oi], fy = y + bdy + OFFS[oj], x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+          var q = y0 * w + x0, q2 = q + w, w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
+          var d = Math.abs(live.r[q] * w00 + live.r[q + 1] * w10 + live.r[q2] * w01 + live.r[q2 + 1] * w11 - br)
+                + Math.abs(live.g[q] * w00 + live.g[q + 1] * w10 + live.g[q2] * w01 + live.g[q2 + 1] * w11 - bg)
+                + Math.abs(live.b[q] * w00 + live.b[q + 1] * w10 + live.b[q2] * w01 + live.b[q2 + 1] * w11 - bb);
+          if (d < dmin) dmin = d;
+        }
+        var v = Math.max(0, Math.min(1, (dmin - 24) / 55)); V[j0] = v; tot++; if (v > 0.5) over++;
+      }
+      if (over / tot > 0.55) bad = true;                                // az egész kép változik (fény, expozíció): nem hologram
+      if (!bad) {
+        // 3) erózió: a vékony élnyomok eltűnnek, csak az összefüggő foltok maradnak; 4) a folt egy darabig megmarad
+        var E = new Float32Array(n), any = 0, ex, ey;
+        for (y = m; y < h - m; y++) for (x = m; x < w - m; x++) {
+          var mn = 1;
+          for (ey = -1; ey <= 1 && mn > 0; ey++) for (ex = -1; ex <= 1; ex++) { var vv = V[(y + ey) * w + x + ex]; if (vv < mn) mn = vv; }
+          E[y * w + x] = mn; if (mn > 0.3) any++;
+        }
+        for (i = 0; i < n; i++) { var dec = chAcc[i] * 0.94; chAcc[i] = E[i] > dec ? E[i] : dec; }
+        chSetState(any > 6 ? 'Változó rész található' : 'Nincs változás');
+      } else {
+        for (i = 0; i < n; i++) chAcc[i] *= 0.94;
+        chSetState(over / tot > 0.55 ? 'Egyenetlen fény, tartsd nyugodtan' : 'Túl gyors mozgás, lassabban');
+      }
+    } else if (!chState) chSetState('Billentsd lassan az okmányt');
     if (chHeat.width !== w || chHeat.height !== h) { chHeat.width = w; chHeat.height = h; }
-    var himg = chHeatCtx.createImageData(w, h), o = himg.data, oi, oj;
-    var OFFS = [-1, -0.5, 0, 0.5, 1];
-    for (y = m; y < h - m; y++) for (x = m; x < w - m; x++) {
-      var j0 = y * w + x, dmin = 1e9, br = B.r[j0] + mr, bg = B.g[j0] + mg, bb = B.b[j0] + mb;
-      // a legkisebb eltérés a fél képpontnyi eltolások között: a kéz apró remegése nem számít változásnak
-      for (oi = 0; oi < 5; oi++) for (oj = 0; oj < 5; oj++) {
-        var fx = x + bdx + OFFS[oi], fy = y + bdy + OFFS[oj], x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
-        var q = y0 * w + x0, q2 = q + w, w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
-        var lr = live.r[q] * w00 + live.r[q + 1] * w10 + live.r[q2] * w01 + live.r[q2 + 1] * w11;
-        var lg = live.g[q] * w00 + live.g[q + 1] * w10 + live.g[q2] * w01 + live.g[q2 + 1] * w11;
-        var lb = live.b[q] * w00 + live.b[q + 1] * w10 + live.b[q2] * w01 + live.b[q2 + 1] * w11;
-        var d = Math.abs(lr - br) + Math.abs(lg - bg) + Math.abs(lb - bb);
-        if (d < dmin) dmin = d;
-      }
-      var v = Math.max(0, Math.min(1, (dmin - 22) / 55)), k = j0 * 4;
-      o[k] = 255; o[k + 1] = 70 + 150 * v; o[k + 2] = 20; o[k + 3] = v * 255;
-    }
+    var himg = chHeatCtx.createImageData(w, h), o = himg.data, k, vv2;
+    for (i = 0; i < n; i++) { vv2 = chAcc[i]; k = i * 4; o[k] = 255; o[k + 1] = 70 + 150 * vv2; o[k + 2] = 20; o[k + 3] = Math.min(255, vv2 * 300); }
     chHeatCtx.putImageData(himg, 0, 0);
-    upCtx.fillStyle = 'rgba(0,0,0,0.62)'; upCtx.fillRect(0, 0, OW, OH);   // a háttér sötét, így csak a változás világít
+    upCtx.fillStyle = 'rgba(0,0,0,0.55)'; upCtx.fillRect(0, 0, OW, OH);   // a háttér sötét, így csak a változás világít
     upCtx.imageSmoothingEnabled = true;
     upCtx.drawImage(chHeat, 0, 0, OW, OH);
   }
@@ -1502,14 +1525,14 @@
 
   async function enterUp(change) {
     if (upOn) return;
-    upOn = true; upKey = ''; chg = !!change; chBaseData = null;
+    upOn = true; upKey = ''; chg = !!change;
     app.classList.add('up');
     if (chg) {
       chPrevMode = upMode; app.classList.add('chg'); upSrc.width = 1;
-      $('chBase').textContent = 'Alapkép'; $('chBtn').classList.add('on'); $('chBtn').setAttribute('aria-pressed', 'true');
+      chReset(); $('chBtn').classList.add('on'); $('chBtn').setAttribute('aria-pressed', 'true');
       $('upRow').hidden = false; stopGlare();
       if (!upRaf) upRaf = requestAnimationFrame(upLoop);
-      toast('Tartsd stabilan az okmányt, koppints az Alapkép gombra, majd billentsd meg.');
+      toast('Tartsd az okmányt a kamerában, és lassan billentsd. Ami világít, az a döntésre változik.');
       return;
     }
     $('upRow').hidden = false; $('upBtn').classList.add('on'); $('upBtn').setAttribute('aria-pressed', 'true');
@@ -1525,7 +1548,7 @@
   async function exitUp() {
     if (!upOn) return;
     var wasChg = chg;
-    upOn = false; chg = false; chBaseData = null;
+    upOn = false; chg = false; chHist = []; chAcc = null;
     app.classList.remove('up'); app.classList.remove('chg');
     $('upRow').hidden = true;
     $('upBtn').classList.remove('on'); $('upBtn').setAttribute('aria-pressed', 'false');
@@ -1539,7 +1562,7 @@
 
   $('upBtn').addEventListener('click', function () { if (upOn && !chg) exitUp(); else if (upOn) exitUp().then(function () { enterUp(false); }); else enterUp(false); });
   $('chBtn').addEventListener('click', function () { if (upOn && chg) exitUp(); else if (upOn) exitUp().then(function () { enterUp(true); }); else enterUp(true); });
-  $('chBase').addEventListener('click', setChBase);
+  $('chBase').addEventListener('click', chReset);
   $('upClose').addEventListener('click', exitUp);
   $('upModes').addEventListener('click', function (e) { var m = e.target && e.target.dataset && e.target.dataset.u; if (m) setUpMode(m); });
 

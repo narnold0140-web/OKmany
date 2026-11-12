@@ -56,14 +56,12 @@ A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti v
 
 A felső sávban a rombusz ikonnal kapcsolható. Azt mutatja meg, mely részei változnak az okmánynak a megdöntéstől: ilyen a hologram, a színváltó festék és a kinegram. Egy fénymásolt vagy nyomtatott hamisítványon a döntéstől semmi nem változik.
 
-1. Tartsd az okmányt a kamera elé, és koppints az **Alapkép** gombra.
-2. Billentsd meg az okmányt (vagy a telefont) néhány fokkal, miközben a kamerában tartod.
-3. Az élő kép elsötétül, és csak azok a részek világítanak narancssárgán, amelyek az alapképhez képest színt váltottak.
+Nincs külön gomb, nem kell semmit rögzíteni. Tartsd az okmányt a kamerában, és lassan billentsd meg. Az élő kép elsötétül, és csak azok a részek világítanak narancssárgán, amelyek a billentés közben színt váltanak. A folt a mozgás után még egy másodpercig látszik, aztán elhalványul.
 
-Tudnivalók:
-- A kéz kisebb remegését az app kiigazítja, de nagy elmozdulásnál vagy erős döntésnél hamis jelzések is megjelenhetnek a szélek mentén. Tartsd stabilan az okmányt, és billentsd lassan.
-- A fény megváltozása (árnyék, tükröződés) is változásnak látszik. Egyenletes fényben vizsgálj.
-- A nagyítás a rögzítés után nem változtatható, az alapkép az akkori nézetre vonatkozik. Új nézethez nyomd meg az Új alapkép gombot.
+- Az app mozgás közben mindig az előbbi pillanathoz hasonlít, a kéz remegését kiigazítja, és a vékony élnyomokat nem jelzi.
+- Az alsó sávban a szöveg megmondja, mi történik: „Változó rész található", „Nincs változás", „Túl gyors mozgás, lassabban" vagy „Egyenetlen fény, tartsd nyugodtan".
+- Egyenletes fényben vizsgálj, mert az árnyék és a tükröződés is változásnak látszhat. A Törlés gomb letörli a megmaradt foltokat.
+- Nagyítás vagy mozgatás után az app tiszta lappal indul.
 - Ez vizuális segéd, nem ítélet: te dönted el, hogy a világító rész ott van-e, ahol a valódi okmányon kell lennie. Hasonlítsd a Mintaokmány-tár képével.
 
 ## Mintaokmány-tár
