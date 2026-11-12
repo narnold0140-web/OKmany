@@ -36,7 +36,7 @@
   }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  #app { position: fixed; inset: 0; overflow: hidden; background: #000; }
+  #app { position: fixed; inset: 0; overflow: hidden; background: #000; touch-action: none; }
 
   /* Kép */
   #viewport { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
@@ -48,8 +48,8 @@
 
   /* Okmánykeret */
   #guide {
-    position: absolute; left: 50%; top: 38%; width: calc(100% - 48px); max-width: 520px;
-    aspect-ratio: 1.586; transform: translate(-50%, -50%); pointer-events: none;
+    position: absolute; left: 50%; top: 38%; width: calc(100% - 48px); height: 200px;
+    transform: translate(-50%, -50%); pointer-events: none;
     transition: opacity .25s;
   }
   .is-frozen #guide, .no-guide #guide { opacity: 0; }
@@ -86,33 +86,86 @@
   }
   .round.on { background: var(--accent); color: var(--on-accent); }
   .round svg { width: 20px; height: 20px; }
+  .round[hidden] { display: none; }
+  .tools { display: flex; gap: 8px; pointer-events: none; }
+  .tools .round { width: 38px; height: 38px; }
+  .tools .round svg { width: 19px; height: 19px; }
+
+  /* Tükröződés-jelző */
+  #glare { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .is-frozen #glare, .no-glare #glare { display: none; }
+  #glareNote { display: none; color: var(--warn); font-weight: 600; }
+  .is-glare:not(.is-frozen) #glareNote { display: inline; }
+  .is-glare:not(.is-frozen) .nosave { display: none; }
+  .is-glare:not(.is-frozen) .dot { background: var(--warn); }
+
+  /* Lupe */
+  #lupe {
+    position: absolute; left: 0; top: 0; width: 132px; height: 132px; border-radius: 50%; border: 3px solid #fff;
+    box-shadow: 0 8px 28px rgba(0,0,0,.55); pointer-events: none; z-index: 4; background: #000;
+  }
+  #lupe[hidden] { display: none; }
+
+  /* Objektív + szűrők egy sorban */
+  #chipRow { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; touch-action: pan-x; -webkit-overflow-scrolling: touch; }
+  #chipRow::-webkit-scrollbar { display: none; }
+  #chipInner { display: flex; align-items: center; gap: 8px; margin: 0 auto; flex: none; }
+  #lensGroup { display: flex; align-items: center; gap: 8px; }
+  #lensGroup[hidden] { display: none; }
+  #lenses, #fxChips { display: flex; gap: 6px; }
+  #lenses .chip { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.4); }
+  #lenses .chip.active { background: var(--accent); box-shadow: none; }
+  .sep { width: 1px; height: 18px; background: rgba(255,255,255,.28); }
+  #fxChips .chip { min-width: 0; font-size: 12px; padding: 5px 10px; }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+
+  /* Összecsukható panel */
+  .handle { width: 100%; height: 20px; flex: none; display: grid; place-items: center; }
+  .handle span { width: 38px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.42); }
+  .min #bottom .row { display: none; }
+  .pill { white-space: nowrap; }
+
+  /* Saját keretméret */
+  #customDlg {
+    position: absolute; inset: 0; z-index: 9; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center;
+    padding: calc(var(--sat) + 20px) 20px calc(var(--sab) + 20px);
+  }
+  #customDlg[hidden] { display: none; }
+  #customDlg .card { width: 100%; max-width: 340px; background: #10181a; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  #customDlg h2 { margin: 0; font-size: 18px; }
+  #customDlg .fields { display: flex; gap: 10px; }
+  #customDlg label { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+  #customDlg input {
+    width: 100%; font-size: 17px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.08); color: var(--text); -webkit-user-select: text; user-select: text;
+  }
+  #customDlg .btns { display: flex; gap: 10px; }
 
   /* Alsó panel */
   #bottom {
     position: absolute; left: 0; right: 0; bottom: 0;
-    padding: 18px calc(var(--sar) + 20px) calc(var(--sab) + 14px) calc(var(--sal) + 20px);
-    border-radius: 32px 32px 0 0; background: var(--glass);
+    padding: 4px calc(var(--sar) + 16px) calc(var(--sab) + 10px) calc(var(--sal) + 16px);
+    border-radius: 26px 26px 0 0; background: var(--glass);
     -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5);
-    display: flex; flex-direction: column; gap: 16px;
+    display: flex; flex-direction: column; gap: 8px;
   }
   .row { display: flex; align-items: center; gap: 8px; }
   .presets { justify-content: space-between; }
   .presets .group { display: flex; gap: 8px; }
-  .chip { min-width: 40px; padding: 7px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--glass-strong); }
+  .chip { min-width: 38px; padding: 5px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--glass-strong); }
   .chip.active { background: var(--accent); color: var(--on-accent); }
   #zoomLabel { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .step {
-    width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--glass-strong); font-size: 20px; line-height: 1;
+    width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--glass-strong); font-size: 18px; line-height: 1;
   }
-  input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 34px; }
+  input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 20px; margin: 0; touch-action: pan-x; }
 
   #shutterWrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   #shutter {
-    width: 76px; height: 76px; border-radius: 50%; border: 4px solid #fff; display: grid; place-items: center; transition: transform .12s;
+    width: 60px; height: 60px; border-radius: 50%; border: 3px solid #fff; display: grid; place-items: center; transition: transform .12s;
   }
-  #shutter::after { content: ""; width: 60px; height: 60px; border-radius: 50%; background: #fff; }
+  #shutter::after { content: ""; width: 48px; height: 48px; border-radius: 50%; background: #fff; }
   #shutter:active { transform: scale(.92); }
-  #shutterWrap small { font-size: 12px; color: var(--muted); }
   #actions { display: none; gap: 12px; }
   .is-frozen #actions { display: flex; }
   .is-frozen #shutterWrap { display: none; }
@@ -126,11 +179,16 @@
 
   /* Teljes képernyős üzenetek */
   .screen {
-    position: absolute; inset: 0; z-index: 5; background: #05090a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    position: absolute; inset: 0; z-index: 5; background: #05090a; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; gap: 16px;
     padding: calc(var(--sat) + 32px) calc(var(--sar) + 28px) calc(var(--sab) + 32px) calc(var(--sal) + 28px); text-align: center;
   }
   .screen[hidden], #shareView[hidden] { display: none; }
+  /* Középre igazít, de ha kevés a hely (fekvő mód), görgethető marad, és nem vág le semmit */
+  .screen::before, .screen::after { content: ""; flex: 1 1 0; min-height: 0; }
   .screen h1 { margin: 0; font-size: 28px; letter-spacing: -.01em; }
+  .app-name { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: -8px; }
+  .screen p.welcome { color: var(--text); font-size: 16px; }
+  .screen p.privacy { font-size: 13px; }
   .screen p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 340px; }
   .screen .btn { flex: none; width: 100%; max-width: 340px; }
   .logo { width: 84px; height: 84px; border-radius: 22px; }
@@ -146,10 +204,36 @@
   #shareView p { margin: 0; text-align: center; color: var(--muted); max-width: 320px; line-height: 1.5; }
 
   #toast {
-    position: absolute; left: 50%; top: calc(var(--sat) + 64px); transform: translate(-50%, -10px); opacity: 0; pointer-events: none; z-index: 7;
+    position: absolute; left: 50%; top: calc(var(--sat) + 64px); transform: translate(-50%, -10px); opacity: 0; pointer-events: none; z-index: 10;
     padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; background: rgba(255,255,255,.95); color: #111; transition: all .25s; max-width: calc(100% - 32px); text-align: center;
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* Fektetett (fekvő) mód: a vezérlők jobb oldali sávba kerülnek, a kép szabadon marad */
+  @media (orientation: landscape) {
+    :root { --panel-w: min(270px, 40vw); }
+    #top { right: var(--panel-w); }
+    #bottom {
+      left: auto; top: 0; width: var(--panel-w);
+      padding: 2px calc(var(--sar) + 14px) calc(var(--sab) + 10px) 14px;
+      border-radius: 26px 0 0 26px; gap: 8px; justify-content: center; overflow-y: auto;
+    }
+    .min #bottom { top: auto; border-radius: 26px 0 0 0; }
+    #chipRow { flex-wrap: wrap; overflow: visible; }
+    #chipInner { flex: 0 1 auto; max-width: 100%; flex-wrap: wrap; justify-content: center; }
+    #lensGroup { flex-wrap: wrap; justify-content: center; }
+    #fxChips { flex-wrap: wrap; justify-content: center; }
+    .sep { display: none; }
+    .presets { flex-wrap: wrap; justify-content: center; row-gap: 6px; }
+    #shutter { width: 54px; height: 54px; }
+    #shutter::after { width: 42px; height: 42px; }
+    .btn { padding: 11px 14px; font-size: 15px; }
+    .logo { width: 56px; height: 56px; }
+    .screen h1 { font-size: 24px; }
+    #shareView img { max-height: 46%; }
+    .pill .nosave { display: none; }
+  }
+  @media (max-width: 400px) { .pill .nosave { display: none; } }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -160,20 +244,45 @@
     <div id="stage">
       <video id="video" playsinline muted autoplay></video>
       <canvas id="frozen"></canvas>
+      <canvas id="glare"></canvas>
     </div>
   </div>
 
   <div id="guide" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i><span>Igazítsd az okmányt a keretbe</span></div>
   <div id="flash"></div>
+  <canvas id="lupe" width="264" height="264" hidden></canvas>
 
   <div id="top">
-    <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small>· nincs mentve</small></div>
+    <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small class="nosave">· nincs mentve</small><small id="glareNote">· tükröződés!</small></div>
+    <div class="tools">
+      <button class="round on" id="glareBtn" aria-label="Tükröződés-jelző" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="round" id="frameBtn" aria-label="Keret váltása">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"/></svg>
+      </button>
+      <button class="round" id="rotateFrame" aria-label="Keret elforgatása">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>
+      </button>
     <button class="round" id="torch" hidden aria-label="Zseblámpa">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v4l-1.5 2v3.5a1.5 1.5 0 0 1-3 0V8L9 6z"/><path d="M12 15v7"/></svg>
     </button>
+    </div>
   </div>
 
   <div id="bottom">
+    <button class="handle" id="panelToggle" aria-label="Vezérlők elrejtése vagy megjelenítése" aria-expanded="true"><span></span></button>
+    <div class="row" id="chipRow">
+      <div id="chipInner">
+        <div id="lensGroup" hidden><div id="lenses"></div><i class="sep"></i></div>
+        <div id="fxChips">
+          <button class="chip" data-fx="contrast" aria-pressed="false">Kontraszt</button>
+          <button class="chip" data-fx="sharp" aria-pressed="false">Élesítés</button>
+          <button class="chip" data-fx="gray" aria-pressed="false">Szürke</button>
+          <button class="chip" data-fx="invert" aria-pressed="false">Inverz</button>
+        </div>
+      </div>
+    </div>
     <div class="row presets">
       <div class="group" id="presets">
         <button class="chip" data-z="1">1×</button>
@@ -190,7 +299,6 @@
     </div>
     <div id="shutterWrap">
       <button id="shutter" aria-label="Pillanatkép rögzítése"></button>
-      <small>Pillanatkép rögzítése</small>
     </div>
     <div id="actions">
       <button class="btn" id="live">
@@ -206,8 +314,10 @@
 
   <section class="screen" id="start">
     <img class="logo" src="icon-180.png" alt="">
-    <h1>Okmányvizsgáló</h1>
-    <p>Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
+    <small class="app-name">Okmányvizsgáló</small>
+    <h1>Üdv, kolléga!</h1>
+    <p class="welcome">Te vagy az első védvonal. Az éles szemed és a türelmed másokat véd: minden felfedett hamisítvány biztonságosabbá teszi a határt. Nézz alaposan, bízz a szakmai megérzéseidben, és ne hagyd, hogy a rutin elaltassa a figyelmedet. Jó munkát a mai műszakhoz!</p>
+    <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -224,6 +334,20 @@
     <button class="btn" id="shareClose" style="flex:none;width:100%;max-width:320px">Bezárás</button>
   </section>
 
+  <div id="customDlg" hidden>
+    <div class="card">
+      <h2>Saját keretméret</h2>
+      <div class="fields">
+        <label>Szélesség (mm)<input id="cw" type="number" inputmode="decimal" min="10" max="600" step="0.1"></label>
+        <label>Magasság (mm)<input id="ch" type="number" inputmode="decimal" min="10" max="600" step="0.1"></label>
+      </div>
+      <div class="btns">
+        <button class="btn" id="cCancel">Mégse</button>
+        <button class="btn primary" id="cOk">Kész</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" role="status"></div>
 </div>
 
@@ -237,6 +361,15 @@
   var MAX_ZOOM = 10;
 
   var stream = null, track = null, torchOn = false, wakeLock = null, shareUrl = null;
+  var currentDeviceId = null, lensList = [];
+  var lensRow = $('lensGroup'), lensBox = $('lenses');
+  var bottom = $('bottom'), topBar = $('top'), guide = $('guide');
+  var glareCv = $('glare'), glareCtx = glareCv.getContext('2d'), glareOn = true, glareState = false, glareTimer = null;
+  var gCv = document.createElement('canvas'), gCtx = gCv.getContext('2d', { willReadFrequently: true });
+  var lupe = $('lupe'), lupeCtx = lupe.getContext('2d');
+  var frozenRaw = document.createElement('canvas'), capturing = false;
+  var sCv = document.createElement('canvas'), sCtx = sCv.getContext('2d', { willReadFrequently: true });
+  var fx = { contrast: false, sharp: false, gray: false, invert: false };
   var state = { s: 1, x: 0, y: 0 };
 
   /* ---------- Nagyítás és mozgatás ---------- */
@@ -276,57 +409,147 @@
     return { x: clientX - r.left - r.width / 2, y: clientY - r.top - r.height / 2 };
   }
 
-  var pointers = new Map();
-  var lastTap = { t: 0, x: 0, y: 0 };
-  var gesture = null;
+  // Képernyőpont -> forrás (videó/vászon) pixel, a nagyítás és az object-fit: cover figyelembevételével
+  function screenToSrc(cx, cy, sw, sh) {
+    var vw = viewport.clientWidth, vh = viewport.clientHeight, r = viewport.getBoundingClientRect();
+    var k = Math.max(vw / sw, vh / sh);
+    var ux = vw / 2 + (cx - r.left - vw / 2 - state.x) / state.s;
+    var uy = vh / 2 + (cy - r.top - vh / 2 - state.y) / state.s;
+    return { x: (ux - (vw - sw * k) / 2) / k, y: (uy - (vh - sh * k) / 2) / k, k: k };
+  }
 
-  viewport.addEventListener('pointerdown', function (e) {
-    viewport.setPointerCapture(e.pointerId);
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    gesture = { moved: false, startX: e.clientX, startY: e.clientY, t: Date.now() };
-  });
+  /* Érintés: egy ujj mozgat, két ujj nagyít, dupla koppintás nagyít / visszaáll, hosszú nyomás: lupe.
+     Touch eseményekkel, mert iPhone Safariban ez a megbízható, és az egész képernyőn működik. */
 
-  viewport.addEventListener('pointermove', function (e) {
-    var p = pointers.get(e.pointerId);
-    if (!p) return;
-    var prev = { x: p.x, y: p.y };
-    p.x = e.clientX; p.y = e.clientY;
+  var touchState = null, lastTap = { t: 0, x: 0, y: 0 }, lastTouchAt = 0;
+  var lupeTimer = null, lupeActive = false, lupePos = { x: 0, y: 0 };
 
-    if (pointers.size === 1) {
-      state.x += p.x - prev.x;
-      state.y += p.y - prev.y;
-      if (Math.abs(p.x - gesture.startX) + Math.abs(p.y - gesture.startY) > 8) gesture.moved = true;
-      render();
-    } else if (pointers.size === 2) {
-      gesture.moved = true;
-      var pts = Array.from(pointers.values());
-      var other = pts[0] === p ? pts[1] : pts[0];
-      var dPrev = Math.hypot(prev.x - other.x, prev.y - other.y);
-      var dNow = Math.hypot(p.x - other.x, p.y - other.y);
-      var mid = centerRel((p.x + other.x) / 2, (p.y + other.y) / 2);
-      var midPrev = centerRel((prev.x + other.x) / 2, (prev.y + other.y) / 2);
-      state.x += mid.x - midPrev.x;
-      state.y += mid.y - midPrev.y;
-      if (dPrev > 0) zoomTo(state.s * dNow / dPrev, mid.x, mid.y);
+  function isControl(el) {
+    return !!(el && el.closest && el.closest('button, input, label, #customDlg, #shareView, .screen, #bottom .row'));
+  }
+
+  function doubleTap(x, y) {
+    if (state.s > 1.05) { state.x = 0; state.y = 0; zoomTo(1, 0, 0); }
+    else { var c = centerRel(x, y); zoomTo(3, c.x, c.y); }
+  }
+
+  function dist(a, b) { return Math.max(1, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)); }
+
+  function startLupe() {
+    lupeTimer = null;
+    if (!touchState || touchState.mode !== 'pan' || touchState.moved) return;
+    lupeActive = true;
+    lupe.style.filter = isFrozen() ? 'none' : (video.style.filter || 'none');
+    lupe.hidden = false;
+    lupePos.x = touchState.lx; lupePos.y = touchState.ly;
+    if (navigator.vibrate) navigator.vibrate(8);
+    lupeLoop();
+  }
+  function stopLupe() { lupeActive = false; lupe.hidden = true; }
+  function cancelLupeTimer() { if (lupeTimer) { clearTimeout(lupeTimer); lupeTimer = null; } }
+  function lupeLoop() {
+    if (!lupeActive) return;
+    moveLupe(lupePos.x, lupePos.y);
+    requestAnimationFrame(lupeLoop);
+  }
+  function moveLupe(cx, cy) {
+    var fr = isFrozen(), el = fr ? frozen : video;
+    var sw = fr ? frozen.width : video.videoWidth, sh = fr ? frozen.height : video.videoHeight;
+    if (!sw || !sh || sw < 4) return;
+    var p = screenToSrc(cx, cy, sw, sh);
+    var half = (lupe.clientWidth || 132) / 2;
+    var rs = (half * 2) / 3 / (p.k * state.s);   // 3× a képernyőn látotthoz képest
+    var S = lupe.width;
+    try { lupeCtx.clearRect(0, 0, S, S); lupeCtx.drawImage(el, p.x - rs / 2, p.y - rs / 2, rs, rs, 0, 0, S, S); } catch (e) {}
+    var lx = Math.max(4, Math.min(app.clientWidth - 2 * half - 4, cx - half));
+    var ly = cy - 2 * half - 36; if (ly < 4) ly = cy + 44;
+    lupe.style.transform = 'translate(' + lx + 'px,' + ly + 'px)';
+  }
+
+  app.addEventListener('touchstart', function (e) {
+    lastTouchAt = Date.now();
+    if (isControl(e.target)) return;
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      var t = e.touches[0];
+      touchState = { mode: 'pan', sx: t.clientX, sy: t.clientY, lx: t.clientX, ly: t.clientY, t0: Date.now(), moved: false };
+      cancelLupeTimer();
+      lupeTimer = setTimeout(startLupe, 450);
+    } else if (e.touches.length >= 2 && touchState) {
+      cancelLupeTimer(); stopLupe();
+      var a = e.touches[0], b = e.touches[1];
+      touchState = {
+        mode: 'pinch', d0: dist(a, b), s0: state.s, x0: state.x, y0: state.y, moved: true,
+        m0: centerRel((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2)
+      };
     }
-  });
+  }, { passive: false });
 
-  function endPointer(e) {
-    if (!pointers.has(e.pointerId)) return;
-    pointers.delete(e.pointerId);
-    if (pointers.size === 0 && gesture && !gesture.moved && Date.now() - gesture.t < 300) {
-      var now = Date.now();
-      if (now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
-        var c = centerRel(e.clientX, e.clientY);
-        if (state.s > 1.05) { state.x = 0; state.y = 0; zoomTo(1, 0, 0); } else { zoomTo(3, c.x, c.y); }
-        lastTap.t = 0;
-      } else {
-        lastTap = { t: now, x: e.clientX, y: e.clientY };
+  app.addEventListener('touchmove', function (e) {
+    if (!touchState) return;
+    e.preventDefault();
+    if (touchState.mode === 'pinch' && e.touches.length >= 2) {
+      var a = e.touches[0], b = e.touches[1];
+      var mid = centerRel((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+      var ns = Math.max(1, Math.min(MAX_ZOOM, touchState.s0 * dist(a, b) / touchState.d0));
+      // A kép pontja, ami a kezdeti középpont alatt volt, az ujjak mostani közepe alatt marad.
+      var px = (touchState.m0.x - touchState.x0) / touchState.s0;
+      var py = (touchState.m0.y - touchState.y0) / touchState.s0;
+      state.s = ns; state.x = mid.x - px * ns; state.y = mid.y - py * ns;
+      render();
+    } else if (touchState.mode === 'pan' && e.touches.length === 1) {
+      var t = e.touches[0];
+      if (lupeActive) { lupePos.x = t.clientX; lupePos.y = t.clientY; return; }
+      if (!touchState.moved && Math.hypot(t.clientX - touchState.sx, t.clientY - touchState.sy) > 10) {
+        touchState.moved = true; cancelLupeTimer();
       }
+      if (touchState.moved) { state.x += t.clientX - touchState.lx; state.y += t.clientY - touchState.ly; render(); }
+      touchState.lx = t.clientX; touchState.ly = t.clientY;
+    }
+  }, { passive: false });
+
+  function onTouchEnd(e) {
+    lastTouchAt = Date.now();
+    if (!touchState) return;
+    cancelLupeTimer();
+    if (e.touches.length === 0) {
+      var ts = touchState; touchState = null;
+      if (lupeActive) { stopLupe(); return; }
+      var ct = e.changedTouches[0], now = Date.now();
+      if (ts.mode === 'pan' && !ts.moved && now - ts.t0 < 350) {
+        if (now - lastTap.t < 400 && Math.hypot(ct.clientX - lastTap.x, ct.clientY - lastTap.y) < 50) {
+          lastTap.t = 0; doubleTap(ct.clientX, ct.clientY);
+        } else { lastTap = { t: now, x: ct.clientX, y: ct.clientY }; }
+      }
+    } else if (e.touches.length === 1) {
+      var r = e.touches[0];   // két ujjról egyre: mozgatás folytatódik
+      touchState = { mode: 'pan', sx: r.clientX, sy: r.clientY, lx: r.clientX, ly: r.clientY, t0: Date.now(), moved: true };
     }
   }
-  viewport.addEventListener('pointerup', endPointer);
-  viewport.addEventListener('pointercancel', endPointer);
+  app.addEventListener('touchend', onTouchEnd);
+  app.addEventListener('touchcancel', function () { cancelLupeTimer(); stopLupe(); touchState = null; });
+
+  // iOS Safari saját oldal-nagyítása ne lépjen közbe
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) {
+    document.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false });
+  });
+
+  // Egér (asztali gépen kipróbáláshoz): húzás, dupla kattintás
+  var mouseDrag = null;
+  viewport.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'mouse') return;
+    mouseDrag = { x: e.clientX, y: e.clientY }; viewport.setPointerCapture(e.pointerId);
+  });
+  viewport.addEventListener('pointermove', function (e) {
+    if (!mouseDrag || e.pointerType !== 'mouse') return;
+    state.x += e.clientX - mouseDrag.x; state.y += e.clientY - mouseDrag.y;
+    mouseDrag = { x: e.clientX, y: e.clientY }; render();
+  });
+  viewport.addEventListener('pointerup', function () { mouseDrag = null; });
+  viewport.addEventListener('dblclick', function (e) {
+    if (Date.now() - lastTouchAt < 800) return;
+    doubleTap(e.clientX, e.clientY);
+  });
 
   viewport.addEventListener('wheel', function (e) {
     e.preventDefault();
@@ -354,18 +577,26 @@
     showScreen('denied');
   }
 
-  async function startCamera() {
+  // deviceId: adott objektív; nélküle az utoljára használt, vagy első indításkor a fő hátlapi kamera.
+  // silent: hiba esetén nem mutat hibaképernyőt, csak false-t ad vissza (objektívváltáshoz).
+  async function startCamera(deviceId, silent) {
+    var id = (typeof deviceId === 'string') ? deviceId : currentDeviceId;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showDenied('A kamera itt nem érhető el', 'A kamerához biztonságos (https) kapcsolat kell. Nyisd meg az app https címét Safariban.');
-      return;
+      return false;
     }
     try {
       stopCamera();
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }
-      });
+      var constraints = { width: { ideal: 3840 }, height: { ideal: 2160 } };
+      if (id) constraints.deviceId = { exact: id };
+      else constraints.facingMode = { ideal: 'environment' };
+      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
     } catch (err) {
+      if (silent) return false;
+      if (id && err && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
+        currentDeviceId = null; // az eszközazonosító már nem érvényes, vissza az alapértelmezett kamerához
+        return startCamera();
+      }
       if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
         showDenied('Nincs kamera engedély', 'Az okmányvizsgálathoz kell a kamera. Engedélyezd: Beállítások, Safari, Kamera, majd válaszd az Engedélyezés lehetőséget.');
       } else if (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError')) {
@@ -373,21 +604,82 @@
       } else {
         showDenied('A kamera nem indult el', 'Zárd be a kamerát használó többi appot, majd próbáld újra.');
       }
-      return;
+      return false;
     }
     video.srcObject = stream;
     try { await video.play(); } catch (e) { /* a muted autoplay általában elindul */ }
     track = stream.getVideoTracks()[0];
+    var settings = (track && track.getSettings) ? track.getSettings() : {};
+    currentDeviceId = id || settings.deviceId || null;
     var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
     torchBtn.hidden = !(caps && caps.torch);
     showScreen(null);
     requestWakeLock();
+    loadLenses();
+    startGlare();
+    return true;
   }
+
+  /* ---------- Objektívváltó (0,5× / 1× / Tele) ---------- */
+
+  // A kameraengedély megadása után a Safari már megadja a kamerák nevét.
+  async function loadLenses() {
+    try {
+      var devs = await navigator.mediaDevices.enumerateDevices();
+      var found = {};
+      devs.forEach(function (d) {
+        if (d.kind !== 'videoinput' || !d.label) return;
+        var l = d.label.toLowerCase();
+        if (!/back|rear|environment|hátsó|hátlapi/.test(l)) return;
+        if (/dual|triple/.test(l)) return; // összevont (virtuális) kamera, nem önálló objektív
+        var kind = /ultra/.test(l) ? 'ultra' : (/tele/.test(l) ? 'tele' : 'main');
+        if (!found[kind]) found[kind] = d.deviceId;
+      });
+      lensList = [];
+      if (found.ultra) lensList.push({ id: found.ultra, text: '0,5×' });
+      if (found.main) lensList.push({ id: found.main, text: '1×' });
+      if (found.tele) lensList.push({ id: found.tele, text: 'Tele' });
+      renderLenses();
+    } catch (e) {
+      lensRow.hidden = true;
+    }
+  }
+
+  function renderLenses() {
+    lensRow.hidden = lensList.length < 2;
+    lensBox.innerHTML = '';
+    lensList.forEach(function (l) {
+      var b = document.createElement('button');
+      b.className = 'chip' + (l.id === currentDeviceId ? ' active' : '');
+      b.textContent = l.text;
+      b.setAttribute('aria-label', 'Objektív ' + l.text);
+      b.dataset.id = l.id;
+      lensBox.appendChild(b);
+    });
+  }
+
+  async function switchLens(id) {
+    if (id === currentDeviceId) return;
+    var prev = currentDeviceId;
+    if (isFrozen()) unfreeze();
+    resetView();
+    var ok = await startCamera(id, true);
+    if (!ok) {
+      toast('Ez az objektív nem indítható.');
+      await startCamera(prev);
+    }
+  }
+
+  lensBox.addEventListener('click', function (e) {
+    var id = e.target && e.target.dataset && e.target.dataset.id;
+    if (id) switchLens(id);
+  });
 
   function stopCamera() {
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
     stream = null; track = null; torchOn = false;
     torchBtn.classList.remove('on');
+    stopGlare();
   }
 
   async function requestWakeLock() {
@@ -409,31 +701,256 @@
     }
   });
 
-  $('startBtn').addEventListener('click', startCamera);
-  $('retryBtn').addEventListener('click', startCamera);
+  $('startBtn').addEventListener('click', function () { startCamera(); });
+  $('retryBtn').addEventListener('click', function () { startCamera(); });
 
   /* ---------- Pillanatkép (csak memóriában) ---------- */
 
   function isFrozen() { return app.classList.contains('is-frozen'); }
 
-  function freeze() {
+  /* ----- Legélesebb képkocka ----- */
+
+  function nextFrame() {
+    return new Promise(function (resolve) {
+      var done = false;
+      function fin() { if (!done) { done = true; resolve(); } }
+      setTimeout(fin, video.requestVideoFrameCallback ? 150 : 70);
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(fin);
+    });
+  }
+
+  // Élességmérő: a képrészlet Laplace-szórása (minél élesebb, annál nagyobb).
+  function sharpness(w, h) {
+    var cw = Math.min(480, w), ch = Math.min(270, h);
+    var gr = guide.getBoundingClientRect();
+    var zoomed = state.s > 1.05;
+    var fpx = zoomed ? viewport.clientWidth / 2 : gr.left + gr.width / 2;
+    var fpy = zoomed ? viewport.clientHeight / 2 : gr.top + gr.height / 2;
+    var p = screenToSrc(fpx, fpy, w, h);
+    var sx = Math.max(0, Math.min(w - cw, Math.round(p.x - cw / 2)));
+    var sy = Math.max(0, Math.min(h - ch, Math.round(p.y - ch / 2)));
+    if (sCv.width !== cw || sCv.height !== ch) { sCv.width = cw; sCv.height = ch; }
+    sCtx.drawImage(video, sx, sy, cw, ch, 0, 0, cw, ch);
+    var d = sCtx.getImageData(0, 0, cw, ch).data;
+    var g = new Float32Array(cw * ch);
+    for (var i = 0, j = 0; i < d.length; i += 4, j++) g[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    var sum = 0, sum2 = 0, n = 0;
+    for (var y = 1; y < ch - 1; y++) {
+      for (var x = 1; x < cw - 1; x++) {
+        var c = y * cw + x, l = 4 * g[c] - g[c - 1] - g[c + 1] - g[c - cw] - g[c + cw];
+        sum += l; sum2 += l * l; n++;
+      }
+    }
+    var mean = sum / n;
+    return sum2 / n - mean * mean;
+  }
+
+  async function captureBest(n, w, h) {
+    if (frozenRaw.width !== w || frozenRaw.height !== h) { frozenRaw.width = w; frozenRaw.height = h; }
+    var rctx = frozenRaw.getContext('2d'), best = -1;
+    for (var i = 0; i < n; i++) {
+      var sc = sharpness(w, h);
+      if (sc > best) { best = sc; rctx.drawImage(video, 0, 0, w, h); }  // csak a eddigi legélesebbet tartja meg
+      if (i < n - 1) await nextFrame();
+    }
+  }
+
+  /* ----- Képszűrők ----- */
+
+  function applyLiveFx() {
+    var f = [];
+    if (fx.contrast) f.push('contrast(1.6)');
+    if (fx.gray) f.push('grayscale(1)');
+    if (fx.invert) f.push('invert(1)');
+    video.style.filter = f.length ? f.join(' ') : 'none';
+  }
+
+  // A rögzített képre sütjük rá a szűrőket, így a mentett kép is olyan, amilyet látsz.
+  function processImage(rawCv, outCv) {
+    var w = rawCv.width, h = rawCv.height;
+    if (outCv.width !== w || outCv.height !== h) { outCv.width = w; outCv.height = h; }
+    var octx = outCv.getContext('2d');
+    if (!fx.sharp && !fx.contrast && !fx.gray && !fx.invert) { octx.drawImage(rawCv, 0, 0); return; }
+    var img = rawCv.getContext('2d').getImageData(0, 0, w, h), d = img.data, out = d;
+    if (fx.sharp) {
+      var o = new Uint8ClampedArray(d.length), a = 0.8, c = 1 + 4 * a, stride = w * 4;
+      o.set(d);
+      for (var y = 1; y < h - 1; y++) {
+        var row = y * stride;
+        for (var x = 1; x < w - 1; x++) {
+          var i = row + x * 4;
+          o[i]     = c * d[i]     - a * (d[i - 4]     + d[i + 4]     + d[i - stride]     + d[i + stride]);
+          o[i + 1] = c * d[i + 1] - a * (d[i - 3]     + d[i + 5]     + d[i - stride + 1] + d[i + stride + 1]);
+          o[i + 2] = c * d[i + 2] - a * (d[i - 2]     + d[i + 6]     + d[i - stride + 2] + d[i + stride + 2]);
+        }
+      }
+      out = o; img = new ImageData(o, w, h);
+    }
+    if (fx.contrast || fx.gray || fx.invert) {
+      var ct = fx.contrast, gy = fx.gray, iv = fx.invert;
+      for (var k = 0; k < out.length; k += 4) {
+        var r = out[k], g = out[k + 1], b = out[k + 2];
+        if (ct) { r = (r - 128) * 1.6 + 128; g = (g - 128) * 1.6 + 128; b = (b - 128) * 1.6 + 128; }
+        if (gy) { var l = 0.2126 * r + 0.7152 * g + 0.0722 * b; r = l; g = l; b = l; }
+        if (iv) { r = 255 - r; g = 255 - g; b = 255 - b; }
+        out[k] = r; out[k + 1] = g; out[k + 2] = b;
+      }
+    }
+    octx.putImageData(img, 0, 0);
+  }
+
+  $('fxChips').addEventListener('click', function (e) {
+    var key = e.target && e.target.dataset && e.target.dataset.fx;
+    if (!key) return;
+    fx[key] = !fx[key];
+    e.target.setAttribute('aria-pressed', String(fx[key]));
+    if (isFrozen()) { setTimeout(function () { processImage(frozenRaw, frozen); }, 0); }
+    else {
+      applyLiveFx();
+      if (key === 'sharp' && fx.sharp) toast('Az élesítés a rögzített képen látszik.');
+    }
+  });
+
+  /* ----- Tükröződés-jelző ----- */
+
+  function analyzeGlare() {
+    if (!glareOn || isFrozen() || capturing || document.hidden || !video.videoWidth) return;
+    var vw = video.videoWidth, vh = video.videoHeight, L = 192, gw, gh;
+    if (vw >= vh) { gw = L; gh = Math.max(1, Math.round(L * vh / vw)); } else { gh = L; gw = Math.max(1, Math.round(L * vw / vh)); }
+    if (glareCv.width !== gw || glareCv.height !== gh) { glareCv.width = gw; glareCv.height = gh; gCv.width = gw; gCv.height = gh; }
+    gCtx.drawImage(video, 0, 0, gw, gh);
+    var src = gCtx.getImageData(0, 0, gw, gh).data;
+    var out = glareCtx.createImageData(gw, gh), o = out.data;
+    var gr = guide.getBoundingClientRect();
+    var a = screenToSrc(gr.left, gr.top, vw, vh), b = screenToSrc(gr.right, gr.bottom, vw, vh);
+    var x0 = Math.max(0, Math.floor(a.x * gw / vw)), x1 = Math.min(gw, Math.ceil(b.x * gw / vw));
+    var y0 = Math.max(0, Math.floor(a.y * gh / vh)), y1 = Math.min(gh, Math.ceil(b.y * gh / vh));
+    var inCnt = 0, inHit = 0;
+    for (var y = 0; y < gh; y++) {
+      for (var x = 0; x < gw; x++) {
+        var i = (y * gw + x) * 4;
+        var hit = Math.min(src[i], src[i + 1], src[i + 2]) >= 250;   // minden csatorna kiégett
+        if (hit) { o[i] = 255; o[i + 1] = 171; o[i + 2] = 64; o[i + 3] = 170; }
+        if (x >= x0 && x < x1 && y >= y0 && y < y1) { inCnt++; if (hit) inHit++; }
+      }
+    }
+    glareCtx.putImageData(out, 0, 0);
+    var frac = inCnt ? inHit / inCnt : 0;
+    if (frac > 0.025) glareState = true; else if (frac < 0.012) glareState = false;
+    app.classList.toggle('is-glare', glareState);
+  }
+  function startGlare() { stopGlare(); if (glareOn) glareTimer = setInterval(analyzeGlare, 250); }
+  function stopGlare() {
+    if (glareTimer) { clearInterval(glareTimer); glareTimer = null; }
+    glareCtx.clearRect(0, 0, glareCv.width, glareCv.height);
+    glareState = false; app.classList.remove('is-glare');
+  }
+  $('glareBtn').addEventListener('click', function () {
+    glareOn = !glareOn;
+    this.classList.toggle('on', glareOn); this.setAttribute('aria-pressed', String(glareOn));
+    app.classList.toggle('no-glare', !glareOn);
+    if (glareOn && !isFrozen() && track) startGlare(); else stopGlare();
+    toast(glareOn ? 'Tükröződés-jelző bekapcsolva' : 'Tükröződés-jelző kikapcsolva');
+  });
+
+  /* ----- Váltható keret ----- */
+
+  var FRAMES = [
+    { name: 'Bankkártya (ID-1)', w: 85.6, h: 54 },
+    { name: 'Útlevél', w: 125, h: 88 },
+    { name: 'Saját méret', w: 100, h: 70, custom: true }
+  ];
+  var frameIdx = 0, frameRot = false;
+  try {
+    var saved = JSON.parse(localStorage.getItem('dokunezo-frame') || 'null');
+    if (saved) {
+      if (saved.w >= 10 && saved.w <= 600 && saved.h >= 10 && saved.h <= 600) { FRAMES[2].w = saved.w; FRAMES[2].h = saved.h; }
+      if (saved.i >= 0 && saved.i < FRAMES.length) frameIdx = saved.i | 0;
+      frameRot = !!saved.r;
+    }
+  } catch (e) { /* nem kötelező */ }
+  function saveFrame() {
+    try { localStorage.setItem('dokunezo-frame', JSON.stringify({ i: frameIdx, r: frameRot, w: FRAMES[2].w, h: FRAMES[2].h })); } catch (e) {}
+  }
+  function frameName() {
+    var f = FRAMES[frameIdx];
+    return f.name + (f.custom ? ' (' + f.w + '×' + f.h + ' mm)' : '');
+  }
+
+  function layoutGuide() {
+    var vw = viewport.clientWidth, vh = viewport.clientHeight;
+    if (!vw || !vh) return;
+    var f = FRAMES[frameIdx], asp = f.w / f.h;
+    if (frameRot) asp = 1 / asp;
+    var side = bottom.offsetWidth < vw * 0.9;
+    var top = topBar.offsetHeight + 8, left = 0, right = vw, bot = vh;
+    if (side) right = vw - bottom.offsetWidth; else bot = bottom.offsetTop;
+    var availW = Math.max(80, right - left - 48);
+    var availH = Math.max(60, bot - top - 56);   // alul hely a felirat számára
+    var w = Math.min(availW, availH * asp, 640), h = w / asp;
+    guide.style.width = w + 'px'; guide.style.height = h + 'px';
+    guide.style.left = (left + right) / 2 + 'px';
+    guide.style.top = (top + (bot - 56 - top) / 2 + (side ? 6 : 0)) + 'px';
+  }
+  window.addEventListener('resize', layoutGuide);
+  if (window.ResizeObserver) new ResizeObserver(layoutGuide).observe(bottom);
+
+  $('frameBtn').addEventListener('click', function () {
+    var next = (frameIdx + 1) % FRAMES.length;
+    if (FRAMES[next].custom) {
+      $('cw').value = FRAMES[2].w; $('ch').value = FRAMES[2].h;
+      $('customDlg').hidden = false;
+      return;
+    }
+    frameIdx = next; saveFrame(); layoutGuide(); toast('Keret: ' + frameName());
+  });
+  $('rotateFrame').addEventListener('click', function () { frameRot = !frameRot; saveFrame(); layoutGuide(); });
+  $('cCancel').addEventListener('click', function () { $('customDlg').hidden = true; });
+  $('cOk').addEventListener('click', function () {
+    var w = parseFloat(String($('cw').value).replace(',', '.')), h = parseFloat(String($('ch').value).replace(',', '.'));
+    if (!(w >= 10 && w <= 600 && h >= 10 && h <= 600)) { toast('Adj meg 10 és 600 mm közötti értéket.'); return; }
+    FRAMES[2].w = w; FRAMES[2].h = h; frameIdx = 2;
+    saveFrame(); layoutGuide(); $('customDlg').hidden = true; toast('Keret: ' + frameName());
+  });
+
+  $('panelToggle').addEventListener('click', function () {
+    var min = app.classList.toggle('min');
+    this.setAttribute('aria-expanded', String(!min));
+  });
+
+  /* ----- Pillanatkép ----- */
+
+  async function freeze() {
+    if (capturing || isFrozen()) return;
     var w = video.videoWidth, h = video.videoHeight;
     if (!w || !h) { toast('A kép még nem áll készen.'); return; }
-    frozen.width = w; frozen.height = h;
-    frozen.getContext('2d').drawImage(video, 0, 0, w, h);
-    app.classList.add('is-frozen');
-    $('modeLabel').textContent = 'Rögzített kép';
+    capturing = true;
     var f = $('flash'); f.classList.add('on');
     setTimeout(function () { f.classList.remove('on'); }, 90);
     if (navigator.vibrate) navigator.vibrate(15);
+    try {
+      await captureBest(6, w, h);
+      processImage(frozenRaw, frozen);
+    } catch (err) {
+      capturing = false;
+      toast('A rögzítés nem sikerült.');
+      return;
+    }
+    capturing = false;
+    stopGlare();
+    app.classList.add('is-frozen');
+    $('modeLabel').textContent = 'Rögzített kép';
   }
 
   function unfreeze() {
-    frozen.width = 1; frozen.height = 1; // felszabadítja a kép memóriáját
+    frozen.width = 1; frozen.height = 1;          // felszabadítja a kép memóriáját
+    frozenRaw.width = 1; frozenRaw.height = 1;
     app.classList.remove('is-frozen');
     $('modeLabel').textContent = 'Élő kép';
     closeShareView();
+    stopLupe();
     resetView();
+    if (track) startGlare();
   }
 
   $('shutter').addEventListener('click', freeze);
@@ -484,6 +1001,10 @@
     toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
   }
 
+  // Forgatáskor a mozgatási határokat újra kell számolni.
+  window.addEventListener('resize', render);
+  window.addEventListener('orientationchange', function () { setTimeout(render, 250); });
+
   var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS && !standalone) $('installTip').hidden = false;
@@ -493,6 +1014,8 @@
   }
 
   render();
+  layoutGuide();
+  window.addEventListener('load', layoutGuide);
 })();
 </script>
 </body>
