@@ -37,6 +37,7 @@
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   #app { position: fixed; inset: 0; overflow: hidden; background: #000; touch-action: none; }
+  #insetProbe { position: absolute; left: 0; top: 0; width: 0; height: 0; visibility: hidden; pointer-events: none; padding: var(--sat) var(--sar) var(--sab) var(--sal); }
 
   /* Kép */
   #viewport { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
@@ -87,7 +88,9 @@
   .round.on { background: var(--accent); color: var(--on-accent); }
   .round svg { width: 20px; height: 20px; }
   .round[hidden] { display: none; }
-  .tools { display: flex; gap: 8px; pointer-events: none; }
+  .tools { display: flex; gap: 8px; pointer-events: none; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+  #top { flex-wrap: wrap; row-gap: 8px; }
+  @media (max-width: 440px) { .tools { gap: 6px; } .tools .round { width: 36px; height: 36px; } .tools .round svg { width: 18px; height: 18px; } }
   .tools .round { width: 38px; height: 38px; }
   .tools .round svg { width: 19px; height: 19px; }
 
@@ -129,13 +132,13 @@
   #cmpRow { justify-content: center; flex-wrap: wrap; gap: 6px; }
   #cmpMode { display: flex; gap: 6px; }
   #ovWrap {
-    position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--sat) + 60px); z-index: 4;
+    position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--topH, 56px) + 6px); z-index: 4;
     display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-radius: 999px; font-size: 12px; color: var(--muted);
     background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
   }
   #ovWrap input { width: 140px; }
   #listCard {
-    position: absolute; left: calc(var(--sal) + 16px); top: calc(var(--sat) + 104px); z-index: 4; max-width: min(300px, 80%); max-height: 36%;
+    position: absolute; left: calc(var(--sal) + 16px); top: calc(var(--topH, 56px) + 50px); z-index: 4; max-width: min(300px, 80%); max-height: 36%;
     overflow-y: auto; padding: 10px 14px; border-radius: 18px; font-size: 14px; touch-action: pan-y;
     background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
   }
@@ -179,6 +182,26 @@
   #specPrev { display: block; width: 100%; max-height: 200px; object-fit: contain; border-radius: 12px; background: #000; margin-bottom: 12px; }
   #specForm .btns { display: flex; gap: 10px; margin-top: 6px; }
   #specForm .btn.danger { background: rgba(255,90,90,.2); color: #ffb4b4; }
+
+
+  /* Alnyomat-nézet */
+  #upCv { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
+  .up #upCv { display: block; }
+  .up #guide { opacity: 0; }
+  .up #chipRow { display: none; }
+  #upRow[hidden], #upInfo[hidden] { display: none; }
+  #upRow { justify-content: center; flex-wrap: wrap; gap: 6px; }
+  #upModes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  #upInfo {
+    position: absolute; left: calc(var(--sal) + 16px); top: calc(var(--topH, 56px) + 8px); z-index: 4; width: min(270px, 72%);
+    max-height: 60%; overflow-y: auto; padding: 10px 12px; border-radius: 18px; font-size: 13px; line-height: 1.45; touch-action: pan-y;
+    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  }
+  #upInfo b { display: block; font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+  #upInfo canvas { display: block; width: 128px; height: 128px; border-radius: 10px; background: #000; margin: 6px 0; }
+  #upInfo .warn { color: var(--warn); }
+  #upInfo #upInfoText div { margin-bottom: 4px; }
+  #upInfo .mini { margin-top: 6px; }
 
   /* Összecsukható panel */
   .handle { width: 100%; height: 20px; flex: none; display: grid; place-items: center; }
@@ -265,7 +288,7 @@
   #shareView p { margin: 0; text-align: center; color: var(--muted); max-width: 320px; line-height: 1.5; }
 
   #toast {
-    position: absolute; left: 50%; top: calc(var(--sat) + 64px); transform: translate(-50%, -10px); opacity: 0; pointer-events: none; z-index: 10;
+    position: absolute; left: 50%; top: calc(var(--topH, 56px) + 8px); transform: translate(-50%, -10px); opacity: 0; pointer-events: none; z-index: 10;
     padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; background: rgba(255,255,255,.95); color: #111; transition: all .25s; max-width: calc(100% - 32px); text-align: center;
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -277,8 +300,9 @@
     #bottom {
       left: auto; top: 0; width: var(--panel-w);
       padding: 2px calc(var(--sar) + 14px) calc(var(--sab) + 10px) 14px;
-      border-radius: 26px 0 0 26px; gap: 8px; justify-content: center; overflow-y: auto;
+      border-radius: 26px 0 0 26px; gap: 8px; justify-content: flex-start; overflow-y: auto;
     }
+    #bottom::before, #bottom::after { content: ""; flex: 1 1 0; min-height: 0; }
     .min #bottom { top: auto; border-radius: 26px 0 0 0; }
     #chipRow { flex-wrap: wrap; overflow: visible; }
     #chipInner { flex: 0 1 auto; max-width: 100%; flex-wrap: wrap; justify-content: center; }
@@ -308,6 +332,7 @@
       <canvas id="glare"></canvas>
       <img id="overlayImg" alt="" hidden>
     </div>
+    <canvas id="upCv"></canvas>
   </div>
 
   <div id="specPane" hidden><div id="specStage"><img id="specImg" alt=""></div></div>
@@ -328,6 +353,9 @@
       <button class="round" id="rotateFrame" aria-label="Keret elforgatása">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>
       </button>
+    <button class="round" id="upBtn" aria-label="Alnyomat-nézet" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7c3-3 6 3 9 0s6 3 9 0"/><path d="M3 12c3-3 6 3 9 0s6 3 9 0"/><path d="M3 17c3-3 6 3 9 0s6 3 9 0"/></svg>
+      </button>
     <button class="round" id="specBtn" aria-label="Mintaokmány-tár">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/></svg>
       </button>
@@ -339,9 +367,20 @@
 
   <div id="ovWrap" hidden><span>Átlátszóság</span><input type="range" id="ovOpacity" min="0" max="100" value="50" aria-label="Rávetített minta átlátszósága"></div>
   <div id="listCard" hidden><b>Ellenőrzőlista</b><div id="listItems"></div></div>
+  <div id="upInfo" hidden><b>Szerkezet-elemzés (kísérleti)</b><canvas id="upSpec" width="128" height="128"></canvas><div id="upInfoText"></div><button class="mini" id="upInfoClose">Bezár</button></div>
 
   <div id="bottom">
     <button class="handle" id="panelToggle" aria-label="Vezérlők elrejtése vagy megjelenítése" aria-expanded="true"><span></span></button>
+    <div class="row" id="upRow" hidden>
+      <div id="upModes">
+        <button class="chip" data-u="sharp" aria-pressed="true">Éles</button>
+        <button class="chip" data-u="line" aria-pressed="false">Vonal</button>
+        <button class="chip" data-u="rainbow" aria-pressed="false">Szivárvány</button>
+        <button class="chip" data-u="uv" aria-pressed="false">UV</button>
+      </div>
+      <button class="chip" id="upAnalyze">Elemzés</button>
+      <button class="step" id="upClose" aria-label="Alnyomat-nézet bezárása">×</button>
+    </div>
     <div class="row" id="cmpRow" hidden>
       <div id="cmpMode">
         <button class="chip" data-m="overlay" aria-pressed="true">Átfedés</button>
@@ -460,6 +499,7 @@
     </div>
   </div>
 
+  <div id="insetProbe" aria-hidden="true"></div>
   <div id="toast" role="status"></div>
 </div>
 
@@ -566,6 +606,7 @@
     lupeTimer = null;
     if (!touchState || touchState.mode !== 'pan' || touchState.moved) return;
     if (inSpecPane(touchState.lx, touchState.ly)) return;   // a minta-panelen nincs lupe
+    if (upOn) return;                                       // alnyomat-nézetben a kép már feldolgozott
     lupeActive = true;
     lupe.style.filter = isFrozen() ? 'none' : (video.style.filter || 'none');
     lupe.hidden = false;
@@ -901,7 +942,7 @@
     if (!fx.sharp && !fx.contrast && !fx.gray && !fx.invert) { octx.drawImage(rawCv, 0, 0); return; }
     var img = rawCv.getContext('2d').getImageData(0, 0, w, h), d = img.data, out = d;
     if (fx.sharp) {
-      var o = new Uint8ClampedArray(d.length), a = 0.8, c = 1 + 4 * a, stride = w * 4;
+      var o = new Uint8ClampedArray(d.length), a = 1.0, c = 1 + 4 * a, stride = w * 4;   // a = élesítés erőssége (korábban 0,8)
       o.set(d);
       for (var y = 1; y < h - 1; y++) {
         var row = y * stride;
@@ -942,7 +983,7 @@
   /* ----- Tükröződés-jelző ----- */
 
   function analyzeGlare() {
-    if (!glareOn || isFrozen() || capturing || document.hidden || !video.videoWidth) return;
+    if (!glareOn || isFrozen() || capturing || document.hidden || !video.videoWidth || upOn) return;
     var vw = video.videoWidth, vh = video.videoHeight, L = 192, gw, gh;
     if (vw >= vh) { gw = L; gh = Math.max(1, Math.round(L * vh / vw)); } else { gh = L; gw = Math.max(1, Math.round(L * vw / vh)); }
     if (glareCv.width !== gw || glareCv.height !== gh) { glareCv.width = gw; glareCv.height = gh; gCv.width = gw; gCv.height = gh; }
@@ -1039,8 +1080,11 @@
     var f = frameOverride || FRAMES[frameIdx], asp = f.w / f.h;
     if (frameRot) asp = 1 / asp;
     var side = bottom.offsetWidth < app.clientWidth * 0.9;
-    var top = topBar.offsetHeight + 8, left = 0, right = vw, bot = vh;
+    document.documentElement.style.setProperty('--topH', topBar.offsetHeight + 'px');
+    var pcs = getComputedStyle($('insetProbe')), insL = parseFloat(pcs.paddingLeft) || 0, insR = parseFloat(pcs.paddingRight) || 0, insB = parseFloat(pcs.paddingBottom) || 0;
+    var top = topBar.offsetHeight + 8, left = insL, right = vw, bot = vh;
     if (!splitOn) { if (side) right = vw - bottom.offsetWidth; else bot = bottom.offsetTop; }
+    if (side) bot = vh - insB;   // fekvő módban az alsó biztonsági sáv fölött marad a felirat
     var availW = Math.max(80, right - left - 48);
     var availH = Math.max(60, bot - top - 56);   // alul hely a felirat számára
     var w = Math.min(availW, availH * asp, 640), h = w / asp;
@@ -1051,7 +1095,7 @@
     render();
   }
   window.addEventListener('resize', layoutGuide);
-  if (window.ResizeObserver) new ResizeObserver(layoutGuide).observe(bottom);
+  if (window.ResizeObserver) { var ro = new ResizeObserver(layoutGuide); ro.observe(bottom); ro.observe(topBar); }
 
   $('frameBtn').addEventListener('click', function () {
     if (frameOverride) { toast('Összehasonlítás közben a keret a mintához igazodik.'); return; }
@@ -1269,6 +1313,287 @@
   $('listBtn').addEventListener('click', function () { listCard.hidden = !listCard.hidden; });
   $('cmpClose').addEventListener('click', stopCompare);
 
+  /* ----- Alnyomat-nézet ----- */
+
+  var upOn = false, upMode = 'sharp', upRaf = 0, upLast = 0, upPrevLens = null, upKey = '';
+  var upCv = $('upCv'), upCtx = upCv.getContext('2d');
+  var upSrc = document.createElement('canvas'), upSrcCtx = upSrc.getContext('2d', { willReadFrequently: true });
+
+  /* PURE-START */
+  var uL = null, uT = null, uB = null, uvLut = null;
+
+  // Dobozszűrő (szétválasztható), a széleken a szélső képpontot ismétli.
+  function boxBlur(src, dst, tmp, w, h, r) {
+    var inv = 1 / (2 * r + 1), x, y, sum, row;
+    for (y = 0; y < h; y++) {
+      row = y * w; sum = 0;
+      for (x = -r; x <= r; x++) sum += src[row + Math.min(w - 1, Math.max(0, x))];
+      for (x = 0; x < w; x++) {
+        tmp[row + x] = sum * inv;
+        sum += src[row + Math.min(w - 1, x + r + 1)] - src[row + Math.max(0, x - r)];
+      }
+    }
+    for (x = 0; x < w; x++) {
+      sum = 0;
+      for (y = -r; y <= r; y++) sum += tmp[Math.min(h - 1, Math.max(0, y)) * w + x];
+      for (y = 0; y < h; y++) {
+        dst[y * w + x] = sum * inv;
+        sum += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x];
+      }
+    }
+  }
+
+  // RGBA képpontok helyben történő feldolgozása: sharp | line | rainbow | uv
+  function processUpPixels(d, w, h, mode) {
+    var n = w * h, i, j, l;
+    if (!uL || uL.length !== n) { uL = new Float32Array(n); uT = new Float32Array(n); uB = new Float32Array(n); }
+    if (mode === 'uv') {
+      if (!uvLut) { uvLut = new Float32Array(256); for (i = 0; i < 256; i++) uvLut[i] = 255 * Math.pow(Math.max(0, i - 8) / 247, 0.55); }
+      for (i = 0; i < d.length; i += 4) {
+        var r0 = uvLut[d[i]], g0 = uvLut[d[i + 1]], b0 = uvLut[d[i + 2]];
+        l = 0.299 * r0 + 0.587 * g0 + 0.114 * b0;
+        d[i] = l + (r0 - l) * 1.6; d[i + 1] = l + (g0 - l) * 1.6; d[i + 2] = l + (b0 - l) * 1.6;
+      }
+      return;
+    }
+    if (mode === 'rainbow') {
+      for (i = 0; i < d.length; i += 4) {
+        l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        d[i] = (l + (d[i] - l) * 2.6 - 128) * 1.3 + 128;
+        d[i + 1] = (l + (d[i + 1] - l) * 2.6 - 128) * 1.3 + 128;
+        d[i + 2] = (l + (d[i + 2] - l) * 2.6 - 128) * 1.3 + 128;
+      }
+      return;
+    }
+    for (i = 0, j = 0; i < d.length; i += 4, j++) uL[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    if (mode === 'line') {
+      boxBlur(uL, uB, uT, w, h, 2);
+      for (i = 0, j = 0; i < d.length; i += 4, j++) { var v = 128 + 5 * (uL[j] - uB[j]); d[i] = v; d[i + 1] = v; d[i + 2] = v; }
+    } else {
+      boxBlur(uL, uB, uT, w, h, 1);
+      for (i = 0, j = 0; i < d.length; i += 4, j++) {
+        var dl = 2.6 * (uL[j] - uB[j]);
+        d[i] = (d[i] + dl - 128) * 1.2 + 128;
+        d[i + 1] = (d[i + 1] + dl - 128) * 1.2 + 128;
+        d[i + 2] = (d[i + 2] + dl - 128) * 1.2 + 128;
+      }
+    }
+  }
+
+  var FN = 256, fftCos = new Float64Array(FN / 2), fftSin = new Float64Array(FN / 2), fftRev = new Uint16Array(FN);
+  (function () {
+    var bits = Math.round(Math.log(FN) / Math.LN2), i, b, r;
+    for (i = 0; i < FN / 2; i++) { fftCos[i] = Math.cos(2 * Math.PI * i / FN); fftSin[i] = -Math.sin(2 * Math.PI * i / FN); }
+    for (i = 0; i < FN; i++) { r = 0; for (b = 0; b < bits; b++) { if (i & (1 << b)) r |= 1 << (bits - 1 - b); } fftRev[i] = r; }
+  })();
+
+  function fft(re, im) {
+    var n = FN, i, j, k, len, half, step, a, b, tr, ti, wr, wi;
+    for (i = 0; i < n; i++) { j = fftRev[i]; if (j > i) { tr = re[i]; re[i] = re[j]; re[j] = tr; ti = im[i]; im[i] = im[j]; im[j] = ti; } }
+    for (len = 2; len <= n; len <<= 1) {
+      half = len >> 1; step = n / len;
+      for (i = 0; i < n; i += len) {
+        for (k = 0; k < half; k++) {
+          wr = fftCos[k * step]; wi = fftSin[k * step];
+          a = i + k; b = a + half;
+          tr = re[b] * wr - im[b] * wi; ti = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        }
+      }
+    }
+  }
+
+  // RGBA (FN×FN) -> szürke, átlagmentes, Hann-ablakozott
+  function prepareLuma(rgba) {
+    var N = FN, L = new Float64Array(N * N), mean = 0, i, j, x, y;
+    for (i = 0, j = 0; i < rgba.length; i += 4, j++) { L[j] = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2]; mean += L[j]; }
+    mean /= L.length;
+    for (y = 0; y < N; y++) {
+      var wy = 0.5 - 0.5 * Math.cos(2 * Math.PI * y / (N - 1));
+      for (x = 0; x < N; x++) L[y * N + x] = (L[y * N + x] - mean) * wy * (0.5 - 0.5 * Math.cos(2 * Math.PI * x / (N - 1)));
+    }
+    return L;
+  }
+
+  // Periodikus szerkezet keresése: 2D FFT, a spektrum sugár szerinti mediánjához mért kiugró csúcsok, irányok csoportosítása.
+  function analyzeSpectrum(L) {
+    var N = FN, R = N / 2, re = new Float64Array(L), im = new Float64Array(N * N);
+    var tr = new Float64Array(N), ti = new Float64Array(N), x, y, i, r, fu, fv;
+    for (y = 0; y < N; y++) {
+      for (x = 0; x < N; x++) { tr[x] = re[y * N + x]; ti[x] = im[y * N + x]; }
+      fft(tr, ti);
+      for (x = 0; x < N; x++) { re[y * N + x] = tr[x]; im[y * N + x] = ti[x]; }
+    }
+    for (x = 0; x < N; x++) {
+      for (y = 0; y < N; y++) { tr[y] = re[y * N + x]; ti[y] = im[y * N + x]; }
+      fft(tr, ti);
+      for (y = 0; y < N; y++) { re[y * N + x] = tr[y]; im[y * N + x] = ti[y]; }
+    }
+    var mag = new Float32Array(N * N);
+    for (i = 0; i < mag.length; i++) mag[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]);
+    var bins = [];
+    for (r = 0; r <= R; r++) bins.push([]);
+    for (y = 0; y < N; y++) {
+      fv = y < R ? y : y - N;
+      for (x = 0; x < N; x++) {
+        fu = x < R ? x : x - N;
+        r = Math.round(Math.sqrt(fu * fu + fv * fv));
+        if (r <= R) bins[r].push(mag[y * N + x]);
+      }
+    }
+    var med = new Float32Array(R + 1);
+    for (r = 0; r <= R; r++) { var bb = bins[r]; if (bb.length) { bb.sort(function (p, q) { return p - q; }); med[r] = bb[bb.length >> 1]; } }
+    var peaks = [], dx, dy;
+    for (y = 0; y < N; y++) {
+      fv = y < R ? y : y - N;
+      for (x = 0; x < N; x++) {
+        fu = x < R ? x : x - N;
+        if (!(fv > 0 || (fv === 0 && fu > 0))) continue;   // a spektrum szimmetrikus, elég a fél sík
+        var rad = Math.sqrt(fu * fu + fv * fv), ri = Math.round(rad);
+        if (ri < 10 || ri > R - 4) continue;                // nagyon alacsony frekvencia: a kép tartalma, nem a szerkezet
+        var m = mag[y * N + x], ratio = m / (med[ri] + 1e-9);
+        if (ratio < 8) continue;
+        var isMax = true;
+        for (dy = -2; dy <= 2 && isMax; dy++) {
+          for (dx = -2; dx <= 2; dx++) {
+            if (!dx && !dy) continue;
+            if (mag[((y + dy + N) % N) * N + ((x + dx + N) % N)] > m) { isMax = false; break; }
+          }
+        }
+        if (isMax) peaks.push({ fu: fu, fv: fv, r: rad, ratio: ratio });
+      }
+    }
+    peaks.sort(function (p, q) { return q.ratio - p.ratio; });
+    if (peaks.length) { var top = peaks[0].ratio; peaks = peaks.filter(function (q) { return q.ratio >= 0.2 * top; }); }   // csak a domináns csúcsok, a szivárgás és a kerekítés melléktermékei nem
+    peaks = peaks.slice(0, 16);
+    var groups = [];
+    peaks.forEach(function (pk) {
+      var ang = (Math.atan2(pk.fv, pk.fu) * 180 / Math.PI + 180) % 180, g = null, k, dd;
+      for (k = 0; k < groups.length; k++) {
+        dd = Math.abs(groups[k].ang - ang); dd = Math.min(dd, 180 - dd);
+        if (dd <= 10) { g = groups[k]; break; }
+      }
+      if (!g) groups.push({ ang: ang, r: pk.r, ratio: pk.ratio, n: 1 });
+      else { g.n++; if (pk.r < g.r) g.r = pk.r; if (pk.ratio > g.ratio) g.ratio = pk.ratio; }   // az alapharmonikus a legkisebb frekvenciájú
+    });
+    return { groups: groups, peaks: peaks, mag: mag, med: med };
+  }
+  /* PURE-END */
+
+  function setUpMode(m) {
+    upMode = m; upKey = '';
+    var ch = $('upModes').children;
+    for (var i = 0; i < ch.length; i++) ch[i].setAttribute('aria-pressed', String(ch[i].dataset.u === m));
+    renderUp(true);
+  }
+
+  // A látott területet natív felbontáson dolgozza fel (nagyítva a valódi részletet mutatja, nem kinagyított pixeleket).
+  function renderUp(force) {
+    if (!upOn || document.hidden) return;
+    var fr = isFrozen(), el = fr ? frozen : video;
+    var sw = fr ? frozen.width : video.videoWidth, sh = fr ? frozen.height : video.videoHeight;
+    if (!sw || !sh || sw < 8 || sh < 8) return;
+    var key = fr ? [upMode, state.s, state.x, state.y, sw].join() : '';
+    if (!force && fr && key === upKey) return;   // rögzített képnél csak változáskor számol újra
+    upKey = key;
+    var r = viewport.getBoundingClientRect();
+    var a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
+    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y);
+    var cap = (fr || force) ? 1400000 : 520000;
+    var f = Math.min(1, Math.sqrt(cap / (rw * rh)));
+    var ow = Math.max(8, Math.round(rw * f)), oh = Math.max(8, Math.round(rh * f));
+    if (upSrc.width !== ow || upSrc.height !== oh) { upSrc.width = ow; upSrc.height = oh; upCv.width = ow; upCv.height = oh; }
+    try { upSrcCtx.drawImage(el, a.x, a.y, rw, rh, 0, 0, ow, oh); } catch (e) { return; }
+    var img = upSrcCtx.getImageData(0, 0, ow, oh);
+    processUpPixels(img.data, ow, oh, upMode);
+    upCtx.putImageData(img, 0, 0);
+  }
+
+  function upLoop(ts) {
+    if (!upOn) { upRaf = 0; return; }
+    upRaf = requestAnimationFrame(upLoop);
+    if (ts - upLast >= 70) { upLast = ts; renderUp(false); }
+  }
+
+  async function enterUp() {
+    if (upOn) return;
+    upOn = true; upKey = '';
+    app.classList.add('up');
+    $('upRow').hidden = false; $('upBtn').classList.add('on'); $('upBtn').setAttribute('aria-pressed', 'true');
+    stopGlare();
+    if (!upRaf) upRaf = requestAnimationFrame(upLoop);
+    // makróhoz az ultraszéles objektív (ahol van), a Pro modellek közelről is élesítenek vele
+    var ul = null;
+    for (var i = 0; i < lensList.length; i++) { if (lensList[i].text === '0,5×') ul = lensList[i]; }
+    if (ul && currentDeviceId !== ul.id) { upPrevLens = currentDeviceId; await switchLens(ul.id); }
+    else if (!ul && lensList.length < 2) toast('Ultraszéles objektív nincs, a fő kamerával dolgozunk.');
+  }
+
+  async function exitUp() {
+    if (!upOn) return;
+    upOn = false;
+    app.classList.remove('up');
+    $('upRow').hidden = true; $('upInfo').hidden = true;
+    $('upBtn').classList.remove('on'); $('upBtn').setAttribute('aria-pressed', 'false');
+    upCtx.clearRect(0, 0, upCv.width, upCv.height);
+    if (upPrevLens) { var id = upPrevLens; upPrevLens = null; await switchLens(id); }
+    else if (track) startGlare();
+  }
+
+  function drawSpectrum(res) {
+    var sc = $('upSpec'), sctx = sc.getContext('2d'), img = sctx.createImageData(128, 128), o = img.data;
+    var N = FN, R = N / 2, x, y, dx, dy;
+    for (y = 0; y < 128; y++) {
+      for (x = 0; x < 128; x++) {
+        var fu = (x - 64) * 2, fv = (y - 64) * 2, best = 0;
+        for (dy = 0; dy < 2; dy++) {
+          for (dx = 0; dx < 2; dx++) {
+            var gu = fu + dx, gv = fv + dy, rr = Math.min(R, Math.round(Math.sqrt(gu * gu + gv * gv)));
+            var q = res.mag[((gv + N) % N) * N + ((gu + N) % N)] / (res.med[rr] + 1e-9);
+            if (q > best) best = q;
+          }
+        }
+        var v = Math.min(1, Math.log(1 + best) / Math.log(1 + 24)), k = (y * 128 + x) * 4;
+        o[k] = o[k + 1] = o[k + 2] = v * 255; o[k + 3] = 255;
+      }
+    }
+    sctx.putImageData(img, 0, 0);
+    sctx.strokeStyle = '#ffab40'; sctx.lineWidth = 1.5;
+    res.peaks.forEach(function (pk) {
+      [[pk.fu, pk.fv], [-pk.fu, -pk.fv]].forEach(function (q) { sctx.beginPath(); sctx.arc(64 + q[0] / 2, 64 + q[1] / 2, 4, 0, 6.2832); sctx.stroke(); });
+    });
+  }
+
+  function analyzeStructure() {
+    var fr = isFrozen(), el = fr ? frozen : video, N = FN;
+    var sw = fr ? frozen.width : video.videoWidth, sh = fr ? frozen.height : video.videoHeight;
+    if (!sw || !sh || sw < N || sh < N) { toast('A kép még nem áll készen.'); return; }
+    var r = viewport.getBoundingClientRect();
+    var c = screenToSrc(r.left + r.width / 2, r.top + r.height / 2, sw, sh);
+    var x0 = Math.max(0, Math.min(sw - N, Math.round(c.x - N / 2))), y0 = Math.max(0, Math.min(sh - N, Math.round(c.y - N / 2)));
+    var pc = document.createElement('canvas'); pc.width = N; pc.height = N;
+    var pctx = pc.getContext('2d', { willReadFrequently: true });
+    var res;
+    try { pctx.drawImage(el, x0, y0, N, N, 0, 0, N, N); res = analyzeSpectrum(prepareLuma(pctx.getImageData(0, 0, N, N).data)); }
+    catch (e) { toast('Az elemzés nem sikerült.'); return; }
+    drawSpectrum(res);
+    var t = $('upInfoText'); t.innerHTML = '';
+    function line(txt, cls) { var d = document.createElement('div'); d.textContent = txt; if (cls) d.className = cls; t.appendChild(d); }
+    var g = res.groups;
+    if (!g.length) line('Nincs jól kivehető periodikus szerkezet. Közelről, élesen, tükröződés nélkül próbáld újra.');
+    else if (g.length === 1) line('Egyirányú vonalszerkezet.');
+    else line('Többirányú periodikus szerkezet (' + g.length + ' irány). Lehet raszterpont, ami másolatra utalhat, de a rozetta- és guilloche-minták is ilyenek: hasonlítsd mintával.', 'warn');
+    g.forEach(function (x, i) { line((i + 1) + '. irány: ' + Math.round(x.ang) + '°, periódus ' + (N / x.r).toFixed(1).replace('.', ',') + ' képpont'); });
+    line('Kísérleti jelzés, nem ítélet. Hasonlítsd egy biztosan eredeti okmány ugyanazon pontjához, azonos távolságból.');
+    $('upInfo').hidden = false;
+  }
+
+  $('upBtn').addEventListener('click', function () { if (upOn) exitUp(); else enterUp(); });
+  $('upClose').addEventListener('click', exitUp);
+  $('upModes').addEventListener('click', function (e) { var m = e.target && e.target.dataset && e.target.dataset.u; if (m) setUpMode(m); });
+  $('upAnalyze').addEventListener('click', analyzeStructure);
+  $('upInfoClose').addEventListener('click', function () { $('upInfo').hidden = true; });
+
   /* ----- Pillanatkép ----- */
 
   async function freeze() {
@@ -1318,7 +1643,9 @@
 
   $('save').addEventListener('click', function () {
     if (!isFrozen()) return;
-    frozen.toBlob(async function (blob) {
+    var srcCv = frozen;
+    if (upOn) { renderUp(true); srcCv = upCv; }   // alnyomat-nézetben azt menti, amit látsz
+    srcCv.toBlob(async function (blob) {
       if (!blob) { toast('A mentés nem sikerült.'); return; }
       var name = 'okmany-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.jpg';
       var file = new File([blob], name, { type: 'image/jpeg' });

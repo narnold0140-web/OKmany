@@ -43,6 +43,16 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 - **Panel elrejtése:** a panel tetején lévő kis vonalra koppintva a vezérlők eltűnnek, csak a zárógomb marad.
 - **Dupla koppintás** az egész képernyőn (a gombokon kívül) 3×-ra nagyít, a következő visszaállítja. Két ujjal csípve a nagyítás az ujjaid között lévő pontnál marad.
 
+## Alnyomat-nézet
+
+A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti vizsgálathoz való (alnyomat, mikroszöveg, guilloche).
+
+- Bekapcsoláskor az app átvált az ultraszéles (0,5×) objektívre, ahol van, kilépéskor visszaáll az előzőre. Közelről ez csak a Pro modelleken élesít.
+- **Éles:** erős részletkiemelés. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik. **Szivárvány:** felerősített színek, a színváltó (OVD) festékek és az átmenetes nyomat kiemeléséhez. **UV:** világosítás és színfokozás. Ehhez külső UV-lámpa kell, a telefon nem bocsát ki UV-fényt. A lámpát soha ne irányítsd szemre vagy arcra.
+- A nézet a látott területet a kamera valódi felbontásán dolgozza fel, ezért nagyításkor is valódi részletet mutat.
+- A Mentés a feldolgozott képet menti, amit éppen látsz.
+- **Elemzés (kísérleti):** a kép közepén lévő kis részletben periodikus mintát (vonalrács, raszter) keres, és megadja az irányokat és a periódust képpontban. Kísérleti jelzés, nem ítélet: a valódi nyomatok rozetta- és guilloche-mintái is periodikusak. Mindig hasonlítsd egy biztosan eredeti okmány ugyanazon pontjához, azonos távolságból és fénnyel. A küszöbértékeket valódi okmányokon még ki kell próbálni.
+
 ## Mintaokmány-tár
 
 A felső sávban a rétegek ikonnal nyitható. Itt saját mintaképeket tölthetsz be (Minta hozzáadása), és az okmány méretét is megadod, így a keret erre igazodik.
