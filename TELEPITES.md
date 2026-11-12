@@ -48,10 +48,23 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti vizsgálathoz való (alnyomat, mikroszöveg, guilloche).
 
 - Bekapcsoláskor az app átvált az ultraszéles (0,5×) objektívre, ahol van, kilépéskor visszaáll az előzőre. Közelről ez csak a Pro modelleken élesít.
-- **Éles:** erős részletkiemelés. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik. **Szivárvány:** felerősített színek, a színváltó (OVD) festékek és az átmenetes nyomat kiemeléséhez. **UV:** világosítás és színfokozás. Ehhez külső UV-lámpa kell, a telefon nem bocsát ki UV-fényt. A lámpát soha ne irányítsd szemre vagy arcra.
+- **Éles:** erős részletkiemelés. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik. **Szivárvány:** felerősített színek, a színváltó (OVD) festékek és az átmenetes nyomat kiemeléséhez.
 - A nézet a látott területet a kamera valódi felbontásán dolgozza fel, ezért nagyításkor is valódi részletet mutat.
 - A Mentés a feldolgozott képet menti, amit éppen látsz.
-- **Elemzés (kísérleti):** a kép közepén lévő kis részletben periodikus mintát (vonalrács, raszter) keres, és megadja az irányokat és a periódust képpontban. Kísérleti jelzés, nem ítélet: a valódi nyomatok rozetta- és guilloche-mintái is periodikusak. Mindig hasonlítsd egy biztosan eredeti okmány ugyanazon pontjához, azonos távolságból és fénnyel. A küszöbértékeket valódi okmányokon még ki kell próbálni.
+
+## Változás-térkép
+
+A felső sávban a rombusz ikonnal kapcsolható. Azt mutatja meg, mely részei változnak az okmánynak a megdöntéstől: ilyen a hologram, a színváltó festék és a kinegram. Egy fénymásolt vagy nyomtatott hamisítványon a döntéstől semmi nem változik.
+
+1. Tartsd az okmányt a kamera elé, és koppints az **Alapkép** gombra.
+2. Billentsd meg az okmányt (vagy a telefont) néhány fokkal, miközben a kamerában tartod.
+3. Az élő kép elsötétül, és csak azok a részek világítanak narancssárgán, amelyek az alapképhez képest színt váltottak.
+
+Tudnivalók:
+- A kéz kisebb remegését az app kiigazítja, de nagy elmozdulásnál vagy erős döntésnél hamis jelzések is megjelenhetnek a szélek mentén. Tartsd stabilan az okmányt, és billentsd lassan.
+- A fény megváltozása (árnyék, tükröződés) is változásnak látszik. Egyenletes fényben vizsgálj.
+- A nagyítás a rögzítés után nem változtatható, az alapkép az akkori nézetre vonatkozik. Új nézethez nyomd meg az Új alapkép gombot.
+- Ez vizuális segéd, nem ítélet: te dönted el, hogy a világító rész ott van-e, ahol a valódi okmányon kell lennie. Hasonlítsd a Mintaokmány-tár képével.
 
 ## Mintaokmány-tár
 
