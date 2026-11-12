@@ -190,8 +190,13 @@
   .up #guide { opacity: 0; }
   .up #chipRow { display: none; }
   #upRow[hidden] { display: none; }
-  #chBase, #chState { display: none; }
+  #chBase, #chState, #chMeter { display: none; }
   .chg #chBase { display: inline-flex; }
+  .chg #chMeter { display: block; }
+  #chMeter[hidden] { display: none; }
+  #chMeter { flex: 0 0 100%; height: 8px; border-radius: 4px; background: rgba(255,255,255,.16); position: relative; overflow: hidden; }
+  #chMeter b { position: absolute; left: 40%; width: 43%; top: 0; bottom: 0; background: rgba(120,255,230,.28); }
+  #chMeter i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .12s linear; }
   .chg #chState { display: inline-block; font-size: 13px; color: var(--muted); padding: 0 4px; align-self: center; text-align: center; }
   .chg #upModes { display: none; }
   #upRow { justify-content: center; flex-wrap: wrap; gap: 6px; }
@@ -381,6 +386,7 @@
         <button class="chip" data-u="rainbow" aria-pressed="false">Szivárvány</button>
       </div>
       <span id="chState" aria-live="polite"></span>
+      <div id="chMeter" hidden aria-hidden="true"><b></b><i id="chMeterFill"></i></div>
       <button class="chip" id="chBase">Törlés</button>
       <button class="step" id="upClose" aria-label="Alnyomat-nézet bezárása">×</button>
     </div>
@@ -1378,20 +1384,29 @@
 
 
   /* ----- Változás-térkép: a billentésre változó részek kiemelése -----
-     Gomb nélkül, folyamatosan: az élő képet a néhány tizedmásodperccel korábbihoz hasonlítja (a két kép közti mozgás kicsi,
-     így jól igazítható), a kéz mozgását kiigazítja, a vékony élnyomokat elnyeli, és a tartósan változó foltokat egy darabig megtartja. */
+     Gomb nélkül, folyamatosan: az élő képet a néhány tizedmásodperccel korábbihoz hasonlítja (a két kép közti mozgás kicsi, így
+     jól igazítható). A színre (nem a fényerőre) érzékeny, ezért az árnyék, az expozíció és a tükröződés kevésbé téveszt meg;
+     a kéz mozgását kiigazítja, a vékony élnyomokat elnyeli, a foltot csak többszöri megerősítés után jelzi, és egy darabig megtartja.
+     A telefon mozgásérzékelője (ha engedélyezed) a billentés mértékét és sebességét mutatja. */
   var chg = false, chPrevMode = 'sharp', CHW = 160, CHR = 6, CH_LAG = 350;
   var chSmall = document.createElement('canvas'), chSmallCtx = chSmall.getContext('2d', { willReadFrequently: true });
   var chHeat = document.createElement('canvas'), chHeatCtx = chHeat.getContext('2d');
-  var chTmp = null, chHist = [], chAcc = null, chState = '', chLastKey = '';
+  var chTmp = null, chHist = [], chAcc = null, chConf = null, chState = '', chLastKey = '';
+  var chSensor = { ok: false, ref: null, ang: 0, rate: 0, lastT: 0, lastAng: 0 };
 
   function chPrep(d, w, h) {
-    var n = w * h, out = { r: new Float32Array(n), g: new Float32Array(n), b: new Float32Array(n), l: new Float32Array(n) };
+    var n = w * h, out = { r: new Float32Array(n), g: new Float32Array(n), b: new Float32Array(n), l: new Float32Array(n), cr: new Float32Array(n), cb: new Float32Array(n), s: new Uint8Array(n) };
     if (!chTmp || chTmp.length !== n) chTmp = new Float32Array(n);
     var raw = [new Float32Array(n), new Float32Array(n), new Float32Array(n)], i, j;
     for (i = 0, j = 0; i < d.length; i += 4, j++) { raw[0][j] = d[i]; raw[1][j] = d[i + 1]; raw[2][j] = d[i + 2]; }
     boxBlur(raw[0], out.r, chTmp, w, h, 1); boxBlur(raw[1], out.g, chTmp, w, h, 1); boxBlur(raw[2], out.b, chTmp, w, h, 1);
-    for (j = 0; j < n; j++) out.l[j] = 0.299 * out.r[j] + 0.587 * out.g[j] + 0.114 * out.b[j];
+    for (j = 0; j < n; j++) {
+      var l = 0.299 * out.r[j] + 0.587 * out.g[j] + 0.114 * out.b[j];
+      out.l[j] = l;
+      out.cr[j] = (out.r[j] - l) / (l + 20) * 160;      // a színezet a fényerőhöz viszonyítva: az árnyék ezt alig változtatja
+      out.cb[j] = (out.b[j] - l) / (l + 20) * 160;
+      out.s[j] = (out.r[j] >= 245 && out.g[j] >= 245 && out.b[j] >= 245) ? 1 : 0;   // kiégett folt (tükröződés): nem értékelhető
+    }
     return out;
   }
 
@@ -1401,13 +1416,48 @@
     return chPrep(chSmallCtx.getImageData(0, 0, w, h).data, w, h);
   }
 
-  function chSetState(t) {
-    if (t === chState) return;
-    chState = t; var el = $('chState'); if (el) el.textContent = t;
+  function chShow() {
+    var el = $('chState'); if (!el) return;
+    el.textContent = (chSensor.ok ? Math.round(chSensor.ang) + '° · ' : '') + chState;
+  }
+  function chSetState(t) { if (t !== chState) { chState = t; chShow(); } }
+
+  function chMeterUpdate() {
+    var m = $('chMeter'); if (!m) return;
+    m.hidden = !chSensor.ok;
+    var f = $('chMeterFill'); f.style.width = Math.min(100, chSensor.ang / 30 * 100) + '%';
+    f.style.background = chSensor.rate > 70 ? 'var(--warn)' : 'var(--accent)';
+  }
+
+  function chOrient(e) {
+    if (e.beta == null || e.gamma == null) return;
+    chSensor.ok = true;
+    if (!chSensor.ref) chSensor.ref = { b: e.beta, g: e.gamma };
+    var db = e.beta - chSensor.ref.b, dg = e.gamma - chSensor.ref.g, ang = Math.sqrt(db * db + dg * dg), now = performance.now();
+    if (chSensor.lastT) {
+      var dt = (now - chSensor.lastT) / 1000;
+      if (dt > 0.03) { chSensor.rate = chSensor.rate * 0.7 + Math.abs(ang - chSensor.lastAng) / dt * 0.3; chSensor.lastT = now; chSensor.lastAng = ang; }
+    } else { chSensor.lastT = now; chSensor.lastAng = ang; }
+    chSensor.ang = ang; chMeterUpdate(); chShow();
+  }
+
+  function chSensorStart() {
+    var DOE = window.DeviceOrientationEvent;
+    if (!DOE) return;
+    var go = function () { window.removeEventListener('deviceorientation', chOrient); window.addEventListener('deviceorientation', chOrient); };
+    if (typeof DOE.requestPermission === 'function') { DOE.requestPermission().then(function (st) { if (st === 'granted') go(); }).catch(function () {}); }
+    else go();
+  }
+  function chSensorStop() {
+    window.removeEventListener('deviceorientation', chOrient);
+    chSensor = { ok: false, ref: null, ang: 0, rate: 0, lastT: 0, lastAng: 0 };
+    var m = $('chMeter'); if (m) m.hidden = true;
   }
 
   function chReset() {
-    chHist = []; chAcc = null; chLastKey = ''; chSetState('Billentsd lassan az okmányt');
+    chHist = []; chAcc = null; chConf = null; chLastKey = '';
+    chSensor.ref = null; chSensor.ang = 0; chSensor.lastT = 0; chMeterUpdate();
+    chState = ''; chSetState('Tartsd az okmányt egyenesen');
   }
 
   function renderChange() {
@@ -1417,67 +1467,82 @@
     var rect = { x: a.x, y: a.y, w: Math.max(8, b.x - a.x), h: Math.max(8, b.y - a.y) };
     var w = CHW, h = Math.max(24, Math.round(CHW * rect.h / rect.w));
     var key = [w, h, Math.round(rect.x), Math.round(rect.y), Math.round(rect.w)].join();
-    if (key !== chLastKey) { chHist = []; chAcc = null; chLastKey = key; }   // nagyítás vagy mozgatás után tiszta lappal indul
+    if (key !== chLastKey) { chHist = []; chAcc = null; chConf = null; chLastKey = key; }   // nagyítás vagy mozgatás után tiszta lappal indul
     var OW = 480, OH = Math.max(24, Math.round(OW * rect.h / rect.w));
     if (upCv.width !== OW || upCv.height !== OH) { upCv.width = OW; upCv.height = OH; }
     try { upCtx.drawImage(video, rect.x, rect.y, rect.w, rect.h, 0, 0, OW, OH); } catch (e) { return; }
     var now = performance.now(), live = chGrab(rect, w, h);
     chHist.push({ t: now, px: live });
     while (chHist.length > 12) chHist.shift();
-    // a hasonlítás alapja: a legközelebbi, legalább CH_LAG ms-mal korábbi kép
     var ref = null, i;
     for (i = chHist.length - 2; i >= 0; i--) { if (now - chHist[i].t >= CH_LAG) { ref = chHist[i].px; break; } }
-    var n = w * h, x, y, dx, dy, m = CHR + 3;
-    if (!chAcc || chAcc.length !== n) chAcc = new Float32Array(n);
-    var bad = false;
+    var n = w * h, x, y, dx, dy, m = CHR + 3, msg = '';
+    if (!chAcc || chAcc.length !== n) { chAcc = new Float32Array(n); chConf = new Uint8Array(n); }
+    var bad = '';
     if (ref) {
       // 1) igazítás: a kéz mozgását ne tekintse változásnak
-      var bestD = 1e12, bdx = 0, bdy = 0, cells = 0;
+      var bestD = 1e12, bdx = 0, bdy = 0;
       for (dy = -CHR; dy <= CHR; dy++) {
         for (dx = -CHR; dx <= CHR; dx++) {
-          var sad = 0; cells = 0;
-          for (y = m; y < h - m; y += 2) { var ro = y * w, rl = (y + dy) * w + dx; for (x = m; x < w - m; x += 2) { sad += Math.abs(live.l[rl + x] - ref.l[ro + x]); cells++; } }
+          var sad = 0;
+          for (y = m; y < h - m; y += 2) { var ro = y * w, rl = (y + dy) * w + dx; for (x = m; x < w - m; x += 2) sad += Math.abs(live.l[rl + x] - ref.l[ro + x]); }
           if (sad < bestD) { bestD = sad; bdx = dx; bdy = dy; }
         }
       }
-      if (Math.abs(bdx) >= CHR || Math.abs(bdy) >= CHR) bad = true;     // túl gyors mozgás: az igazítás nem megbízható
-      // 2) fényerő-eltolódás (medián), majd színkülönbség fél képpontos tűréssel
+      if (Math.abs(bdx) >= CHR || Math.abs(bdy) >= CHR) bad = 'Túl gyors mozgás, lassabban';
+      // 2) globális eltolódás (medián): fehéregyensúly, expozíció
       var med3 = function (P, Q) {
         var hist = new Uint32Array(511), c2 = 0, yy, xx, t, acc = 0;
         for (yy = m; yy < h - m; yy++) for (xx = m; xx < w - m; xx++) { hist[Math.max(0, Math.min(510, Math.round(P[(yy + bdy) * w + xx + bdx] - Q[yy * w + xx]) + 255))]++; c2++; }
         for (t = 0; t < 511; t++) { acc += hist[t]; if (acc >= c2 / 2) return t - 255; }
         return 0;
       };
-      var mr = med3(live.r, ref.r), mg = med3(live.g, ref.g), mb = med3(live.b, ref.b);
+      var mcr = med3(live.cr, ref.cr), mcb = med3(live.cb, ref.cb), ml = med3(live.l, ref.l);
+      // 3) színezet-különbség fél képpontos tűréssel; a fényerő-változás csak kis súlyt kap (árnyék), a kiégett pont kimarad (tükröződés)
       var V = new Float32Array(n), OFFS = [-1, -0.5, 0, 0.5, 1], oi, oj, over = 0, tot = 0;
       for (y = m; y < h - m; y++) for (x = m; x < w - m; x++) {
-        var j0 = y * w + x, dmin = 1e9, br = ref.r[j0] + mr, bg = ref.g[j0] + mg, bb = ref.b[j0] + mb;
+        var j0 = y * w + x, dmin = 1e9, rcr = ref.cr[j0] + mcr, rcb = ref.cb[j0] + mcb, rl0 = ref.l[j0] + ml;
+        var nq = (Math.round(y + bdy)) * w + Math.round(x + bdx);
+        tot++;
+        if (ref.s[j0] || live.s[nq]) { V[j0] = 0; continue; }
+        // tükröződés: a pont kivilágosodik, és a színezete ugyanabba az irányba, de gyengébben jelenik meg (kifehéredik).
+        // A hologram színezete nem csak gyengül, hanem irányt is vált, ezért az nem esik ide.
+        var dL = live.l[nq] - rl0, lc = live.cr[nq], lb = live.cb[nq], eL = Math.sqrt(lc * lc + lb * lb), eR = Math.sqrt(rcr * rcr + rcb * rcb);
+        if (dL > 12 && eL < 0.95 * eR + 4 && (lc * rcr + lb * rcb) > 0.7 * eL * eR) { V[j0] = 0; continue; }
         for (oi = 0; oi < 5; oi++) for (oj = 0; oj < 5; oj++) {
           var fx = x + bdx + OFFS[oi], fy = y + bdy + OFFS[oj], x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
           var q = y0 * w + x0, q2 = q + w, w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
-          var d = Math.abs(live.r[q] * w00 + live.r[q + 1] * w10 + live.r[q2] * w01 + live.r[q2 + 1] * w11 - br)
-                + Math.abs(live.g[q] * w00 + live.g[q + 1] * w10 + live.g[q2] * w01 + live.g[q2 + 1] * w11 - bg)
-                + Math.abs(live.b[q] * w00 + live.b[q + 1] * w10 + live.b[q2] * w01 + live.b[q2 + 1] * w11 - bb);
+          var d = Math.abs(live.cr[q] * w00 + live.cr[q + 1] * w10 + live.cr[q2] * w01 + live.cr[q2 + 1] * w11 - rcr)
+                + Math.abs(live.cb[q] * w00 + live.cb[q + 1] * w10 + live.cb[q2] * w01 + live.cb[q2 + 1] * w11 - rcb)
+                + 0.2 * Math.abs(live.l[q] * w00 + live.l[q + 1] * w10 + live.l[q2] * w01 + live.l[q2 + 1] * w11 - rl0);
           if (d < dmin) dmin = d;
         }
-        var v = Math.max(0, Math.min(1, (dmin - 24) / 55)); V[j0] = v; tot++; if (v > 0.5) over++;
+        var v = Math.max(0, Math.min(1, (dmin - 32) / 60)); V[j0] = v; if (v > 0.5) over++;
       }
-      if (over / tot > 0.55) bad = true;                                // az egész kép változik (fény, expozíció): nem hologram
+      if (over / tot > 0.4) bad = bad || 'Egyenetlen fény, tartsd nyugodtan';     // az egész kép változik: nem hologram
       if (!bad) {
-        // 3) erózió: a vékony élnyomok eltűnnek, csak az összefüggő foltok maradnak; 4) a folt egy darabig megmarad
+        // 4) erózió: a vékony élnyomok eltűnnek; 5) megerősítés: a folt legalább két egymás utáni mérésben megjelenik; 6) egy darabig megmarad
         var E = new Float32Array(n), any = 0, ex, ey;
         for (y = m; y < h - m; y++) for (x = m; x < w - m; x++) {
           var mn = 1;
           for (ey = -1; ey <= 1 && mn > 0; ey++) for (ex = -1; ex <= 1; ex++) { var vv = V[(y + ey) * w + x + ex]; if (vv < mn) mn = vv; }
-          E[y * w + x] = mn; if (mn > 0.3) any++;
+          var ii = y * w + x;
+          if (mn > 0.3) { if (chConf[ii] < 255) chConf[ii]++; } else chConf[ii] = 0;
+          E[ii] = chConf[ii] >= 2 ? mn : 0;
+          if (E[ii] > 0.3) any++;
         }
         for (i = 0; i < n; i++) { var dec = chAcc[i] * 0.94; chAcc[i] = E[i] > dec ? E[i] : dec; }
-        chSetState(any > 6 ? 'Változó rész található' : 'Nincs változás');
+        if (any > 6) msg = 'Változó rész található';
+        else if (chSensor.ok && chSensor.ang < 6) msg = 'Billentsd lassan, kb. 15°-ra';
+        else if (chSensor.ok && chSensor.ang >= 12) msg = 'Nincs változás ' + Math.round(chSensor.ang) + '°-os billentésnél';
+        else msg = 'Nincs változás';
       } else {
         for (i = 0; i < n; i++) chAcc[i] *= 0.94;
-        chSetState(over / tot > 0.55 ? 'Egyenetlen fény, tartsd nyugodtan' : 'Túl gyors mozgás, lassabban');
+        msg = bad;
       }
-    } else if (!chState) chSetState('Billentsd lassan az okmányt');
+    } else msg = chSensor.ok ? 'Billentsd lassan, kb. 15°-ra' : 'Billentsd lassan az okmányt';
+    if (chSensor.ok && chSensor.rate > 70 && !bad) msg = 'Túl gyors billentés, lassabban';
+    chSetState(msg);
     if (chHeat.width !== w || chHeat.height !== h) { chHeat.width = w; chHeat.height = h; }
     var himg = chHeatCtx.createImageData(w, h), o = himg.data, k, vv2;
     for (i = 0; i < n; i++) { vv2 = chAcc[i]; k = i * 4; o[k] = 255; o[k + 1] = 70 + 150 * vv2; o[k + 2] = 20; o[k + 3] = Math.min(255, vv2 * 300); }
@@ -1554,6 +1619,7 @@
     $('upBtn').classList.remove('on'); $('upBtn').setAttribute('aria-pressed', 'false');
     $('chBtn').classList.remove('on'); $('chBtn').setAttribute('aria-pressed', 'false');
     upSrc.width = 1; upMode = wasChg ? chPrevMode : upMode;
+    if (wasChg) chSensorStop();
     upCtx.clearRect(0, 0, upCv.width, upCv.height);
     if (wasChg) { if (track) startGlare(); return; }
     if (upPrevLens) { var id = upPrevLens; upPrevLens = null; await switchLens(id); }
@@ -1561,7 +1627,11 @@
   }
 
   $('upBtn').addEventListener('click', function () { if (upOn && !chg) exitUp(); else if (upOn) exitUp().then(function () { enterUp(false); }); else enterUp(false); });
-  $('chBtn').addEventListener('click', function () { if (upOn && chg) exitUp(); else if (upOn) exitUp().then(function () { enterUp(true); }); else enterUp(true); });
+  $('chBtn').addEventListener('click', function () {
+    if (upOn && chg) { exitUp(); return; }
+    chSensorStart();   // iPhone-on az érzékelő engedélyét kattintásból lehet kérni
+    if (upOn) exitUp().then(function () { enterUp(true); }); else enterUp(true);
+  });
   $('chBase').addEventListener('click', chReset);
   $('upClose').addEventListener('click', exitUp);
   $('upModes').addEventListener('click', function (e) { var m = e.target && e.target.dataset && e.target.dataset.u; if (m) setUpMode(m); });

@@ -58,10 +58,10 @@ A felső sávban a rombusz ikonnal kapcsolható. Azt mutatja meg, mely részei v
 
 Nincs külön gomb, nem kell semmit rögzíteni. Tartsd az okmányt a kamerában, és lassan billentsd meg. Az élő kép elsötétül, és csak azok a részek világítanak narancssárgán, amelyek a billentés közben színt váltanak. A folt a mozgás után még egy másodpercig látszik, aztán elhalványul.
 
-- Az app mozgás közben mindig az előbbi pillanathoz hasonlít, a kéz remegését kiigazítja, és a vékony élnyomokat nem jelzi.
-- Az alsó sávban a szöveg megmondja, mi történik: „Változó rész található", „Nincs változás", „Túl gyors mozgás, lassabban" vagy „Egyenetlen fény, tartsd nyugodtan".
-- Egyenletes fényben vizsgálj, mert az árnyék és a tükröződés is változásnak látszhat. A Törlés gomb letörli a megmaradt foltokat.
-- Nagyítás vagy mozgatás után az app tiszta lappal indul.
+- **Billentés-mérő:** az első megnyitáskor az iPhone rákérdez a mozgásérzékelő engedélyére, engedélyezd. Ilyenkor az alsó sávban egy mérő mutatja, hány fokot döntöttél (cél: kb. 12–25°), és szól, ha túl gyors a mozdulat. Engedély nélkül is működik, csak a mérő hiányzik. A mérő a telefon dőlését méri, nem az okmányét.
+- **Kevesebb hamis jelzés:** az app a színváltozásra figyel, nem a fényerőre, ezért az árnyék és a fényerő-ingadozás nem világít. A kiégett, kifehéredő tükröződést kihagyja, a kéz remegését kiigazítja, a vékony élnyomokat elnyeli, és a foltot csak akkor jelzi, ha legalább két mérésben megjelenik. Ennek az ára, hogy a csak fényerőt váltó (például ezüstös villanó) elemeket gyengébben jelzi, mint a színváltókat.
+- Az alsó sáv szövege megmondja, mi történik: „Változó rész található", „Nincs változás ...°-os billentésnél", „Túl gyors mozgás, lassabban" vagy „Egyenetlen fény, tartsd nyugodtan".
+- Egyenletes fényben vizsgálj. A Törlés gomb letörli a megmaradt foltokat és nullázza a mérőt. Nagyítás vagy mozgatás után az app tiszta lappal indul.
 - Ez vizuális segéd, nem ítélet: te dönted el, hogy a világító rész ott van-e, ahol a valódi okmányon kell lennie. Hasonlítsd a Mintaokmány-tár képével.
 
 ## Mintaokmány-tár
