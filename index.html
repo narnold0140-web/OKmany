@@ -155,7 +155,10 @@
   .lib-note b { color: var(--text); font-weight: 600; }
   .lib-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
   .lib-actions .btn { flex: 1 1 160px; text-decoration: none; padding: 12px 14px; font-size: 15px; }
-  .lib-actions a.btn { color: var(--text); }
+  .lib-foot { margin-top: 18px; display: flex; }
+  .lib-foot .btn { flex: 1; color: var(--text); text-decoration: none; padding: 12px 14px; font-size: 15px; white-space: nowrap; }
+  .lib-actions .btn { white-space: nowrap; }
+  @media (max-width: 440px) and (orientation: portrait) { .lib-actions .btn { flex: 1 1 100%; } }
   .mini { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--glass-strong); }
   .mini.primary { background: var(--accent); color: var(--on-accent); }
   .spec-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: rgba(255,255,255,.07); margin-bottom: 10px; }
@@ -415,10 +418,10 @@
       <p class="lib-note"><b>Csak mintaokmányt (specimen) tölts be</b>, valódi személy okmányát ne. A képek csak ezen a telefonon tárolódnak, nem kerülnek fel sehova. A minta színe eltérhet az eredetitől, ezért a hasonlítás csak segédlet, a döntés nem alapulhat színegyezésen.</p>
       <div class="lib-actions">
         <button class="btn primary" id="specAdd">Minta hozzáadása</button>
-        <a class="btn" id="pradoLink" href="https://www.consilium.europa.eu/prado/en/prado-start-page.html" target="_blank" rel="noopener">PRADO megnyitása</a>
       </div>
       <p class="lib-note">A Tanács szabálya szerint a PRADO anyagainak másolása, terjesztése és keretezése írásos engedélyhez kötött, a hivatkozás szabad. Ezért az app nem tartalmaz PRADO-képet: saját, vagy a szervezeted által rendelkezésre bocsátott mintaképet használj. Vágd a képet az okmány széléig, hogy illeszkedjen a keretbe.</p>
       <div id="specList"></div>
+      <div class="lib-foot"><a class="btn" id="pradoLink" href="https://www.consilium.europa.eu/prado/en/prado-start-page.html" target="_blank" rel="noopener">PRADO megnyitása ↗</a></div>
       <input type="file" id="specFile" accept="image/*" hidden>
     </div>
     <div id="specForm" hidden>
