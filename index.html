@@ -119,6 +119,64 @@
   #fxChips .chip { min-width: 0; font-size: 12px; padding: 5px 10px; }
   .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 
+
+  /* Mintaokmány-tár és összehasonlítás */
+  #overlayImg { position: absolute; pointer-events: none; opacity: .5; z-index: 2; -webkit-user-drag: none; }
+  #overlayImg[hidden], #specPane[hidden], #ovWrap[hidden], #listCard[hidden], #cmpRow[hidden], #specLib[hidden], #specMain[hidden], #specForm[hidden], #sfCustom[hidden], #sfDel[hidden] { display: none; }
+  #specPane { position: absolute; overflow: hidden; background: #000; box-shadow: 0 0 0 1px rgba(255,255,255,.3); }
+  #specStage { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
+  #specImg { position: absolute; pointer-events: none; -webkit-user-drag: none; }
+  #cmpRow { justify-content: center; flex-wrap: wrap; gap: 6px; }
+  #cmpMode { display: flex; gap: 6px; }
+  #ovWrap {
+    position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--sat) + 60px); z-index: 4;
+    display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-radius: 999px; font-size: 12px; color: var(--muted);
+    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  }
+  #ovWrap input { width: 140px; }
+  #listCard {
+    position: absolute; left: calc(var(--sal) + 16px); top: calc(var(--sat) + 104px); z-index: 4; max-width: min(300px, 80%); max-height: 36%;
+    overflow-y: auto; padding: 10px 14px; border-radius: 18px; font-size: 14px; touch-action: pan-y;
+    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  }
+  #listCard b { display: block; font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+  #listCard label { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; line-height: 1.35; }
+  #listCard input[type=checkbox] { width: 20px; height: 20px; flex: none; margin: 0; accent-color: var(--accent); }
+  #listCard .none { color: var(--muted); }
+
+  #specLib {
+    position: absolute; inset: 0; z-index: 8; background: #05090a; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+    padding: calc(var(--sat) + 16px) calc(var(--sar) + 18px) calc(var(--sab) + 24px) calc(var(--sal) + 18px);
+    -webkit-user-select: auto; user-select: auto;
+  }
+  .lib-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .lib-head h2 { margin: 0; font-size: 22px; }
+  .lib-note { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0 0 12px; }
+  .lib-note b { color: var(--text); font-weight: 600; }
+  .lib-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .lib-actions .btn { flex: 1 1 160px; text-decoration: none; padding: 12px 14px; font-size: 15px; }
+  .lib-actions a.btn { color: var(--text); }
+  .mini { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--glass-strong); }
+  .mini.primary { background: var(--accent); color: var(--on-accent); }
+  .spec-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: rgba(255,255,255,.07); margin-bottom: 10px; }
+  .spec-item img { width: 72px; height: 52px; object-fit: cover; border-radius: 8px; background: #000; flex: none; }
+  .spec-item .meta { flex: 1; min-width: 0; }
+  .spec-item .meta b { display: block; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spec-item .meta span { font-size: 12px; color: var(--muted); }
+  .spec-item .acts { display: flex; flex-direction: column; gap: 6px; }
+  .empty { color: var(--muted); text-align: center; padding: 22px 0; }
+  #specForm label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  #specForm input, #specForm select, #specForm textarea {
+    width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.08); color: var(--text); -webkit-user-select: text; user-select: text;
+  }
+  #specForm textarea { min-height: 120px; resize: vertical; }
+  #specForm .fields { display: flex; gap: 10px; }
+  #specForm .fields label { flex: 1; }
+  #specPrev { display: block; width: 100%; max-height: 200px; object-fit: contain; border-radius: 12px; background: #000; margin-bottom: 12px; }
+  #specForm .btns { display: flex; gap: 10px; margin-top: 6px; }
+  #specForm .btn.danger { background: rgba(255,90,90,.2); color: #ffb4b4; }
+
   /* Összecsukható panel */
   .handle { width: 100%; height: 20px; flex: none; display: grid; place-items: center; }
   .handle span { width: 38px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.42); }
@@ -245,8 +303,11 @@
       <video id="video" playsinline muted autoplay></video>
       <canvas id="frozen"></canvas>
       <canvas id="glare"></canvas>
+      <img id="overlayImg" alt="" hidden>
     </div>
   </div>
+
+  <div id="specPane" hidden><div id="specStage"><img id="specImg" alt=""></div></div>
 
   <div id="guide" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i><span>Igazítsd az okmányt a keretbe</span></div>
   <div id="flash"></div>
@@ -264,14 +325,28 @@
       <button class="round" id="rotateFrame" aria-label="Keret elforgatása">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>
       </button>
+    <button class="round" id="specBtn" aria-label="Mintaokmány-tár">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/></svg>
+      </button>
     <button class="round" id="torch" hidden aria-label="Zseblámpa">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v4l-1.5 2v3.5a1.5 1.5 0 0 1-3 0V8L9 6z"/><path d="M12 15v7"/></svg>
     </button>
     </div>
   </div>
 
+  <div id="ovWrap" hidden><span>Átlátszóság</span><input type="range" id="ovOpacity" min="0" max="100" value="50" aria-label="Rávetített minta átlátszósága"></div>
+  <div id="listCard" hidden><b>Ellenőrzőlista</b><div id="listItems"></div></div>
+
   <div id="bottom">
     <button class="handle" id="panelToggle" aria-label="Vezérlők elrejtése vagy megjelenítése" aria-expanded="true"><span></span></button>
+    <div class="row" id="cmpRow" hidden>
+      <div id="cmpMode">
+        <button class="chip" data-m="overlay" aria-pressed="true">Átfedés</button>
+        <button class="chip" data-m="split" aria-pressed="false">Egymás mellett</button>
+      </div>
+      <button class="chip" id="listBtn">Lista</button>
+      <button class="step" id="cmpClose" aria-label="Összehasonlítás bezárása">×</button>
+    </div>
     <div class="row" id="chipRow">
       <div id="chipInner">
         <div id="lensGroup" hidden><div id="lenses"></div><i class="sep"></i></div>
@@ -334,6 +409,40 @@
     <button class="btn" id="shareClose" style="flex:none;width:100%;max-width:320px">Bezárás</button>
   </section>
 
+  <section id="specLib" hidden>
+    <div id="specMain">
+      <div class="lib-head"><h2>Mintaokmány-tár</h2><button class="mini" id="specClose">Bezár</button></div>
+      <p class="lib-note"><b>Csak mintaokmányt (specimen) tölts be</b>, valódi személy okmányát ne. A képek csak ezen a telefonon tárolódnak, nem kerülnek fel sehova. A minta színe eltérhet az eredetitől, ezért a hasonlítás csak segédlet, a döntés nem alapulhat színegyezésen.</p>
+      <div class="lib-actions">
+        <button class="btn primary" id="specAdd">Minta hozzáadása</button>
+        <a class="btn" id="pradoLink" href="https://www.consilium.europa.eu/prado/en/prado-start-page.html" target="_blank" rel="noopener">PRADO megnyitása</a>
+      </div>
+      <p class="lib-note">A Tanács szabálya szerint a PRADO anyagainak másolása, terjesztése és keretezése írásos engedélyhez kötött, a hivatkozás szabad. Ezért az app nem tartalmaz PRADO-képet: saját, vagy a szervezeted által rendelkezésre bocsátott mintaképet használj. Vágd a képet az okmány széléig, hogy illeszkedjen a keretbe.</p>
+      <div id="specList"></div>
+      <input type="file" id="specFile" accept="image/*" hidden>
+    </div>
+    <div id="specForm" hidden>
+      <div class="lib-head"><h2 id="specFormTitle">Új minta</h2></div>
+      <img id="specPrev" alt="Minta előnézete">
+      <label>Név<input id="sfName" type="text" maxlength="60" placeholder="pl. HU útlevél, 2023"></label>
+      <label>Méret
+        <select id="sfFmt">
+          <option value="id1">Bankkártya (ID-1) 85,6×54 mm</option>
+          <option value="td2">TD2 105×74 mm</option>
+          <option value="td3">Útlevél (TD3) 125×88 mm</option>
+          <option value="custom">Saját méret</option>
+        </select>
+      </label>
+      <div class="fields" id="sfCustom" hidden>
+        <label>Szélesség (mm)<input id="sfW" type="number" inputmode="decimal"></label>
+        <label>Magasság (mm)<input id="sfH" type="number" inputmode="decimal"></label>
+      </div>
+      <label>Ellenőrzendő elemek (soronként egy)<textarea id="sfNote" placeholder="pl.&#10;Hologram a fotó mellett&#10;Mikroszöveg a háttérben"></textarea></label>
+      <div class="btns"><button class="btn" id="sfCancel">Mégse</button><button class="btn primary" id="sfSave">Mentés</button></div>
+      <div class="btns"><button class="btn danger" id="sfDel" hidden>Minta törlése</button></div>
+    </div>
+  </section>
+
   <div id="customDlg" hidden>
     <div class="card">
       <h2>Saját keretméret</h2>
@@ -370,6 +479,9 @@
   var frozenRaw = document.createElement('canvas'), capturing = false;
   var sCv = document.createElement('canvas'), sCtx = sCv.getContext('2d', { willReadFrequently: true });
   var fx = { contrast: false, sharp: false, gray: false, invert: false };
+  var specPane = $('specPane'), specStage = $('specStage'), ovImg = $('overlayImg'), specImg = $('specImg');
+  var ovWrap = $('ovWrap'), listCard = $('listCard');
+  var splitOn = false, frameOverride = null, activeSpec = null, specUrl = null, cmpMode = 'overlay';
   var state = { s: 1, x: 0, y: 0 };
 
   /* ---------- Nagyítás és mozgatás ---------- */
@@ -384,6 +496,7 @@
   function render() {
     clampPan();
     stage.style.transform = 'translate(' + state.x + 'px,' + state.y + 'px) scale(' + state.s + ')';
+    specStage.style.transform = stage.style.transform;
     slider.value = state.s;
     zoomLabel.textContent = state.s.toFixed(1) + '×';
     var chips = document.querySelectorAll('#presets .chip');
@@ -406,7 +519,18 @@
 
   function centerRel(clientX, clientY) {
     var r = viewport.getBoundingClientRect();
+    if (splitOn) {   // a minta-panelen az ujj a nézet koordinátáira képezve, így ott is az ujj alatt marad a pont
+      var p = specPane.getBoundingClientRect();
+      if (clientX >= p.left && clientX <= p.right && clientY >= p.top && clientY <= p.bottom) {
+        clientX -= p.left - r.left; clientY -= p.top - r.top;
+      }
+    }
     return { x: clientX - r.left - r.width / 2, y: clientY - r.top - r.height / 2 };
+  }
+  function inSpecPane(x, y) {
+    if (!splitOn) return false;
+    var p = specPane.getBoundingClientRect();
+    return x >= p.left && x <= p.right && y >= p.top && y <= p.bottom;
   }
 
   // Képernyőpont -> forrás (videó/vászon) pixel, a nagyítás és az object-fit: cover figyelembevételével
@@ -425,7 +549,7 @@
   var lupeTimer = null, lupeActive = false, lupePos = { x: 0, y: 0 };
 
   function isControl(el) {
-    return !!(el && el.closest && el.closest('button, input, label, #customDlg, #shareView, .screen, #bottom .row'));
+    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #customDlg, #shareView, #specLib, .screen, #bottom .row'));
   }
 
   function doubleTap(x, y) {
@@ -438,6 +562,7 @@
   function startLupe() {
     lupeTimer = null;
     if (!touchState || touchState.mode !== 'pan' || touchState.moved) return;
+    if (inSpecPane(touchState.lx, touchState.ly)) return;   // a minta-panelen nincs lupe
     lupeActive = true;
     lupe.style.filter = isFrozen() ? 'none' : (video.style.filter || 'none');
     lupe.hidden = false;
@@ -877,25 +1002,56 @@
     return f.name + (f.custom ? ' (' + f.w + '×' + f.h + ' mm)' : '');
   }
 
+  // Osztott nézet: a nézet a fele, a másik felén a minta; a két fél azonos méretű, így a nagyítás/mozgatás szinkronban marad.
+  function layoutSplit() {
+    var st = viewport.style, ps = specPane.style;
+    if (!splitOn) { st.right = st.bottom = st.width = st.height = ''; specPane.hidden = true; return; }
+    var A = app.clientWidth, H = app.clientHeight, side = bottom.offsetWidth < A * 0.9;
+    specPane.hidden = false;
+    st.right = 'auto'; st.bottom = 'auto';
+    if (side) {
+      var hw = Math.floor((A - bottom.offsetWidth) / 2);
+      st.width = hw + 'px'; st.height = H + 'px';
+      ps.left = hw + 'px'; ps.top = '0px'; ps.width = hw + 'px'; ps.height = H + 'px';
+    } else {
+      var hh = Math.floor(bottom.offsetTop / 2);
+      st.width = A + 'px'; st.height = hh + 'px';
+      ps.left = '0px'; ps.top = hh + 'px'; ps.width = A + 'px'; ps.height = hh + 'px';
+    }
+  }
+
+  function placeSpec(w, h, cx, cy) {
+    [ovImg, specImg].forEach(function (im) {
+      var st = im.style;
+      st.left = cx + 'px'; st.top = cy + 'px';
+      if (frameRot && activeSpec) { st.width = h + 'px'; st.height = w + 'px'; st.transform = 'translate(-50%,-50%) rotate(90deg)'; }
+      else { st.width = w + 'px'; st.height = h + 'px'; st.transform = 'translate(-50%,-50%)'; }
+    });
+  }
+
   function layoutGuide() {
+    layoutSplit();
     var vw = viewport.clientWidth, vh = viewport.clientHeight;
     if (!vw || !vh) return;
-    var f = FRAMES[frameIdx], asp = f.w / f.h;
+    var f = frameOverride || FRAMES[frameIdx], asp = f.w / f.h;
     if (frameRot) asp = 1 / asp;
-    var side = bottom.offsetWidth < vw * 0.9;
+    var side = bottom.offsetWidth < app.clientWidth * 0.9;
     var top = topBar.offsetHeight + 8, left = 0, right = vw, bot = vh;
-    if (side) right = vw - bottom.offsetWidth; else bot = bottom.offsetTop;
+    if (!splitOn) { if (side) right = vw - bottom.offsetWidth; else bot = bottom.offsetTop; }
     var availW = Math.max(80, right - left - 48);
     var availH = Math.max(60, bot - top - 56);   // alul hely a felirat számára
     var w = Math.min(availW, availH * asp, 640), h = w / asp;
+    var cx = (left + right) / 2, cy = top + (bot - 56 - top) / 2 + (side && !splitOn ? 6 : 0);
     guide.style.width = w + 'px'; guide.style.height = h + 'px';
-    guide.style.left = (left + right) / 2 + 'px';
-    guide.style.top = (top + (bot - 56 - top) / 2 + (side ? 6 : 0)) + 'px';
+    guide.style.left = cx + 'px'; guide.style.top = cy + 'px';
+    placeSpec(w, h, cx, cy);
+    render();
   }
   window.addEventListener('resize', layoutGuide);
   if (window.ResizeObserver) new ResizeObserver(layoutGuide).observe(bottom);
 
   $('frameBtn').addEventListener('click', function () {
+    if (frameOverride) { toast('Összehasonlítás közben a keret a mintához igazodik.'); return; }
     var next = (frameIdx + 1) % FRAMES.length;
     if (FRAMES[next].custom) {
       $('cw').value = FRAMES[2].w; $('ch').value = FRAMES[2].h;
@@ -917,6 +1073,198 @@
     var min = app.classList.toggle('min');
     this.setAttribute('aria-expanded', String(!min));
   });
+
+  /* ----- Mintaokmány-tár (csak a telefonon, IndexedDB) ----- */
+
+  var dbp = null;
+  function db() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (resolve, reject) {
+      var rq = indexedDB.open('dokunezo', 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore('specimens', { keyPath: 'id', autoIncrement: true }); };
+      rq.onsuccess = function () { resolve(rq.result); };
+      rq.onerror = function () { reject(rq.error); };
+    });
+    return dbp;
+  }
+  function tx(mode, fn) {
+    return db().then(function (d) {
+      return new Promise(function (resolve, reject) {
+        var t = d.transaction('specimens', mode), req = fn(t.objectStore('specimens'));
+        t.oncomplete = function () { resolve(req ? req.result : undefined); };
+        t.onerror = t.onabort = function () { reject(t.error); };
+      });
+    });
+  }
+  function specAll() { return tx('readonly', function (st) { return st.getAll(); }).then(function (r) { return r || []; }); }
+  function specPut(rec) { return tx('readwrite', function (st) { return st.put(rec); }); }
+  function specDel(id) { return tx('readwrite', function (st) { return st.delete(id); }); }
+
+  function shrinkImage(file, maxSide) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        var k = Math.min(1, maxSide / Math.max(im.naturalWidth, im.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) { if (b) resolve(b); else reject(new Error('blob')); }, 'image/jpeg', 0.9);
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); reject(new Error('img')); };
+      im.src = url;
+    });
+  }
+
+  var PRESETS = { id1: { w: 85.6, h: 54 }, td2: { w: 105, h: 74 }, td3: { w: 125, h: 88 } };
+  var specLib = $('specLib'), specList = $('specList'), thumbUrls = [], editing = null, delArmed = false;
+
+  function fmtLabel(rec) { return String(rec.w).replace('.', ',') + '×' + String(rec.h).replace('.', ',') + ' mm'; }
+  function showMain() { $('specMain').hidden = false; $('specForm').hidden = true; if (editing && editing.url) URL.revokeObjectURL(editing.url); editing = null; }
+
+  async function renderLib() {
+    thumbUrls.forEach(function (u) { URL.revokeObjectURL(u); }); thumbUrls = [];
+    var items = [];
+    try { items = await specAll(); } catch (e) { toast('A mintatár nem érhető el ezen az eszközön.'); }
+    items.sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'hu'); });
+    specList.innerHTML = '';
+    if (!items.length) {
+      var em = document.createElement('p'); em.className = 'empty'; em.textContent = 'Még nincs betöltött minta.';
+      specList.appendChild(em); return;
+    }
+    items.forEach(function (rec) {
+      var row = document.createElement('div'); row.className = 'spec-item';
+      var url = URL.createObjectURL(rec.blob); thumbUrls.push(url);
+      var im = document.createElement('img'); im.src = url; im.alt = '';
+      var meta = document.createElement('div'); meta.className = 'meta';
+      var nm = document.createElement('b'); nm.textContent = rec.name;
+      var sub = document.createElement('span'); sub.textContent = fmtLabel(rec);
+      meta.appendChild(nm); meta.appendChild(sub);
+      var acts = document.createElement('div'); acts.className = 'acts';
+      var use = document.createElement('button'); use.className = 'mini primary'; use.textContent = 'Használ';
+      use.addEventListener('click', function () { startCompare(rec); });
+      var ed = document.createElement('button'); ed.className = 'mini'; ed.textContent = 'Szerkeszt';
+      ed.addEventListener('click', function () { openForm(rec, rec.blob); });
+      acts.appendChild(use); acts.appendChild(ed);
+      row.appendChild(im); row.appendChild(meta); row.appendChild(acts);
+      specList.appendChild(row);
+    });
+  }
+
+  function openLib() { showMain(); specLib.hidden = false; renderLib(); }
+  function closeLib() {
+    specLib.hidden = true; showMain();
+    thumbUrls.forEach(function (u) { URL.revokeObjectURL(u); }); thumbUrls = [];
+  }
+
+  function openForm(rec, blob) {
+    editing = { id: rec ? rec.id : undefined, created: rec ? rec.created : undefined, blob: blob, url: URL.createObjectURL(blob) };
+    $('specFormTitle').textContent = rec ? 'Minta szerkesztése' : 'Új minta';
+    $('specPrev').src = editing.url;
+    $('sfName').value = rec ? rec.name : '';
+    $('sfNote').value = rec ? (rec.note || '') : '';
+    var key = 'custom';
+    if (rec) { for (var k in PRESETS) { if (PRESETS[k].w === rec.w && PRESETS[k].h === rec.h) key = k; } } else key = 'id1';
+    $('sfFmt').value = key;
+    $('sfW').value = rec ? rec.w : ''; $('sfH').value = rec ? rec.h : '';
+    $('sfCustom').hidden = key !== 'custom';
+    delArmed = false; $('sfDel').textContent = 'Minta törlése'; $('sfDel').hidden = !rec;
+    $('specMain').hidden = true; $('specForm').hidden = false;
+    specLib.scrollTop = 0;
+  }
+
+  function formDims() {
+    var key = $('sfFmt').value;
+    if (PRESETS[key]) return PRESETS[key];
+    var w = parseFloat(String($('sfW').value).replace(',', '.')), h = parseFloat(String($('sfH').value).replace(',', '.'));
+    if (!(w >= 10 && w <= 600 && h >= 10 && h <= 600)) { toast('Adj meg 10 és 600 mm közötti méretet.'); return null; }
+    return { w: w, h: h };
+  }
+
+  $('specBtn').addEventListener('click', openLib);
+  $('specClose').addEventListener('click', closeLib);
+  $('specAdd').addEventListener('click', function () { $('specFile').click(); });
+  $('specFile').addEventListener('change', async function () {
+    var f = this.files && this.files[0]; this.value = '';
+    if (!f) return;
+    try {
+      var blob = await shrinkImage(f, 2400);
+      openForm(null, blob);
+      $('sfName').value = String(f.name || '').replace(/\.[^.]+$/, '').slice(0, 60);
+    } catch (e) { toast('A képet nem sikerült betölteni.'); }
+  });
+  $('sfFmt').addEventListener('change', function () { $('sfCustom').hidden = this.value !== 'custom'; });
+  $('sfCancel').addEventListener('click', showMain);
+  $('sfSave').addEventListener('click', async function () {
+    var d = formDims(); if (!d || !editing) return;
+    var rec = { name: ($('sfName').value || '').trim() || 'Minta', w: d.w, h: d.h, note: $('sfNote').value || '', blob: editing.blob, created: editing.created || Date.now() };
+    if (editing.id != null) rec.id = editing.id;
+    try { await specPut(rec); } catch (e) { toast('A mentés nem sikerült (a tároló megtelt vagy nem elérhető).'); return; }
+    showMain(); renderLib();
+  });
+  $('sfDel').addEventListener('click', async function () {
+    if (!editing || editing.id == null) return;
+    if (!delArmed) { delArmed = true; this.textContent = 'Biztosan törlöd? Koppints még egyszer'; return; }
+    var id = editing.id;
+    if (activeSpec && activeSpec.id === id) stopCompare();
+    try { await specDel(id); } catch (e) { toast('A törlés nem sikerült.'); return; }
+    showMain(); renderLib();
+  });
+
+  /* ----- Összehasonlítás: átfedés / egymás mellett ----- */
+
+  function buildList(rec) {
+    var box = $('listItems'); box.innerHTML = '';
+    var lines = String(rec.note || '').split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+    if (!lines.length) {
+      var n = document.createElement('div'); n.className = 'none'; n.textContent = 'Nincs lista. A minta szerkesztésénél soronként felírhatod az ellenőrzendő elemeket.';
+      box.appendChild(n); return;
+    }
+    lines.forEach(function (t) {
+      var lb = document.createElement('label'), cb = document.createElement('input'), sp = document.createElement('span');
+      cb.type = 'checkbox'; sp.textContent = t;
+      lb.appendChild(cb); lb.appendChild(sp); box.appendChild(lb);
+    });
+  }
+
+  function setCmpMode(m) {
+    cmpMode = m; splitOn = (m === 'split');
+    ovImg.hidden = splitOn; ovWrap.hidden = splitOn;
+    var chips = $('cmpMode').children;
+    for (var i = 0; i < chips.length; i++) chips[i].setAttribute('aria-pressed', String(chips[i].dataset.m === m));
+    layoutGuide();
+  }
+
+  function startCompare(rec) {
+    stopCompare();
+    activeSpec = rec;
+    specUrl = URL.createObjectURL(rec.blob);
+    ovImg.src = specUrl; specImg.src = specUrl;
+    ovImg.style.opacity = String($('ovOpacity').value / 100);
+    frameOverride = { w: rec.w, h: rec.h };
+    app.classList.add('cmp');
+    $('cmpRow').hidden = false; $('specBtn').classList.add('on');
+    listCard.hidden = true;
+    buildList(rec);
+    closeLib();
+    setCmpMode('overlay');
+    toast('Minta: ' + rec.name);
+  }
+
+  function stopCompare() {
+    if (!activeSpec) return;
+    activeSpec = null; frameOverride = null; splitOn = false;
+    if (specUrl) { URL.revokeObjectURL(specUrl); specUrl = null; }
+    ovImg.removeAttribute('src'); specImg.removeAttribute('src');
+    ovImg.hidden = true; ovWrap.hidden = true; listCard.hidden = true; $('cmpRow').hidden = true;
+    app.classList.remove('cmp'); $('specBtn').classList.remove('on');
+    layoutGuide();
+  }
+
+  $('cmpMode').addEventListener('click', function (e) { var m = e.target && e.target.dataset && e.target.dataset.m; if (m) setCmpMode(m); });
+  $('ovOpacity').addEventListener('input', function () { ovImg.style.opacity = String(this.value / 100); });
+  $('listBtn').addEventListener('click', function () { listCard.hidden = !listCard.hidden; });
+  $('cmpClose').addEventListener('click', stopCompare);
 
   /* ----- Pillanatkép ----- */
 
