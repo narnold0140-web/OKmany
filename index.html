@@ -183,6 +183,9 @@
   /* Alnyomat-nézet */
   #upCv { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
   .up #upCv { display: block; }
+  #upGl { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
+  .up.up-gl #upGl { display: block; }
+  .up.up-gl #upCv { display: none; }
   .up #guide { opacity: 0; }
   .up #chipRow { display: none; }
   #upRow[hidden] { display: none; }
@@ -338,6 +341,7 @@
       <img id="overlayImg" alt="" hidden>
     </div>
     <canvas id="upCv"></canvas>
+    <canvas id="upGl" aria-hidden="true"></canvas>
   </div>
 
   <div id="specPane" hidden><div id="specStage"><img id="specImg" alt=""></div></div>
@@ -441,7 +445,7 @@
     <p class="welcome">Te vagy az első védvonal első bástyája. Az éles szemed és a türelmed másokat véd: minden felfedett hamisítvány biztonságosabbá teszi a határt, vele együtt az országot is. Nézd át az okmányokat alaposan, bízz a szakmai megérzéseidben, és ne hagyd, hogy a rutin elaltassa a figyelmedet. Jó munkát a mai műszakhoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v24</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v25</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -1317,8 +1321,71 @@
   }
 
   // A látott területet natív felbontáson dolgozza fel (nagyítva a valódi részletet mutatja, nem kinagyított pixeleket).
+  /* Az élő képet a grafikus processzor dolgozza fel (WebGL): ugyanaz a számítás, mint a processzoros változatban, de képkockánként
+     néhány ezredmásodperc. A rögzített képnél és a mentésnél marad a pontos, processzoros út. WebGL nélkül is működik, csak lassabban. */
+  var upGl = $('upGl'), gl = null, glProg = null, glTex = null, glU = {}, glFail = false;
+  function upGlInit() {
+    if (gl || glFail) return !!gl;
+    try {
+      gl = upGl.getContext('webgl', { alpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+      if (!gl) throw new Error('nincs webgl');
+      var vs = 'attribute vec2 a;varying vec2 p;void main(){p=a*0.5+0.5;gl_Position=vec4(a,0.0,1.0);}';
+      var fs = [
+        '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
+        'uniform sampler2D t;uniform vec2 org,siz,px;uniform int mode;varying vec2 p;',
+        'float L(vec2 u){return dot(texture2D(t,u).rgb,vec3(0.299,0.587,0.114));}',
+        'void main(){',
+        ' vec2 uv=org+vec2(p.x,1.0-p.y)*siz; vec3 c=texture2D(t,uv).rgb; float l=dot(c,vec3(0.299,0.587,0.114)); float s=0.0;',
+        ' if(mode==0){',
+        '  for(int j=-1;j<=1;j++){for(int i=-1;i<=1;i++){s+=L(uv+vec2(float(i),float(j))*px);}}',
+        '  float d=2.6*(l-s/9.0); gl_FragColor=vec4((c+d-0.5)*1.2+0.5,1.0);',
+        ' }else{',
+        '  for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){s+=L(uv+vec2(float(i),float(j))*px);}}',
+        '  float v=0.5+5.0*(l-s/25.0); gl_FragColor=vec4(v,v,v,1.0);',
+        ' }',
+        '}'].join('\n');
+      var mk = function (type, src) { var sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; };
+      glProg = gl.createProgram(); gl.attachShader(glProg, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(glProg, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(glProg);
+      if (!gl.getProgramParameter(glProg, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(glProg));
+      gl.useProgram(glProg);
+      var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      var loc = gl.getAttribLocation(glProg, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      glTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      ['org', 'siz', 'px', 'mode', 't'].forEach(function (k) { glU[k] = gl.getUniformLocation(glProg, k); });
+      gl.uniform1i(glU.t, 0);
+      upGl.addEventListener('webglcontextlost', function (e) { e.preventDefault(); gl = null; glFail = true; app.classList.remove('up-gl'); });
+      return true;
+    } catch (e) { gl = null; glFail = true; return false; }
+  }
+
+  function renderUpGl() {
+    var sw = video.videoWidth, sh = video.videoHeight;
+    if (!sw || !sh || video.readyState < 2) return false;
+    if (!upGlInit()) return false;
+    var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
+    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), q = Math.min(3, window.devicePixelRatio || 1);
+    var cap = Math.min(2600000, r.width * r.height * q * q);              // a kijelzőnél finomabbra nem érdemes számolni
+    var f = Math.min(1, Math.sqrt(cap / (rw * rh)));
+    var ow = Math.max(8, Math.round(rw * f)), oh = Math.max(8, Math.round(rh * f));
+    if (upGl.width !== ow || upGl.height !== oh) { upGl.width = ow; upGl.height = oh; }
+    try {
+      gl.viewport(0, 0, ow, oh);
+      gl.bindTexture(gl.TEXTURE_2D, glTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
+      gl.uniform2f(glU.org, a.x / sw, a.y / sh); gl.uniform2f(glU.siz, rw / sw, rh / sh);
+      gl.uniform2f(glU.px, (rw / sw) / ow, (rh / sh) / oh);
+      gl.uniform1i(glU.mode, upMode === 'line' ? 1 : 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    } catch (e) { glFail = true; gl = null; return false; }
+    return true;
+  }
+
   function renderUp(force) {
     if (!upOn || document.hidden) return;
+    if (!isFrozen() && !glFail && renderUpGl()) { app.classList.add('up-gl'); return; }   // élő kép: gyors út
+    app.classList.remove('up-gl');
     var fr = isFrozen(), el = fr ? frozen : video;
     var sw = fr ? frozen.width : video.videoWidth, sh = fr ? frozen.height : video.videoHeight;
     if (!sw || !sh || sw < 8 || sh < 8) return;
@@ -1341,6 +1408,7 @@
   function upLoop(ts) {
     if (!upOn) { upRaf = 0; return; }
     upRaf = requestAnimationFrame(upLoop);
+    if (!glFail && !isFrozen()) { renderUp(false); return; }
     if (ts - upLast >= 70) { upLast = ts; renderUp(false); }
   }
 
@@ -1353,14 +1421,15 @@
     // makróhoz az ultraszéles objektív (ahol van), a Pro modellek közelről is élesítenek vele
     var ul = null;
     for (var i = 0; i < lensList.length; i++) { if (lensList[i].text === '0,5×') ul = lensList[i]; }
+    toast('Alnyomat-vizsgáló');   // felugró, magától eltűnő felirat a nézet kiválasztásakor
     if (ul && currentDeviceId !== ul.id) { upPrevLens = currentDeviceId; await switchLens(ul.id); }
-    else if (!ul && lensList.length < 2) toast('Ultraszéles objektív nincs, a fő kamerával dolgozunk.');
+
   }
 
   async function exitUp() {
     if (!upOn) return;
     upOn = false;
-    app.classList.remove('up');
+    app.classList.remove('up'); app.classList.remove('up-gl');
     $('upRow').hidden = true;
     $('upBtn').classList.remove('on'); $('upBtn').setAttribute('aria-pressed', 'false');
     upKey = ''; ptToggle(false);
