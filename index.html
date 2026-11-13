@@ -43,6 +43,9 @@
   #viewport { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
   #stage { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
   #video, #frozen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+  #stabView { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
+  .stab-live #stabView { display: block; }
+  .stab-live #video { opacity: 0; }
   #frozen { display: none; }
   .is-frozen #video { display: none; }
   .is-frozen #frozen { display: block; }
@@ -328,6 +331,7 @@
 <body>
 <div id="app">
   <div id="viewport">
+    <canvas id="stabView" aria-hidden="true"></canvas>
     <div id="stage">
       <video id="video" playsinline muted autoplay></video>
       <canvas id="frozen"></canvas>
@@ -437,7 +441,7 @@
     <p class="welcome">Te vagy az első védvonal első bástyája. Az éles szemed és a türelmed másokat véd: minden felfedett hamisítvány biztonságosabbá teszi a határt, vele együtt az országot is. Nézd át az okmányokat alaposan, bízz a szakmai megérzéseidben, és ne hagyd, hogy a rutin elaltassa a figyelmedet. Jó munkát a mai műszakhoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A.</p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v24</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -771,8 +775,9 @@
     track = stream.getVideoTracks()[0];
     var settings = (track && track.getSettings) ? track.getSettings() : {};
     currentDeviceId = id || settings.deviceId || null;
-    var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
-    torchBtn.hidden = !(caps && caps.torch);
+    checkTorch();
+    // iPhone-on a vaku néha csak a kép elindulása után jelenik meg a kamera képességei között: később újra megnézzük
+    setTimeout(checkTorch, 700); setTimeout(checkTorch, 2000); setTimeout(checkTorch, 5000);
     showScreen(null);
     requestWakeLock();
     loadLenses();
@@ -833,6 +838,18 @@
     var id = e.target && e.target.dataset && e.target.dataset.id;
     if (id) switchLens(id);
   });
+
+  function checkTorch() {
+    var ok = false;
+    try {
+      var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
+      var st = (track && track.getSettings) ? track.getSettings() : {};
+      ok = !!(track && ((caps && caps.torch) || (st && 'torch' in st)));
+    } catch (e) {}
+    torchBtn.hidden = !ok;
+  }
+
+  video.addEventListener('playing', checkTorch);
 
   function stopCamera() {
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
@@ -1359,30 +1376,58 @@
      Képkockánként megbecsüli, mennyit mozdult a látott kép az előzőhöz képest, ebből követi a kamera útját, és a képet a
      kisimított úthoz tolja vissza. A lassú, szándékos mozgást követi, a gyors remegést kiveszi. Nagyításnál dolgozik
      (1×-nél nincs tartalék a kép szélén), a rögzített képet és a mentést nem érinti. */
-  var stabOn = true, stabPrev = null, stabKey = '', stabP = { x: 0, y: 0 }, stabS = { x: 0, y: 0 }, stabC = { x: 0, y: 0 };
+  var stabOn = true, stabPrev = null, stabKey = '', stabP = { x: 0, y: 0 }, stabS = { x: 0, y: 0 }, stabC = { x: 0, y: 0 }, stabFail = 0;
   var stabCv = document.createElement('canvas'), stabCtx = stabCv.getContext('2d', { willReadFrequently: true });
-  var STW = 96, STR = 7;
+  var STW = 144, STR = 6;   // a becslés két lépcsőben megy: fél felbontáson durván (±STR), teljes felbontáson finoman
 
-  function stabApply(cx, cy) {
-    stabC.x = cx; stabC.y = cy;
-    video.style.transform = (cx || cy) ? 'translate(' + (cx / state.s).toFixed(2) + 'px,' + (cy / state.s).toFixed(2) + 'px)' : '';
+  var stabView = $('stabView'), stabViewCtx = stabView.getContext('2d');
+  // A stabilizált képet maga rajzolja ki: a képkocka és a hozzá tartozó korrekció így mindig együtt jelenik meg (nincs rángás).
+  function stabDraw() {
+    var sw = video.videoWidth, sh = video.videoHeight; if (!sw || !sh) return;
+    var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
+    var rw = b.x - a.x, rh = b.y - a.y, q = Math.min(2, window.devicePixelRatio || 1);
+    var W = Math.max(2, Math.round(r.width * q)), H = Math.max(2, Math.round(r.height * q));
+    if (stabView.width !== W || stabView.height !== H) { stabView.width = W; stabView.height = H; }
+    var f = rw / r.width;                                                   // képernyő képpontja -> forráskép képpontja
+    var sx = Math.max(0, Math.min(sw - rw, a.x - stabC.x * f)), sy = Math.max(0, Math.min(sh - rh, a.y - stabC.y * f));
+    if (stabView.style.filter !== (video.style.filter || '')) stabView.style.filter = video.style.filter || '';
+    try { stabViewCtx.drawImage(video, sx, sy, rw, rh, 0, 0, W, H); } catch (e) {}
+    if (!app.classList.contains('stab-live')) app.classList.add('stab-live');
   }
-  function stabReset() { stabPrev = null; stabP.x = stabP.y = stabS.x = stabS.y = 0; stabApply(0, 0); }
+  function stabApply(cx, cy) { stabC.x = cx; stabC.y = cy; stabDraw(); }
+  function stabReset() {
+    stabPrev = null; stabFail = 0; stabP.x = stabP.y = stabS.x = stabS.y = 0; stabC.x = stabC.y = 0;
+    app.classList.remove('stab-live');
+  }
 
-  // A két szürke kép közti eltolás (cur a prev-hez képest), fél képpontnál finomabban; null, ha nem megbízható.
-  function stabEstimate(prev, cur, w, h) {
-    var m = STR + 1, best = 1e12, bx = 0, by = 0, dx, dy, x, y, sad, grid = {}, flat = 0, cnt = 0;
+  function stabHalf(src, w, h) {   // 2×2 átlagolás
+    var hw = w >> 1, hh = h >> 1, out = new Float32Array(hw * hh), x, y;
+    for (y = 0; y < hh; y++) for (x = 0; x < hw; x++) { var i = (y * 2) * w + x * 2; out[y * hw + x] = (src[i] + src[i + 1] + src[i + w] + src[i + w + 1]) * 0.25; }
+    return { d: out, w: hw, h: hh };
+  }
+  function stabSad(prev, cur, w, h, dx, dy, m, step) {
+    var sad = 0, x, y;
+    for (y = m; y < h - m; y += step) { var ro = y * w, rc = (y + dy) * w + dx; for (x = m; x < w - m; x += step) sad += Math.abs(cur[rc + x] - prev[ro + x]); }
+    return sad;
+  }
+
+  // A két szürke kép közti eltolás (cur a prev-hez képest) a teljes felbontás képpontjaiban, tört pontossággal; null, ha nem megbízható.
+  function stabEstimate(P, C) {
+    var w = C.w, h = C.h, hw = C.half.w, hh = C.half.h, dx, dy, sad, best = 1e12, bx = 0, by = 0, x, y, flat = 0, cnt = 0;
+    for (y = 2; y < hh - 2; y += 2) for (x = 2; x < hw - 4; x += 2) { flat += Math.abs(P.half.d[y * hw + x] - P.half.d[y * hw + x + 2]); cnt++; }
+    if (flat / cnt < 1.0) return null;                                    // egyszínű felület: nincs mihez igazítani
     for (dy = -STR; dy <= STR; dy++) for (dx = -STR; dx <= STR; dx++) {
-      sad = 0;
-      for (y = m; y < h - m; y += 2) { var ro = y * w, rc = (y + dy) * w + dx; for (x = m; x < w - m; x += 2) sad += Math.abs(cur[rc + x] - prev[ro + x]); }
-      grid[dx + ',' + dy] = sad;
+      sad = stabSad(P.half.d, C.half.d, hw, hh, dx, dy, STR + 1, 1);
       if (sad < best) { best = sad; bx = dx; by = dy; }
     }
-    for (y = m; y < h - m; y += 2) for (x = m; x < w - m; x += 2) { flat += Math.abs(prev[y * w + x] - prev[y * w + x + 2]); cnt++; }
-    if (flat / cnt < 1.2) return null;                                   // egyszínű felület: nincs mihez igazítani
-    if (Math.abs(bx) >= STR || Math.abs(by) >= STR) return null;         // túl nagy ugrás (szándékos mozdulat)
-    function sub(a, b, c) { var den = a - 2 * b + c; return den > 1e-6 ? Math.max(-0.5, Math.min(0.5, 0.5 * (a - c) / den)) : 0; }
-    return { x: bx + sub(grid[(bx - 1) + ',' + by], best, grid[(bx + 1) + ',' + by]), y: by + sub(grid[bx + ',' + (by - 1)], best, grid[bx + ',' + (by + 1)]) };
+    if (Math.abs(bx) >= STR || Math.abs(by) >= STR) return null;          // túl nagy ugrás (szándékos mozdulat)
+    var cx = bx * 2, cy = by * 2, g = {}, fb = 1e12, fx = cx, fy = cy, m = STR * 2 + 4;
+    for (dy = cy - 2; dy <= cy + 2; dy++) for (dx = cx - 2; dx <= cx + 2; dx++) {
+      sad = stabSad(P.d, C.d, w, h, dx, dy, m, 2); g[dx + ',' + dy] = sad;
+      if (sad < fb) { fb = sad; fx = dx; fy = dy; }
+    }
+    function sub(a, b, c) { if (a === undefined || c === undefined) return 0; var den = a - 2 * b + c; return den > 1e-6 ? Math.max(-0.5, Math.min(0.5, 0.5 * (a - c) / den)) : 0; }
+    return { x: fx + sub(g[(fx - 1) + ',' + fy], fb, g[(fx + 1) + ',' + fy]), y: fy + sub(g[fx + ',' + (fy - 1)], fb, g[fx + ',' + (fy + 1)]) };
   }
 
   function stabTick() {
@@ -1390,24 +1435,35 @@
     if (!active) { if (stabPrev || stabC.x || stabC.y) stabReset(); return; }
     var sw = video.videoWidth, sh = video.videoHeight, r = viewport.getBoundingClientRect();
     var a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
-    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), w = STW, h = Math.max(24, Math.round(STW * rh / rw));
+    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), asp = rw / rh, w = Math.max(48, Math.round(Math.sqrt(STW * STW * 0.9 * asp) / 2) * 2), h = Math.max(48, Math.round(w / asp / 2) * 2);
     var key = [w, h, state.s.toFixed(3), Math.round(state.x), Math.round(state.y)].join();
     if (stabCv.width !== w || stabCv.height !== h) { stabCv.width = w; stabCv.height = h; }
     try { stabCtx.drawImage(video, a.x, a.y, rw, rh, 0, 0, w, h); } catch (e) { return; }
-    var d = stabCtx.getImageData(0, 0, w, h).data, cur = new Float32Array(w * h), i, j;
-    for (i = 0, j = 0; i < d.length; i += 4, j++) cur[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-    if (key !== stabKey || !stabPrev || stabPrev.length !== cur.length) { stabKey = key; stabReset(); stabPrev = cur; return; }   // nagyítás vagy mozgatás után újraindul
-    var est = stabEstimate(stabPrev, cur, w, h);
+    var d = stabCtx.getImageData(0, 0, w, h).data, cur = { d: new Float32Array(w * h), w: w, h: h }, i, j;
+    for (i = 0, j = 0; i < d.length; i += 4, j++) cur.d[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    cur.half = stabHalf(cur.d, w, h);
+    if (key !== stabKey || !stabPrev || stabPrev.d.length !== cur.d.length) { stabKey = key; stabReset(); stabPrev = cur; stabDraw(); return; }   // nagyítás vagy mozgatás után újraindul
+    var est = stabEstimate(stabPrev, cur);
     stabPrev = cur;
-    if (!est) { stabP.x = stabP.y = stabS.x = stabS.y = 0; stabApply(stabC.x * 0.8, stabC.y * 0.8); return; }
-    var k = r.width / w;                                                  // kis kép képpontja -> képernyő képpontja
+    if (!est) {
+      // bizonytalan képkocka: nem ugrik vissza, hanem lágyan elengedi a korrekciót
+      if (++stabFail > 8) { stabP.x = stabP.y = stabS.x = stabS.y = 0; }
+      stabApply(stabC.x * 0.88, stabC.y * 0.88); return;
+    }
+    stabFail = 0;
+    if (Math.abs(est.x) < 0.04) est.x = 0; if (Math.abs(est.y) < 0.04) est.y = 0;   // a becslés zaja ne mozgassa az álló képet
+    var k = r.width / w, lim = Math.min(80, 50 * (state.s - 1));           // kis kép képpontja -> képernyő képpontja; a korrekció tartaléka
     stabP.x += est.x * k; stabP.y += est.y * k;
-    stabS.x += (stabP.x - stabS.x) * 0.1; stabS.y += (stabP.y - stabS.y) * 0.1;
-    var lim = Math.min(70, 45 * (state.s - 1)), cx = stabS.x - stabP.x, cy = stabS.y - stabP.y;
-    // ha a korrekció elérné a határt (tartós elmozdulás), a kisimított út felzárkózik
-    if (cx > lim) { stabS.x = stabP.x + lim; cx = lim; } else if (cx < -lim) { stabS.x = stabP.x - lim; cx = -lim; }
-    if (cy > lim) { stabS.y = stabP.y + lim; cy = lim; } else if (cy < -lim) { stabS.y = stabP.y - lim; cy = -lim; }
-    stabApply(cx, cy);
+    // A kisimított út: a remegés tartományában lassan követ (nyugodt kép), csak nagy, tartós eltérésnél gyorsul fel (szándékos mozgás)
+    var ex = stabP.x - stabS.x, ey = stabP.y - stabS.y, e = Math.sqrt(ex * ex + ey * ey), al = 0.04 + 0.22 * Math.max(0, Math.min(1, (e - lim * 0.6) / (lim * 0.6 + 1)));
+    stabS.x += ex * al; stabS.y += ey * al;
+    var tx = stabS.x - stabP.x, ty = stabS.y - stabP.y;
+    // lágy határ: a tartalék szélén nem ütközik, hanem fokozatosan elfogy
+    var tm = Math.sqrt(tx * tx + ty * ty);
+    if (tm > 1e-3) { var sc = lim * Math.tanh(tm / (lim + 1e-3)) / tm; tx *= sc; ty *= sc; }
+    if (tm > lim * 1.6) { stabS.x = stabP.x + tx; stabS.y = stabP.y + ty; }   // tartós elmozdulásnál a kisimított út felzárkózik
+    // a kimenet simítása: a képkockánkénti apró becslési hibák nem látszanak rángásként
+    stabApply(stabC.x + (tx - stabC.x) * 0.8, stabC.y + (ty - stabC.y) * 0.8);
   }
 
   (function stabLoop() {

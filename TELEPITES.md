@@ -60,7 +60,7 @@ A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti v
 
 A szűrők sorában két kapcsoló van:
 
-- **Stabil** (alapból be): nagyításnál a kéz remegését digitálisan ellensúlyozza az élő képen. A lassú, szándékos mozgást követi, a gyors remegést kiveszi. 1× nagyításnál nem dolgozik, mert ott nincs tartalék a kép szélén. A rögzített képet és a mentést nem érinti. Egyszínű felületen, ahol nincs mihez igazítani, magától kikapcsol.
+- **Stabil** (alapból be): nagyításnál a kéz remegését digitálisan ellensúlyozza az élő képen. A stabilizált képet az app maga rajzolja ki, így a mozgás sima, nem rángat. A lassú, szándékos mozgást követi, a gyors remegést kiveszi. 1× nagyításnál nem dolgozik, mert ott nincs tartalék a kép szélén. A rögzített képet és a mentést nem érinti. Egyszínű felületen, ahol nincs mihez igazítani, lágyan elengedi a korrekciót.
 - **60 fps:** a kamera kisebb felbontáson, de másodpercenként kétszer annyi képkockával megy, ezért a mozgás folyékonyabb. Az ára, hogy erős nagyításnál és a rögzített képen kevesebb a részlet. Apró részletek vizsgálatához kapcsold ki. Bekapcsoláskor az app kiírja, milyen felbontást és képkockaszámot adott a telefon, mert nem minden modell és objektív tud 60-at. A beállítást az app megjegyzi.
 
 ## Mintaokmány-tár
@@ -86,5 +86,6 @@ A mintaképek csak a telefonon tárolódnak (az app böngészőtárolójában), 
 ## Tudnivalók
 
 - A nagyítás digitális. Az app a legnagyobb elérhető felbontást kéri a kamerától, hogy nagyításkor is éles maradjon.
-- Zseblámpa-gomb csak ott jelenik meg a felső sávban, ahol a böngésző engedi a vaku vezérlését. iPhone Safariban általában nem engedi, ilyenkor a gomb nem látszik.
+- A zseblámpa gomb a felső sávban akkor jelenik meg, ha a telefon az éppen használt objektívhez enged vakuvezérlést (jellemzően a fő kameránál). Más objektívre váltva eltűnhet, visszaváltva újra megjelenik.
+- A kezdőlap alján látszik a verziószám. Ha feltöltés után még a régi számot látod, zárd be teljesen az appot, és nyisd meg újra.
 - Új verzió feltöltése után az app a következő indításkor frissül.
