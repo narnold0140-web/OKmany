@@ -1,6 +1,6 @@
 // Csak az app saját fájljait tárolja el, hogy offline is elinduljon.
 // Kamerakép és pillanatkép soha nem kerül ide.
-const CACHE = 'dokunezo-v14';
+const CACHE = 'dokunezo-v19';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {
