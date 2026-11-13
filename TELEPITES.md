@@ -86,4 +86,5 @@ A mintaképek csak a telefonon tárolódnak (az app böngészőtárolójában), 
 ## Tudnivalók
 
 - A nagyítás digitális. Az app a legnagyobb elérhető felbontást kéri a kamerától, hogy nagyításkor is éles maradjon.
+- Zseblámpa-gomb csak ott jelenik meg a felső sávban, ahol a böngésző engedi a vaku vezérlését. iPhone Safariban általában nem engedi, ilyenkor a gomb nem látszik.
 - Új verzió feltöltése után az app a következő indításkor frissül.

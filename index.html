@@ -354,6 +354,9 @@
     <button class="round" id="specBtn" aria-label="Mintaokmány-tár">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/></svg>
       </button>
+    <button class="round" id="torch" hidden aria-label="Zseblámpa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v4l-1.5 2v3.5a1.5 1.5 0 0 1-3 0V8L9 6z"/><path d="M12 15v7"/></svg>
+    </button>
     </div>
   </div>
 
@@ -495,10 +498,10 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var app = $('app'), viewport = $('viewport'), stage = $('stage'), video = $('video'), frozen = $('frozen');
-  var slider = $('slider'), zoomLabel = $('zoomLabel');
+  var slider = $('slider'), zoomLabel = $('zoomLabel'), torchBtn = $('torch');
   var MAX_ZOOM = 10;
 
-  var stream = null, track = null, wakeLock = null, shareUrl = null;
+  var stream = null, track = null, torchOn = false, wakeLock = null, shareUrl = null;
   var currentDeviceId = null, lensList = [];
   var lensRow = $('lensGroup'), lensBox = $('lenses');
   var bottom = $('bottom'), topBar = $('top'), guide = $('guide');
@@ -768,6 +771,8 @@
     track = stream.getVideoTracks()[0];
     var settings = (track && track.getSettings) ? track.getSettings() : {};
     currentDeviceId = id || settings.deviceId || null;
+    var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
+    torchBtn.hidden = !(caps && caps.torch);
     showScreen(null);
     requestWakeLock();
     loadLenses();
@@ -831,8 +836,22 @@
 
   function stopCamera() {
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
-    stream = null; track = null;
+    stream = null; track = null; torchOn = false;
+    torchBtn.classList.remove('on');
   }
+
+  torchBtn.addEventListener('click', async function () {
+    if (!track) return;
+    try {
+      torchOn = !torchOn;
+      await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+      torchBtn.classList.toggle('on', torchOn);
+    } catch (e) {
+      torchOn = false;
+      torchBtn.classList.remove('on');
+      toast('A zseblámpa nem kapcsolható be.');
+    }
+  });
 
   async function requestWakeLock() {
     try {
