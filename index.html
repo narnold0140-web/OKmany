@@ -59,11 +59,6 @@
   #guide .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 16px; }
   #guide .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 16px; }
   #guide .br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 16px; }
-  #guide span {
-    position: absolute; left: 50%; top: calc(100% + 18px); transform: translateX(-50%); white-space: nowrap;
-    font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 999px; background: rgba(0,0,0,.38);
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  }
 
   #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s ease-out; }
   #flash.on { opacity: .8; transition: opacity .06s; }
@@ -95,12 +90,6 @@
   .tools .round svg { width: 19px; height: 19px; }
 
   /* Tükröződés-jelző */
-  #glare { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-  .is-frozen #glare, .no-glare #glare { display: none; }
-  #glareNote { display: none; color: var(--warn); font-weight: 600; }
-  .is-glare:not(.is-frozen) #glareNote { display: inline; }
-  .is-glare:not(.is-frozen) .nosave { display: none; }
-  .is-glare:not(.is-frozen) .dot { background: var(--warn); }
 
   /* Lupe */
   #lupe {
@@ -228,20 +217,6 @@
   .pill { white-space: nowrap; }
 
   /* Saját keretméret */
-  #customDlg {
-    position: absolute; inset: 0; z-index: 9; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center;
-    padding: calc(var(--sat) + 20px) 20px calc(var(--sab) + 20px);
-  }
-  #customDlg[hidden] { display: none; }
-  #customDlg .card { width: 100%; max-width: 340px; background: #10181a; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-  #customDlg h2 { margin: 0; font-size: 18px; }
-  #customDlg .fields { display: flex; gap: 10px; }
-  #customDlg label { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
-  #customDlg input {
-    width: 100%; font-size: 17px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2);
-    background: rgba(255,255,255,.08); color: var(--text); -webkit-user-select: text; user-select: text;
-  }
-  #customDlg .btns { display: flex; gap: 10px; }
 
   /* Alsó panel */
   #bottom {
@@ -356,7 +331,6 @@
     <div id="stage">
       <video id="video" playsinline muted autoplay></video>
       <canvas id="frozen"></canvas>
-      <canvas id="glare"></canvas>
       <img id="overlayImg" alt="" hidden>
     </div>
     <canvas id="upCv"></canvas>
@@ -364,21 +338,15 @@
 
   <div id="specPane" hidden><div id="specStage"><img id="specImg" alt=""></div></div>
 
-  <div id="guide" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i><span>Igazítsd az okmányt a keretbe</span></div>
+  <div id="guide" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
   <div id="flash"></div>
   <canvas id="lupe" width="264" height="264" hidden></canvas>
 
   <div id="top">
-    <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small class="nosave">· nincs mentve</small><small id="glareNote">· tükröződés!</small></div>
+    <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small class="nosave">· nincs mentve</small></div>
     <div class="tools">
-      <button class="round on" id="glareBtn" aria-label="Tükröződés-jelző" aria-pressed="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-      </button>
       <button class="round" id="frameBtn" aria-label="Keret váltása">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"/></svg>
-      </button>
-      <button class="round" id="rotateFrame" aria-label="Keret elforgatása">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></svg>
       </button>
     <button class="round" id="upBtn" aria-label="Alnyomat-nézet" aria-pressed="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7c3-3 6 3 9 0s6 3 9 0"/><path d="M3 12c3-3 6 3 9 0s6 3 9 0"/><path d="M3 17c3-3 6 3 9 0s6 3 9 0"/></svg>
@@ -386,9 +354,6 @@
     <button class="round" id="specBtn" aria-label="Mintaokmány-tár">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/></svg>
       </button>
-    <button class="round" id="torch" hidden aria-label="Zseblámpa">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v4l-1.5 2v3.5a1.5 1.5 0 0 1-3 0V8L9 6z"/><path d="M12 15v7"/></svg>
-    </button>
     </div>
   </div>
 
@@ -408,7 +373,6 @@
       <div id="upModes">
         <button class="chip" data-u="sharp" aria-pressed="true">Éles</button>
         <button class="chip" data-u="line" aria-pressed="false">Vonal</button>
-        <button class="chip" data-u="rainbow" aria-pressed="false">Szivárvány</button>
       </div>
       <button class="chip" id="ptBtn" aria-pressed="false">Tábla</button>
       <button class="step" id="upClose" aria-label="Alnyomat-nézet bezárása">×</button>
@@ -520,19 +484,6 @@
     </div>
   </section>
 
-  <div id="customDlg" hidden>
-    <div class="card">
-      <h2>Saját keretméret</h2>
-      <div class="fields">
-        <label>Szélesség (mm)<input id="cw" type="number" inputmode="decimal" min="10" max="600" step="0.1"></label>
-        <label>Magasság (mm)<input id="ch" type="number" inputmode="decimal" min="10" max="600" step="0.1"></label>
-      </div>
-      <div class="btns">
-        <button class="btn" id="cCancel">Mégse</button>
-        <button class="btn primary" id="cOk">Kész</button>
-      </div>
-    </div>
-  </div>
 
   <div id="insetProbe" aria-hidden="true"></div>
   <div id="toast" role="status"></div>
@@ -544,15 +495,13 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var app = $('app'), viewport = $('viewport'), stage = $('stage'), video = $('video'), frozen = $('frozen');
-  var slider = $('slider'), zoomLabel = $('zoomLabel'), torchBtn = $('torch');
+  var slider = $('slider'), zoomLabel = $('zoomLabel');
   var MAX_ZOOM = 10;
 
-  var stream = null, track = null, torchOn = false, wakeLock = null, shareUrl = null;
+  var stream = null, track = null, wakeLock = null, shareUrl = null;
   var currentDeviceId = null, lensList = [];
   var lensRow = $('lensGroup'), lensBox = $('lenses');
   var bottom = $('bottom'), topBar = $('top'), guide = $('guide');
-  var glareCv = $('glare'), glareCtx = glareCv.getContext('2d'), glareOn = true, glareState = false, glareTimer = null;
-  var gCv = document.createElement('canvas'), gCtx = gCv.getContext('2d', { willReadFrequently: true });
   var lupe = $('lupe'), lupeCtx = lupe.getContext('2d');
   var frozenRaw = document.createElement('canvas'), capturing = false;
   var sCv = document.createElement('canvas'), sCtx = sCv.getContext('2d', { willReadFrequently: true });
@@ -627,7 +576,7 @@
   var lupeTimer = null, lupeActive = false, lupePos = { x: 0, y: 0 };
 
   function isControl(el) {
-    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #customDlg, #shareView, #specLib, .screen, #bottom .row, #ptCard'));
+    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard'));
   }
 
   function doubleTap(x, y) {
@@ -819,12 +768,9 @@
     track = stream.getVideoTracks()[0];
     var settings = (track && track.getSettings) ? track.getSettings() : {};
     currentDeviceId = id || settings.deviceId || null;
-    var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
-    torchBtn.hidden = !(caps && caps.torch);
     showScreen(null);
     requestWakeLock();
     loadLenses();
-    startGlare();
     return true;
   }
 
@@ -885,9 +831,7 @@
 
   function stopCamera() {
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
-    stream = null; track = null; torchOn = false;
-    torchBtn.classList.remove('on');
-    stopGlare();
+    stream = null; track = null;
   }
 
   async function requestWakeLock() {
@@ -896,18 +840,6 @@
     } catch (e) { /* nem kötelező */ }
   }
 
-  torchBtn.addEventListener('click', async function () {
-    if (!track) return;
-    try {
-      torchOn = !torchOn;
-      await track.applyConstraints({ advanced: [{ torch: torchOn }] });
-      torchBtn.classList.toggle('on', torchOn);
-    } catch (e) {
-      torchOn = false;
-      torchBtn.classList.remove('on');
-      toast('A zseblámpa nem kapcsolható be.');
-    }
-  });
 
   $('startBtn').addEventListener('click', function () { startCamera(); });
   $('retryBtn').addEventListener('click', function () { startCamera(); });
@@ -1019,70 +951,24 @@
     }
   });
 
-  /* ----- Tükröződés-jelző ----- */
-
-  function analyzeGlare() {
-    if (!glareOn || isFrozen() || capturing || document.hidden || !video.videoWidth || upOn) return;
-    var vw = video.videoWidth, vh = video.videoHeight, L = 192, gw, gh;
-    if (vw >= vh) { gw = L; gh = Math.max(1, Math.round(L * vh / vw)); } else { gh = L; gw = Math.max(1, Math.round(L * vw / vh)); }
-    if (glareCv.width !== gw || glareCv.height !== gh) { glareCv.width = gw; glareCv.height = gh; gCv.width = gw; gCv.height = gh; }
-    gCtx.drawImage(video, 0, 0, gw, gh);
-    var src = gCtx.getImageData(0, 0, gw, gh).data;
-    var out = glareCtx.createImageData(gw, gh), o = out.data;
-    var gr = guide.getBoundingClientRect();
-    var a = screenToSrc(gr.left, gr.top, vw, vh), b = screenToSrc(gr.right, gr.bottom, vw, vh);
-    var x0 = Math.max(0, Math.floor(a.x * gw / vw)), x1 = Math.min(gw, Math.ceil(b.x * gw / vw));
-    var y0 = Math.max(0, Math.floor(a.y * gh / vh)), y1 = Math.min(gh, Math.ceil(b.y * gh / vh));
-    var inCnt = 0, inHit = 0;
-    for (var y = 0; y < gh; y++) {
-      for (var x = 0; x < gw; x++) {
-        var i = (y * gw + x) * 4;
-        var hit = Math.min(src[i], src[i + 1], src[i + 2]) >= 250;   // minden csatorna kiégett
-        if (hit) { o[i] = 255; o[i + 1] = 171; o[i + 2] = 64; o[i + 3] = 170; }
-        if (x >= x0 && x < x1 && y >= y0 && y < y1) { inCnt++; if (hit) inHit++; }
-      }
-    }
-    glareCtx.putImageData(out, 0, 0);
-    var frac = inCnt ? inHit / inCnt : 0;
-    if (frac > 0.025) glareState = true; else if (frac < 0.012) glareState = false;
-    app.classList.toggle('is-glare', glareState);
-  }
-  function startGlare() { stopGlare(); if (glareOn) glareTimer = setInterval(analyzeGlare, 250); }
-  function stopGlare() {
-    if (glareTimer) { clearInterval(glareTimer); glareTimer = null; }
-    glareCtx.clearRect(0, 0, glareCv.width, glareCv.height);
-    glareState = false; app.classList.remove('is-glare');
-  }
-  $('glareBtn').addEventListener('click', function () {
-    glareOn = !glareOn;
-    this.classList.toggle('on', glareOn); this.setAttribute('aria-pressed', String(glareOn));
-    app.classList.toggle('no-glare', !glareOn);
-    if (glareOn && !isFrozen() && track) startGlare(); else stopGlare();
-    toast(glareOn ? 'Tükröződés-jelző bekapcsolva' : 'Tükröződés-jelző kikapcsolva');
-  });
-
   /* ----- Váltható keret ----- */
 
   var FRAMES = [
     { name: 'Bankkártya (ID-1)', w: 85.6, h: 54 },
-    { name: 'Útlevél', w: 125, h: 88 },
-    { name: 'Saját méret', w: 100, h: 70, custom: true }
+    { name: 'Útlevél', w: 125, h: 88 }
   ];
-  var frameIdx = 0, frameRot = false;
+  var frameIdx = 0;
   try {
     var saved = JSON.parse(localStorage.getItem('dokunezo-frame') || 'null');
     if (saved) {
-      if (saved.w >= 10 && saved.w <= 600 && saved.h >= 10 && saved.h <= 600) { FRAMES[2].w = saved.w; FRAMES[2].h = saved.h; }
       if (saved.i >= 0 && saved.i < FRAMES.length) frameIdx = saved.i | 0;
-      frameRot = !!saved.r;
     }
   } catch (e) { /* nem kötelező */ }
   function saveFrame() {
-    try { localStorage.setItem('dokunezo-frame', JSON.stringify({ i: frameIdx, r: frameRot, w: FRAMES[2].w, h: FRAMES[2].h })); } catch (e) {}
+    try { localStorage.setItem('dokunezo-frame', JSON.stringify({ i: frameIdx })); } catch (e) {}
   }
   function frameName() {
-    var f = FRAMES[frameIdx];
-    return f.name + (f.custom ? ' (' + f.w + '×' + f.h + ' mm)' : '');
+    return FRAMES[frameIdx].name;
   }
 
   // Osztott nézet: a nézet a fele, a másik felén a minta; a két fél azonos méretű, így a nagyítás/mozgatás szinkronban marad.
@@ -1107,8 +993,7 @@
     [ovImg, specImg].forEach(function (im) {
       var st = im.style;
       st.left = cx + 'px'; st.top = cy + 'px';
-      if (frameRot && activeSpec) { st.width = h + 'px'; st.height = w + 'px'; st.transform = 'translate(-50%,-50%) rotate(90deg)'; }
-      else { st.width = w + 'px'; st.height = h + 'px'; st.transform = 'translate(-50%,-50%)'; }
+      { st.width = w + 'px'; st.height = h + 'px'; st.transform = 'translate(-50%,-50%)'; }
     });
   }
 
@@ -1117,17 +1002,16 @@
     var vw = viewport.clientWidth, vh = viewport.clientHeight;
     if (!vw || !vh) return;
     var f = frameOverride || FRAMES[frameIdx], asp = f.w / f.h;
-    if (frameRot) asp = 1 / asp;
     var side = bottom.offsetWidth < app.clientWidth * 0.9;
     document.documentElement.style.setProperty('--topH', topBar.offsetHeight + 'px');
     var pcs = getComputedStyle($('insetProbe')), insL = parseFloat(pcs.paddingLeft) || 0, insR = parseFloat(pcs.paddingRight) || 0, insB = parseFloat(pcs.paddingBottom) || 0;
     var top = topBar.offsetHeight + 8, left = insL, right = vw, bot = vh;
     if (!splitOn) { if (side) right = vw - bottom.offsetWidth; else bot = bottom.offsetTop; }
-    if (side) bot = vh - insB;   // fekvő módban az alsó biztonsági sáv fölött marad a felirat
+    if (side) bot = vh - insB;   // fekvő módban az alsó biztonsági sáv fölött marad a keret
     var availW = Math.max(80, right - left - 48);
-    var availH = Math.max(60, bot - top - 56);   // alul hely a felirat számára
+    var availH = Math.max(60, bot - top - 20);
     var w = Math.min(availW, availH * asp, 640), h = w / asp;
-    var cx = (left + right) / 2, cy = top + (bot - 56 - top) / 2 + (side && !splitOn ? 6 : 0);
+    var cx = (left + right) / 2, cy = top + (bot - 20 - top) / 2 + 4;
     guide.style.width = w + 'px'; guide.style.height = h + 'px';
     guide.style.left = cx + 'px'; guide.style.top = cy + 'px';
     placeSpec(w, h, cx, cy);
@@ -1138,23 +1022,8 @@
 
   $('frameBtn').addEventListener('click', function () {
     if (frameOverride) { toast('Összehasonlítás közben a keret a mintához igazodik.'); return; }
-    var next = (frameIdx + 1) % FRAMES.length;
-    if (FRAMES[next].custom) {
-      $('cw').value = FRAMES[2].w; $('ch').value = FRAMES[2].h;
-      $('customDlg').hidden = false;
-      return;
-    }
-    frameIdx = next; saveFrame(); layoutGuide(); toast('Keret: ' + frameName());
+    frameIdx = (frameIdx + 1) % FRAMES.length; saveFrame(); layoutGuide(); toast('Keret: ' + frameName());
   });
-  $('rotateFrame').addEventListener('click', function () { frameRot = !frameRot; saveFrame(); layoutGuide(); });
-  $('cCancel').addEventListener('click', function () { $('customDlg').hidden = true; });
-  $('cOk').addEventListener('click', function () {
-    var w = parseFloat(String($('cw').value).replace(',', '.')), h = parseFloat(String($('ch').value).replace(',', '.'));
-    if (!(w >= 10 && w <= 600 && h >= 10 && h <= 600)) { toast('Adj meg 10 és 600 mm közötti értéket.'); return; }
-    FRAMES[2].w = w; FRAMES[2].h = h; frameIdx = 2;
-    saveFrame(); layoutGuide(); $('customDlg').hidden = true; toast('Keret: ' + frameName());
-  });
-
   $('panelToggle').addEventListener('click', function () {
     var min = app.classList.toggle('min');
     this.setAttribute('aria-expanded', String(!min));
@@ -1382,19 +1251,10 @@
     }
   }
 
-  // RGBA képpontok helyben történő feldolgozása: sharp | line | rainbow
+  // RGBA képpontok helyben történő feldolgozása: sharp | line
   function processUpPixels(d, w, h, mode) {
     var n = w * h, i, j, l;
     if (!uL || uL.length !== n) { uL = new Float32Array(n); uT = new Float32Array(n); uB = new Float32Array(n); }
-    if (mode === 'rainbow') {
-      for (i = 0; i < d.length; i += 4) {
-        l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-        d[i] = (l + (d[i] - l) * 2.6 - 128) * 1.3 + 128;
-        d[i + 1] = (l + (d[i + 1] - l) * 2.6 - 128) * 1.3 + 128;
-        d[i + 2] = (l + (d[i + 2] - l) * 2.6 - 128) * 1.3 + 128;
-      }
-      return;
-    }
     for (i = 0, j = 0; i < d.length; i += 4, j++) uL[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
     if (mode === 'line') {
       boxBlur(uL, uB, uT, w, h, 2);
@@ -1453,7 +1313,6 @@
     upOn = true; upKey = '';
     app.classList.add('up');
     $('upRow').hidden = false; $('upBtn').classList.add('on'); $('upBtn').setAttribute('aria-pressed', 'true');
-    stopGlare();
     if (!upRaf) upRaf = requestAnimationFrame(upLoop);
     // makróhoz az ultraszéles objektív (ahol van), a Pro modellek közelről is élesítenek vele
     var ul = null;
@@ -1471,7 +1330,6 @@
     upKey = ''; ptToggle(false);
     upCtx.clearRect(0, 0, upCv.width, upCv.height);
     if (upPrevLens) { var id = upPrevLens; upPrevLens = null; await switchLens(id); }
-    else if (track) startGlare();
   }
 
   $('upBtn').addEventListener('click', function () { if (upOn) exitUp(); else enterUp(); });
@@ -1698,7 +1556,6 @@
       return;
     }
     capturing = false;
-    stopGlare();
     app.classList.add('is-frozen');
     $('modeLabel').textContent = 'Rögzített kép';
   }
@@ -1711,7 +1568,6 @@
     closeShareView();
     stopLupe();
     resetView();
-    if (track) startGlare();
   }
 
   $('shutter').addEventListener('click', freeze);

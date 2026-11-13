@@ -36,9 +36,8 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 ## Funkciók
 
 - **Legélesebb képkocka:** a pillanatkép gombra az app néhány képkockát rögzít, és a legélesebbet tartja meg.
-- **Tükröződés-jelző:** a napocska gombbal kapcsolható. A kiégett, fényvisszaverő foltokat narancssárgán jelöli az élő képen, és ha a keretben sok van belőlük, a felső sávban figyelmeztet. Dönts a telefonnal, amíg el nem tűnnek.
 - **Képszűrők:** Kontraszt, Élesítés, Szürke, Inverz. Az Élesítés csak a rögzített képen látszik. A szűrők a mentett képre is rákerülnek.
-- **Váltható keret:** a keret gombbal Bankkártya (ID-1), Útlevél és Saját méret között válthatsz, a környíl gombbal elforgathatod.
+- **Váltható keret:** a keret gombbal Bankkártya (ID-1) és Útlevél méret között válthatsz.
 - **Lupe:** hosszan nyomd az ujjad a képen, és a kép alatt egy kerek nagyító követi. Felengedésre eltűnik.
 - **Panel elrejtése:** a panel tetején lévő kis vonalra koppintva a vezérlők eltűnnek, csak a zárógomb marad.
 - **Dupla koppintás** az egész képernyőn (a gombokon kívül) 3×-ra nagyít, a következő visszaállítja. Két ujjal csípve a nagyítás az ujjaid között lévő pontnál marad.
@@ -48,7 +47,7 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti vizsgálathoz való (alnyomat, mikroszöveg, guilloche).
 
 - Bekapcsoláskor az app átvált az ultraszéles (0,5×) objektívre, ahol van, kilépéskor visszaáll az előzőre. Közelről ez csak a Pro modelleken élesít.
-- **Éles:** erős részletkiemelés. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik. **Szivárvány:** felerősített színek, a színváltó (OVD) festékek és az átmenetes nyomat kiemeléséhez.
+- **Éles:** erős részletkiemelés. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik.
 - A nézet a látott területet a kamera valódi felbontásán dolgozza fel, ezért nagyításkor is valódi részletet mutat.
 - A Mentés a feldolgozott képet menti, amit éppen látsz.
 - **Tábla (nyomtatási technika segédtábla):** kilenc lapon mutatja, hogyan néz ki erős nagyításban az okmánygyártásban használt nyomtatás, és hogyan az irodai nyomtató vagy a másolat. A kamerában látott képet a rajzhoz hasonlítod, az Előző és a Tovább gombbal lapozol.
@@ -81,11 +80,10 @@ A mintaképek csak a telefonon tárolódnak (az app böngészőtárolójában), 
 ## Adatvédelem
 
 - A kép csak a telefon memóriájában van, és kilépéskor vagy háttérbe váltáskor törlődik.
-- Az app nem küld el semmit sehova. Az app fájljai, a keret beállítása (méret, elforgatás), a 60 fps kapcsoló állása és az általad betöltött mintaképek a telefonon tárolódnak, hogy internet nélkül is elinduljon. A vizsgált okmányról készült képet az app nem tárolja.
+- Az app nem küld el semmit sehova. Az app fájljai, a választott keretméret, a 60 fps kapcsoló állása és az általad betöltött mintaképek a telefonon tárolódnak, hogy internet nélkül is elinduljon. A vizsgált okmányról készült képet az app nem tárolja.
 - Képernyőképet az app nem tud megakadályozni.
 
 ## Tudnivalók
 
 - A nagyítás digitális. Az app a legnagyobb elérhető felbontást kéri a kamerától, hogy nagyításkor is éles maradjon.
-- Zseblámpa-gomb csak ott jelenik meg, ahol a böngésző engedi. iPhone Safariban általában nincs.
 - Új verzió feltöltése után az app a következő indításkor frissül.
