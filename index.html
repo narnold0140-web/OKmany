@@ -188,7 +188,10 @@
   .up.up-gl #upCv { display: none; }
   .up #guide { opacity: 0; }
   .up #chipRow { display: none; }
-  #upRow[hidden] { display: none; }
+  #upRow[hidden], #upSetRow[hidden] { display: none; }
+  #upSetRow { justify-content: center; flex-wrap: wrap; gap: 6px 12px; }
+  .upset { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .upset input { width: 96px; }
   /* Nyomtatási technika segédtábla */
   #ptCard {
     position: absolute; left: calc(var(--sal) + 12px); top: calc(var(--topH, 56px) + 8px); z-index: 4; width: min(272px, 74%);
@@ -385,8 +388,14 @@
         <button class="chip" data-u="sharp" aria-pressed="true">Éles</button>
         <button class="chip" data-u="line" aria-pressed="false">Vonal</button>
       </div>
+      <button class="chip" id="upInv" aria-pressed="false">Inverz</button>
       <button class="chip" id="ptBtn" aria-pressed="false">Tábla</button>
       <button class="step" id="upClose" aria-label="Alnyomat-nézet bezárása">×</button>
+    </div>
+    <div class="row" id="upSetRow" hidden>
+      <label class="upset"><span>Erősség</span><input type="range" id="upGain" min="30" max="300" value="100" aria-label="A kiemelés erőssége"></label>
+      <label class="upset"><span>Finomság</span><input type="range" id="upRad" min="10" max="40" value="10" aria-label="A kiemelt vonalak vastagsága"></label>
+      <button class="mini" id="upSetReset">Alap</button>
     </div>
     <div class="row" id="cmpRow" hidden>
       <div id="cmpMode">
@@ -445,7 +454,7 @@
     <p class="welcome">Te vagy az első védvonal első bástyája. Az éles szemed és a türelmed másokat véd: minden felfedett hamisítvány biztonságosabbá teszi a határt, vele együtt az országot is. Nézd át az okmányokat alaposan, bízz a szakmai megérzéseidben, és ne hagyd, hogy a rutin elaltassa a figyelmedet. Jó munkát a mai műszakhoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v25</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v27</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -1268,7 +1277,7 @@
   var upSrc = document.createElement('canvas'), upSrcCtx = upSrc.getContext('2d', { willReadFrequently: true });
 
   /* PURE-START */
-  var uL = null, uT = null, uB = null;
+  var uL = null, uT = null, uB = null, upGain = 1, upRad = 1, upInv = false;   // upGain: a kiemelés szorzója, upRad: a vizsgált szerkezet mérete (1 = legfinomabb)
 
   // Dobozszűrő (szétválasztható), a széleken a szélső képpontot ismétli.
   function boxBlur(src, dst, tmp, w, h, r) {
@@ -1297,17 +1306,18 @@
     if (!uL || uL.length !== n) { uL = new Float32Array(n); uT = new Float32Array(n); uB = new Float32Array(n); }
     for (i = 0, j = 0; i < d.length; i += 4, j++) uL[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
     if (mode === 'line') {
-      boxBlur(uL, uB, uT, w, h, 2);
-      for (i = 0, j = 0; i < d.length; i += 4, j++) { var v = 128 + 5 * (uL[j] - uB[j]); d[i] = v; d[i + 1] = v; d[i + 2] = v; }
+      boxBlur(uL, uB, uT, w, h, Math.max(1, Math.round(2 * upRad)));
+      for (i = 0, j = 0; i < d.length; i += 4, j++) { var v = 128 + 5 * upGain * (uL[j] - uB[j]); d[i] = v; d[i + 1] = v; d[i + 2] = v; }
     } else {
-      boxBlur(uL, uB, uT, w, h, 1);
+      boxBlur(uL, uB, uT, w, h, Math.max(1, Math.round(upRad)));
       for (i = 0, j = 0; i < d.length; i += 4, j++) {
-        var dl = 2.6 * (uL[j] - uB[j]);
+        var dl = 2.6 * upGain * (uL[j] - uB[j]);
         d[i] = (d[i] + dl - 128) * 1.2 + 128;
         d[i + 1] = (d[i + 1] + dl - 128) * 1.2 + 128;
         d[i + 2] = (d[i + 2] + dl - 128) * 1.2 + 128;
       }
     }
+    if (upInv) { for (i = 0; i < d.length; i += 4) { d[i] = 255 - d[i]; d[i + 1] = 255 - d[i + 1]; d[i + 2] = 255 - d[i + 2]; } }   // a tömb magától 0..255 közé vág, ezért a fordítás a vágott értékre hat
   }
 
   /* PURE-END */
@@ -1332,17 +1342,18 @@
       var vs = 'attribute vec2 a;varying vec2 p;void main(){p=a*0.5+0.5;gl_Position=vec4(a,0.0,1.0);}';
       var fs = [
         '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
-        'uniform sampler2D t;uniform vec2 org,siz,px;uniform int mode;varying vec2 p;',
+        'uniform sampler2D t;uniform vec2 org,siz,px;uniform int mode;uniform float gain,rad,inv;varying vec2 p;',
         'float L(vec2 u){return dot(texture2D(t,u).rgb,vec3(0.299,0.587,0.114));}',
         'void main(){',
         ' vec2 uv=org+vec2(p.x,1.0-p.y)*siz; vec3 c=texture2D(t,uv).rgb; float l=dot(c,vec3(0.299,0.587,0.114)); float s=0.0;',
         ' if(mode==0){',
-        '  for(int j=-1;j<=1;j++){for(int i=-1;i<=1;i++){s+=L(uv+vec2(float(i),float(j))*px);}}',
-        '  float d=2.6*(l-s/9.0); gl_FragColor=vec4((c+d-0.5)*1.2+0.5,1.0);',
+        '  for(int j=-1;j<=1;j++){for(int i=-1;i<=1;i++){s+=L(uv+vec2(float(i),float(j))*px*rad);}}',
+        '  float d=2.6*gain*(l-s/9.0); gl_FragColor=vec4(clamp((c+d-0.5)*1.2+0.5,0.0,1.0),1.0);',
         ' }else{',
-        '  for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){s+=L(uv+vec2(float(i),float(j))*px);}}',
-        '  float v=0.5+5.0*(l-s/25.0); gl_FragColor=vec4(v,v,v,1.0);',
+        '  for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){s+=L(uv+vec2(float(i),float(j))*px*rad);}}',
+        '  float v=clamp(0.5+5.0*gain*(l-s/25.0),0.0,1.0); gl_FragColor=vec4(v,v,v,1.0);',
         ' }',
+        ' if(inv>0.5){gl_FragColor.rgb=1.0-gl_FragColor.rgb;}',
         '}'].join('\n');
       var mk = function (type, src) { var sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; };
       glProg = gl.createProgram(); gl.attachShader(glProg, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(glProg, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(glProg);
@@ -1353,7 +1364,7 @@
       glTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      ['org', 'siz', 'px', 'mode', 't'].forEach(function (k) { glU[k] = gl.getUniformLocation(glProg, k); });
+      ['org', 'siz', 'px', 'mode', 'gain', 'rad', 'inv', 't'].forEach(function (k) { glU[k] = gl.getUniformLocation(glProg, k); });
       gl.uniform1i(glU.t, 0);
       upGl.addEventListener('webglcontextlost', function (e) { e.preventDefault(); gl = null; glFail = true; app.classList.remove('up-gl'); });
       return true;
@@ -1374,10 +1385,13 @@
       gl.viewport(0, 0, ow, oh);
       gl.bindTexture(gl.TEXTURE_2D, glTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
-      gl.uniform2f(glU.org, a.x / sw, a.y / sh); gl.uniform2f(glU.siz, rw / sw, rh / sh);
+      var sf = rw / r.width, ox = a.x, oy = a.y;                              // stabilizálás: a kivágás eltolása a korrekcióval
+      if (stabOn && (stabC.x || stabC.y)) { ox = Math.max(0, Math.min(sw - rw, a.x - stabC.x * sf)); oy = Math.max(0, Math.min(sh - rh, a.y - stabC.y * sf)); }
+      gl.uniform2f(glU.org, ox / sw, oy / sh); gl.uniform2f(glU.siz, rw / sw, rh / sh);
       gl.uniform2f(glU.px, (rw / sw) / ow, (rh / sh) / oh);
-      gl.uniform1i(glU.mode, upMode === 'line' ? 1 : 0);
+      gl.uniform1i(glU.mode, upMode === 'line' ? 1 : 0); gl.uniform1f(glU.gain, upGain); gl.uniform1f(glU.rad, upRad); gl.uniform1f(glU.inv, upInv ? 1 : 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (window.__dnAfterUp) window.__dnAfterUp(upGl);   // csak az automata tesztek használják: a frissen kirajzolt kép mérése
     } catch (e) { glFail = true; gl = null; return false; }
     return true;
   }
@@ -1389,7 +1403,7 @@
     var fr = isFrozen(), el = fr ? frozen : video;
     var sw = fr ? frozen.width : video.videoWidth, sh = fr ? frozen.height : video.videoHeight;
     if (!sw || !sh || sw < 8 || sh < 8) return;
-    var key = fr ? [upMode, state.s, state.x, state.y, sw].join() : '';
+    var key = fr ? [upMode, upGain, upRad, upInv, state.s, state.x, state.y, sw].join() : '';
     if (!force && fr && key === upKey) return;   // rögzített képnél csak változáskor számol újra
     upKey = key;
     var r = viewport.getBoundingClientRect();
@@ -1408,7 +1422,7 @@
   function upLoop(ts) {
     if (!upOn) { upRaf = 0; return; }
     upRaf = requestAnimationFrame(upLoop);
-    if (!glFail && !isFrozen()) { renderUp(false); return; }
+    if (!glFail && !isFrozen()) { if (!stabDriving()) renderUp(false); return; }
     if (ts - upLast >= 70) { upLast = ts; renderUp(false); }
   }
 
@@ -1416,7 +1430,7 @@
     if (upOn) return;
     upOn = true; upKey = '';
     app.classList.add('up');
-    $('upRow').hidden = false; $('upBtn').classList.add('on'); $('upBtn').setAttribute('aria-pressed', 'true');
+    $('upRow').hidden = false; $('upSetRow').hidden = false; $('upBtn').classList.add('on'); $('upBtn').setAttribute('aria-pressed', 'true');
     if (!upRaf) upRaf = requestAnimationFrame(upLoop);
     // makróhoz az ultraszéles objektív (ahol van), a Pro modellek közelről is élesítenek vele
     var ul = null;
@@ -1430,7 +1444,7 @@
     if (!upOn) return;
     upOn = false;
     app.classList.remove('up'); app.classList.remove('up-gl');
-    $('upRow').hidden = true;
+    $('upRow').hidden = true; $('upSetRow').hidden = true;
     $('upBtn').classList.remove('on'); $('upBtn').setAttribute('aria-pressed', 'false');
     upKey = ''; ptToggle(false);
     upCtx.clearRect(0, 0, upCv.width, upCv.height);
@@ -1439,6 +1453,20 @@
 
   $('upBtn').addEventListener('click', function () { if (upOn) exitUp(); else enterUp(); });
   $('upClose').addEventListener('click', exitUp);
+  // Beállítások: a telefon megjegyzi őket
+  function upSetApply(save) {
+    upGain = (+$('upGain').value) / 100; upRad = (+$('upRad').value) / 10; upKey = '';
+    if (save) { try { localStorage.setItem('dn_up', JSON.stringify({ g: +$('upGain').value, r: +$('upRad').value })); } catch (e) {} }
+    renderUp(true);
+  }
+  try {
+    var upSaved = JSON.parse(localStorage.getItem('dn_up') || 'null');
+    if (upSaved && upSaved.g >= 30 && upSaved.g <= 300 && upSaved.r >= 10 && upSaved.r <= 40) { $('upGain').value = upSaved.g; $('upRad').value = upSaved.r; upGain = upSaved.g / 100; upRad = upSaved.r / 10; }
+  } catch (e) {}
+  $('upInv').addEventListener('click', function () { upInv = !upInv; this.setAttribute('aria-pressed', String(upInv)); upKey = ''; renderUp(true); });
+  $('upGain').addEventListener('input', function () { upSetApply(true); });
+  $('upRad').addEventListener('input', function () { upSetApply(true); });
+  $('upSetReset').addEventListener('click', function () { $('upGain').value = 100; $('upRad').value = 10; upSetApply(true); toast('Alapbeállítás visszaállítva'); });
   $('upModes').addEventListener('click', function (e) { var m = e.target && e.target.dataset && e.target.dataset.u; if (m) setUpMode(m); });
 
   /* ----- Képstabilizálás: a kéz remegésének digitális ellensúlyozása az élő képen -----
@@ -1452,6 +1480,7 @@
   var stabView = $('stabView'), stabViewCtx = stabView.getContext('2d');
   // A stabilizált képet maga rajzolja ki: a képkocka és a hozzá tartozó korrekció így mindig együtt jelenik meg (nincs rángás).
   function stabDraw() {
+    if (upOn) { app.classList.remove('stab-live'); renderUp(false); return; }   // Alnyomat-nézet: ott a saját vászna rajzol, ugyanezzel a korrekcióval
     var sw = video.videoWidth, sh = video.videoHeight; if (!sw || !sh) return;
     var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
     var rw = b.x - a.x, rh = b.y - a.y, q = Math.min(2, window.devicePixelRatio || 1);
@@ -1464,6 +1493,8 @@
     if (!app.classList.contains('stab-live')) app.classList.add('stab-live');
   }
   function stabApply(cx, cy) { stabC.x = cx; stabC.y = cy; stabDraw(); }
+  // Igaz, ha a stabilizálás éppen dolgozik: ilyenkor az Alnyomat-nézetet a becslés üteme rajzolja, hogy a képkocka és a korrekció együtt jelenjen meg.
+  function stabDriving() { return stabOn && !!stabPrev && !isFrozen() && state.s > 1.15; }
   function stabReset() {
     stabPrev = null; stabFail = 0; stabP.x = stabP.y = stabS.x = stabS.y = 0; stabC.x = stabC.y = 0;
     app.classList.remove('stab-live');
@@ -1500,7 +1531,7 @@
   }
 
   function stabTick() {
-    var active = stabOn && !isFrozen() && !upOn && !document.hidden && video.videoWidth && state.s > 1.15;
+    var active = stabOn && !isFrozen() && !document.hidden && video.videoWidth && state.s > 1.15;
     if (!active) { if (stabPrev || stabC.x || stabC.y) stabReset(); return; }
     var sw = video.videoWidth, sh = video.videoHeight, r = viewport.getBoundingClientRect();
     var a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
@@ -1539,7 +1570,7 @@
     function step() { try { stabTick(); } catch (e) {} next(); }
     function next() { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step); }
     // a videó-visszahívás csak futó videónál jön: mellette egy lassú időzítő gondoskodik a visszaállításról (rögzítés, kilépés)
-    setInterval(function () { if (!(stabOn && !isFrozen() && !upOn && state.s > 1.15)) { if (stabPrev || stabC.x || stabC.y) stabReset(); } }, 300);
+    setInterval(function () { if (!(stabOn && !isFrozen() && state.s > 1.15)) { if (stabPrev || stabC.x || stabC.y) stabReset(); } }, 300);
     next();
   })();
 
