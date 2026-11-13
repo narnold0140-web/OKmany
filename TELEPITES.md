@@ -51,31 +51,11 @@ A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti v
 - **Éles:** erős részletkiemelés. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik. **Szivárvány:** felerősített színek, a színváltó (OVD) festékek és az átmenetes nyomat kiemeléséhez.
 - A nézet a látott területet a kamera valódi felbontásán dolgozza fel, ezért nagyításkor is valódi részletet mutat.
 - A Mentés a feldolgozott képet menti, amit éppen látsz.
-
-## Vízjel-nézet
-
-A felső sávban a csepp ikonnal kapcsolható. Átvilágításos vizsgálathoz való: a halvány árnyalatkülönbségeket emeli ki, így előjön a vízjel, a biztonsági szál, és az is, ha a papírt kikaparták, elvékonyították vagy foltozták.
-
-1. Tartsd az okmány lapját lámpa, világos ablak vagy világító képernyő elé, hogy a fény átvilágítson rajta.
-2. Kapcsold be a Vízjel-nézetet. A kép szürke lesz, a halvány foltok erős kontraszttal jelennek meg.
-3. Az **Erősség** csúszkával állítsd be, mennyire emelje ki. Ha a kép zajos, vedd lejjebb.
-
-- Az egyenetlen megvilágítást az app kiegyenlíti, a sötét nyomatot (szöveg, vonalak) elhalványítja, hogy a vízjel látsszon.
-- Nagyítás, mozgatás, pillanatkép és Mentés itt is működik, a Mentés a kiemelt képet menti.
-- A fóliázott adatoldalon (kártya, polikarbonát lap) nincs papírvízjel, ott ez a nézet keveset mutat. A belső papírlapokon és a papíralapú okmányokon hasznos.
-- A túl erős, kiégett háttérfény elnyomja a vízjelet: tompább, egyenletes fény jobb.
-- Ez vizuális segéd, nem ítélet: a látott vízjelet hasonlítsd a Mintaokmány-tár képéhez vagy a PRADO leírásához.
-
-## Sorvezető
-
-A felső sávban a vonalzó ikonnal kapcsolható. Egy egyenes vonal jelenik meg a képen, amely a képhez tapad: nagyításkor és mozgatáskor ugyanott marad az okmányon. Élő és rögzített képen is működik, de rögzített képen pontosabb.
-
-- A két **karikát** húzva állítod be a vonal két végét, a középső **pöttyel** az egész vonalat tolod arrébb.
-- Tedd egy szövegsor aljára: az eredeti nyomat betűi mind a vonalon ülnek, az utólag beírt karakterek kilógnak vagy megdőlnek.
-- **Nullázás:** rögzíti a vonal irányát (például az okmány szélén). Ha ezután a vonalat egy másik sorra vagy a fotó szélére teszed, a felirat az eltérést mutatja fokban (Δ). Így látszik, ha egy sor vagy a fotó nem párhuzamos az okmány szélével.
-- **Párhuzamos:** egy második, azonos irányú vonalat ad, a pöttyével állítod a távolságát. Sorközök és két él párhuzamosságának ellenőrzésére.
-- **Vízszintes:** visszateszi a vonalat a kép közepére.
-- Nullázás nélkül a szög a telefon képernyőjéhez képest értendő, ezért önmagában nem sokat mond: mindig az okmány egy éléhez viszonyíts. A vonal a mentett képre nem kerül rá.
+- **Tábla (nyomtatási technika segédtábla):** kilenc lapon mutatja, hogyan néz ki erős nagyításban az okmánygyártásban használt nyomtatás, és hogyan az irodai nyomtató vagy a másolat. A kamerában látott képet a rajzhoz hasonlítod, az Előző és a Tovább gombbal lapozol.
+  - Zöld címke (Biztonsági nyomat): ofszet, írisznyomat, metszetmélynyomás, magasnyomás. Az alnyomatban és a díszítő mintákban ezt várod.
+  - Fehér címke (Megszemélyesítés): lézergravírozás, hőszublimációs nyomat. A fotónál és az adatoknál fordul elő.
+  - Narancs címke (Alnyomatban gyanús): tintasugaras nyomtató, lézernyomtató, raszteres másolat. Ha az alnyomat vagy a díszítő minta ilyen, az hamisítványra utal. A fotónál és az adatoknál viszont eredeti okmányon is előfordulhat, mert sok ország így személyesít meg.
+  - A rajzok sematikusak, nem valódi felvételek. Hogy egy adott okmányon melyik technikának hol kell lennie, azt az okmány leírásából (például PRADO) tudod, a tábla csak a felismerést segíti.
 
 ## Stabilizálás és folyékony kép
 
@@ -83,19 +63,6 @@ A szűrők sorában két kapcsoló van:
 
 - **Stabil** (alapból be): nagyításnál a kéz remegését digitálisan ellensúlyozza az élő képen. A lassú, szándékos mozgást követi, a gyors remegést kiveszi. 1× nagyításnál nem dolgozik, mert ott nincs tartalék a kép szélén. A rögzített képet és a mentést nem érinti. Egyszínű felületen, ahol nincs mihez igazítani, magától kikapcsol.
 - **60 fps:** a kamera kisebb felbontáson, de másodpercenként kétszer annyi képkockával megy, ezért a mozgás folyékonyabb. Az ára, hogy erős nagyításnál és a rögzített képen kevesebb a részlet. Apró részletek vizsgálatához kapcsold ki. Bekapcsoláskor az app kiírja, milyen felbontást és képkockaszámot adott a telefon, mert nem minden modell és objektív tud 60-at. A beállítást az app megjegyzi.
-
-## Állvány-mód
-
-A szűrők sorában az **Állvány** kapcsolóval indul. Akkor használd, ha a telefon fixen áll (állványon, tartóban vagy egy polc szélén), és az okmányokat alá teszed. Két kezed szabad marad.
-
-1. Rögzítsd a telefont, kapcsold be az Állvány-módot, és hagyd üresen alatta a felületet egy pillanatra. Az app megjegyzi a hátteret, és szól, ha kész.
-2. Tedd be az okmányt, és vedd ki a kezed a képből. Amikor a kép megnyugszik, az app magától rögzít (a legélesebb képkockát tartja meg).
-3. A rögzített képet nagyíthatod, vizsgálhatod. Ha elveszed az okmányt, az app visszavált élő képre, és várja a következőt.
-
-- Ha üres állapot nélkül cserélsz okmányt, az új okmányt is rögzíti.
-- Ha kézzel visszaváltasz élő képre, amíg az okmány ott van, nem rögzít újra, csak ha változik a kép.
-- A lassú fényváltozáshoz igazodik. Ha a telefont elmozdítod vagy objektívet váltasz, kapcsold ki és be, hogy újra megjegyezze a hátteret.
-- Egyszínű, az okmánytól elütő háttéren működik a legjobban. Ha a kezed mozdulatlanul a képben marad, azt is okmánynak nézheti.
 
 ## Mintaokmány-tár
 
