@@ -460,7 +460,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v31</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v32</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -1340,7 +1340,7 @@
   // A látott területet natív felbontáson dolgozza fel (nagyítva a valódi részletet mutatja, nem kinagyított pixeleket).
   /* Az élő képet a grafikus processzor dolgozza fel (WebGL): ugyanaz a számítás, mint a processzoros változatban, de képkockánként
      néhány ezredmásodperc. A rögzített képnél és a mentésnél marad a pontos, processzoros út. WebGL nélkül is működik, csak lassabban. */
-  var upGl = $('upGl'), gl = null, glProg = null, glTex = null, glU = {}, glFail = false;
+  var upGl = $('upGl'), gl = null, glProg = null, glTex = null, glU = {}, glFail = false, glMax = 0, glChecked = false, glBound = false;
 
   // Közös WebGL-előkészítés: teljes képernyős négyszög, videó-textúra, a megadott fragment shader és uniformok.
   function glBuild(canvas, fsBody, names) {
@@ -1359,8 +1359,10 @@
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
     var U = {}; names.concat(['t']).forEach(function (k) { U[k] = g.getUniformLocation(prog, k); });
     g.uniform1i(U.t, 0);
-    return { gl: g, prog: prog, tex: tex, U: U };
+    return { gl: g, prog: prog, tex: tex, U: U, maxTex: g.getParameter(g.MAX_TEXTURE_SIZE) || 2048 };
   }
+  // A WebGL a hibák nagy részét nem dobja, csak megjegyzi: az első kirajzolás után egyszer rákérdezünk.
+  function glOk(g) { try { return g.getError() === g.NO_ERROR && !g.isContextLost(); } catch (e) { return false; } }
 
   // A látott terület a kamera natív képén, a kirajzolás mérete (legfeljebb a kijelző felbontása) és a stabilizálás eltolása.
   function glCrop() {
@@ -1393,8 +1395,13 @@
         ' if(inv>0.5){gl_FragColor.rgb=1.0-gl_FragColor.rgb;}',
         '}'].join('\n');
       var built = glBuild(upGl, fs, ['org', 'siz', 'px', 'mode', 'gain', 'rad', 'inv']);
-      gl = built.gl; glProg = built.prog; glTex = built.tex; glU = built.U;
-      upGl.addEventListener('webglcontextlost', function (e) { e.preventDefault(); gl = null; glFail = true; app.classList.remove('up-gl'); });
+      gl = built.gl; glProg = built.prog; glTex = built.tex; glU = built.U; glMax = built.maxTex; glChecked = false;
+      if (!glBound) {
+        glBound = true;
+        // iPhone-on a háttérbe tett app elveszítheti a grafikus kontextust: ilyenkor átmenetileg a lassabb útra vált, visszatéréskor újraépít
+        upGl.addEventListener('webglcontextlost', function (e) { e.preventDefault(); gl = null; glFail = true; app.classList.remove('up-gl'); });
+        upGl.addEventListener('webglcontextrestored', function () { gl = null; glFail = false; upKey = ''; });
+      }
       return true;
     } catch (e) { gl = null; glFail = true; return false; }
   }
@@ -1402,6 +1409,7 @@
   function renderUpGl() {
     var k = glCrop(); if (!k) return false;
     if (!upGlInit()) return false;
+    if (k.sw > glMax || k.sh > glMax) { glFail = true; gl = null; return false; }   // a kamera képe nem fér textúrába: marad a processzoros út
     if (upGl.width !== k.ow || upGl.height !== k.oh) { upGl.width = k.ow; upGl.height = k.oh; }
     try {
       gl.viewport(0, 0, k.ow, k.oh);
@@ -1411,6 +1419,7 @@
       gl.uniform2f(glU.px, (k.rw / k.sw) / k.ow, (k.rh / k.sh) / k.oh);
       gl.uniform1i(glU.mode, upMode === 'line' ? 1 : 0); gl.uniform1f(glU.gain, upGain); gl.uniform1f(glU.rad, upRad); gl.uniform1f(glU.inv, upInv ? 1 : 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (!glChecked) { glChecked = true; if (!glOk(gl)) throw new Error('webgl hiba'); }
       if (window.__dnAfterUp) window.__dnAfterUp(upGl);   // csak az automata tesztek használják: a frissen kirajzolt kép mérése
     } catch (e) { glFail = true; gl = null; return false; }
     return true;
@@ -1419,7 +1428,7 @@
   /* ----- Élő élesítés: ugyanaz a 3×3-as kernel, mint a rögzített képen (processImage, a = 1.0), a grafikus processzoron -----
      A kernel a kamera natív képpontjain lép, ezért nagyítás közben azt látod, amit rögzítés után kapsz. A Kontraszt, a Szürke és az
      Inverz továbbra is CSS-szűrőként megy a vászonra (ugyanúgy, mint eddig a videóra), tehát nem alkalmazódik kétszer. */
-  var sharpView = $('sharpView'), sg = null, sgTex = null, sgU = {}, sharpFail = false;
+  var sharpView = $('sharpView'), sg = null, sgTex = null, sgU = {}, sharpFail = false, sgMax = 0, sgChecked = false, sgBound = false, sharpLost = false;
   function sharpInit() {
     if (sg || sharpFail) return !!sg;
     try {
@@ -1435,17 +1444,23 @@
         ' gl_FragColor=vec4(c,1.0);',
         '}'].join('\n');
       var built = glBuild(sharpView, fs, ['org', 'siz', 'tx', 'sub', 'amt', 'ss']);
-      sg = built.gl; sgTex = built.tex; sgU = built.U;
-      sharpView.addEventListener('webglcontextlost', function (e) { e.preventDefault(); sg = null; sharpFail = true; app.classList.remove('sharp-live'); });
+      sg = built.gl; sgTex = built.tex; sgU = built.U; sgMax = built.maxTex; sgChecked = false;
+      if (!sgBound) {
+        sgBound = true;
+        // a kontextus elvesztése nem végleges hiba: a nyers videó látszik, amíg vissza nem áll, utána újraépít
+        sharpView.addEventListener('webglcontextlost', function (e) { e.preventDefault(); sg = null; sharpLost = true; app.classList.remove('sharp-live'); });
+        sharpView.addEventListener('webglcontextrestored', function () { sg = null; sharpLost = false; });
+      }
       return true;
     } catch (e) { sg = null; sharpFail = true; return false; }
   }
   // Igaz, ha az élő képet élesítve kell kirajzolni.
-  function sharpLive() { return fx.sharp && !sharpFail && !isFrozen() && !upOn && !document.hidden; }
+  function sharpLive() { return fx.sharp && !sharpFail && !sharpLost && !isFrozen() && !upOn && !document.hidden; }
   function sharpOff() { if (app.classList.contains('sharp-live')) app.classList.remove('sharp-live'); }
   function sharpDraw() {
-    var k = glCrop(); if (!k) return false;
-    if (!sharpInit()) return false;
+    var k = glCrop(); if (!k) { sharpOff(); return false; }               // nincs kép (pl. objektívváltás közben): ne maradjon kint egy régi képkocka
+    if (!sharpInit()) { sharpOff(); return false; }
+    if (k.sw > sgMax || k.sh > sgMax) { sharpFail = true; sg = null; sharpOff(); return false; }   // a kamera képe nem fér textúrába
     if (sharpView.width !== k.ow || sharpView.height !== k.oh) { sharpView.width = k.ow; sharpView.height = k.oh; }
     try {
       sg.viewport(0, 0, k.ow, k.oh);
@@ -1456,6 +1471,7 @@
       sg.uniform2f(sgU.sub, 0.25 * (k.rw / k.sw) / k.ow, 0.25 * (k.rh / k.sh) / k.oh);
       sg.uniform1f(sgU.amt, 1.0); sg.uniform1f(sgU.ss, k.rw / k.ow > 1.25 ? 1 : 0);
       sg.drawArrays(sg.TRIANGLE_STRIP, 0, 4);
+      if (!sgChecked) { sgChecked = true; if (!glOk(sg)) throw new Error('webgl hiba'); }
       if (window.__dnAfterSharp) window.__dnAfterSharp(sharpView);   // csak az automata tesztek használják
     } catch (e) { sharpFail = true; sg = null; sharpOff(); return false; }
     if (sharpView.style.filter !== (video.style.filter || '')) sharpView.style.filter = video.style.filter || '';
