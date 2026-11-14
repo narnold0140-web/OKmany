@@ -45,6 +45,11 @@
   #video, #frozen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
   #stabView { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
   .stab-live #stabView { display: block; }
+  /* Élő élesítés: a grafikus processzor által rajzolt kép a videó helyén (a rávetített minta fölötte marad) */
+  #sharpView { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
+  .sharp-live #sharpView { display: block; }
+  .sharp-live #video { opacity: 0; }
+  .is-frozen #sharpView, .up #sharpView { display: none; }
   .stab-live #video { opacity: 0; }
   #frozen { display: none; }
   .is-frozen #video { display: none; }
@@ -338,6 +343,7 @@
 <div id="app">
   <div id="viewport">
     <canvas id="stabView" aria-hidden="true"></canvas>
+    <canvas id="sharpView" aria-hidden="true"></canvas>
     <div id="stage">
       <video id="video" playsinline muted autoplay></video>
       <canvas id="frozen"></canvas>
@@ -454,7 +460,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v30</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v31</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -996,7 +1002,8 @@
     if (isFrozen()) { setTimeout(function () { processImage(frozenRaw, frozen); }, 0); }
     else {
       applyLiveFx();
-      if (key === 'sharp' && fx.sharp) toast('Az élesítés a rögzített képen látszik.');
+      // grafikus gyorsítás nélkül az élő élesítés nem megy: ez az első kirajzolási kísérlet után derül ki
+      if (key === 'sharp' && fx.sharp) setTimeout(function () { if (fx.sharp && sharpFail && !isFrozen()) toast('Ezen az eszközön az élesítés csak a rögzített képen látszik.'); }, 500);
     }
   });
 
@@ -1334,14 +1341,44 @@
   /* Az élő képet a grafikus processzor dolgozza fel (WebGL): ugyanaz a számítás, mint a processzoros változatban, de képkockánként
      néhány ezredmásodperc. A rögzített képnél és a mentésnél marad a pontos, processzoros út. WebGL nélkül is működik, csak lassabban. */
   var upGl = $('upGl'), gl = null, glProg = null, glTex = null, glU = {}, glFail = false;
+
+  // Közös WebGL-előkészítés: teljes képernyős négyszög, videó-textúra, a megadott fragment shader és uniformok.
+  function glBuild(canvas, fsBody, names) {
+    var g = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+    if (!g) throw new Error('nincs webgl');
+    var vs = 'attribute vec2 a;varying vec2 p;void main(){p=a*0.5+0.5;gl_Position=vec4(a,0.0,1.0);}';
+    var fs = ['#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif', fsBody].join('\n');
+    var mk = function (type, src) { var sh = g.createShader(type); g.shaderSource(sh, src); g.compileShader(sh); if (!g.getShaderParameter(sh, g.COMPILE_STATUS)) throw new Error(g.getShaderInfoLog(sh)); return sh; };
+    var prog = g.createProgram(); g.attachShader(prog, mk(g.VERTEX_SHADER, vs)); g.attachShader(prog, mk(g.FRAGMENT_SHADER, fs)); g.linkProgram(prog);
+    if (!g.getProgramParameter(prog, g.LINK_STATUS)) throw new Error(g.getProgramInfoLog(prog));
+    g.useProgram(prog);
+    var buf = g.createBuffer(); g.bindBuffer(g.ARRAY_BUFFER, buf); g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), g.STATIC_DRAW);
+    var loc = g.getAttribLocation(prog, 'a'); g.enableVertexAttribArray(loc); g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+    var tex = g.createTexture(); g.bindTexture(g.TEXTURE_2D, tex);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    var U = {}; names.concat(['t']).forEach(function (k) { U[k] = g.getUniformLocation(prog, k); });
+    g.uniform1i(U.t, 0);
+    return { gl: g, prog: prog, tex: tex, U: U };
+  }
+
+  // A látott terület a kamera natív képén, a kirajzolás mérete (legfeljebb a kijelző felbontása) és a stabilizálás eltolása.
+  function glCrop() {
+    var sw = video.videoWidth, sh = video.videoHeight;
+    if (!sw || !sh || video.readyState < 2) return null;
+    var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
+    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), q = Math.min(3, window.devicePixelRatio || 1);
+    var cap = Math.min(2600000, r.width * r.height * q * q);              // a kijelzőnél finomabbra nem érdemes számolni
+    var f = Math.min(1, Math.sqrt(cap / (rw * rh)));
+    var ow = Math.max(8, Math.round(rw * f)), oh = Math.max(8, Math.round(rh * f));
+    var sf = rw / r.width, ox = a.x, oy = a.y;                              // stabilizálás: a kivágás eltolása a korrekcióval
+    if (stabOn && (stabC.x || stabC.y)) { ox = Math.max(0, Math.min(sw - rw, a.x - stabC.x * sf)); oy = Math.max(0, Math.min(sh - rh, a.y - stabC.y * sf)); }
+    return { sw: sw, sh: sh, rw: rw, rh: rh, ow: ow, oh: oh, ox: ox, oy: oy };
+  }
   function upGlInit() {
     if (gl || glFail) return !!gl;
     try {
-      gl = upGl.getContext('webgl', { alpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
-      if (!gl) throw new Error('nincs webgl');
-      var vs = 'attribute vec2 a;varying vec2 p;void main(){p=a*0.5+0.5;gl_Position=vec4(a,0.0,1.0);}';
       var fs = [
-        '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
         'uniform sampler2D t;uniform vec2 org,siz,px;uniform int mode;uniform float gain,rad,inv;varying vec2 p;',
         'float L(vec2 u){return dot(texture2D(t,u).rgb,vec3(0.299,0.587,0.114));}',
         'void main(){',
@@ -1355,44 +1392,75 @@
         ' }',
         ' if(inv>0.5){gl_FragColor.rgb=1.0-gl_FragColor.rgb;}',
         '}'].join('\n');
-      var mk = function (type, src) { var sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; };
-      glProg = gl.createProgram(); gl.attachShader(glProg, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(glProg, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(glProg);
-      if (!gl.getProgramParameter(glProg, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(glProg));
-      gl.useProgram(glProg);
-      var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-      var loc = gl.getAttribLocation(glProg, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      glTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, glTex);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      ['org', 'siz', 'px', 'mode', 'gain', 'rad', 'inv', 't'].forEach(function (k) { glU[k] = gl.getUniformLocation(glProg, k); });
-      gl.uniform1i(glU.t, 0);
+      var built = glBuild(upGl, fs, ['org', 'siz', 'px', 'mode', 'gain', 'rad', 'inv']);
+      gl = built.gl; glProg = built.prog; glTex = built.tex; glU = built.U;
       upGl.addEventListener('webglcontextlost', function (e) { e.preventDefault(); gl = null; glFail = true; app.classList.remove('up-gl'); });
       return true;
     } catch (e) { gl = null; glFail = true; return false; }
   }
 
   function renderUpGl() {
-    var sw = video.videoWidth, sh = video.videoHeight;
-    if (!sw || !sh || video.readyState < 2) return false;
+    var k = glCrop(); if (!k) return false;
     if (!upGlInit()) return false;
-    var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
-    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), q = Math.min(3, window.devicePixelRatio || 1);
-    var cap = Math.min(2600000, r.width * r.height * q * q);              // a kijelzőnél finomabbra nem érdemes számolni
-    var f = Math.min(1, Math.sqrt(cap / (rw * rh)));
-    var ow = Math.max(8, Math.round(rw * f)), oh = Math.max(8, Math.round(rh * f));
-    if (upGl.width !== ow || upGl.height !== oh) { upGl.width = ow; upGl.height = oh; }
+    if (upGl.width !== k.ow || upGl.height !== k.oh) { upGl.width = k.ow; upGl.height = k.oh; }
     try {
-      gl.viewport(0, 0, ow, oh);
+      gl.viewport(0, 0, k.ow, k.oh);
       gl.bindTexture(gl.TEXTURE_2D, glTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
-      var sf = rw / r.width, ox = a.x, oy = a.y;                              // stabilizálás: a kivágás eltolása a korrekcióval
-      if (stabOn && (stabC.x || stabC.y)) { ox = Math.max(0, Math.min(sw - rw, a.x - stabC.x * sf)); oy = Math.max(0, Math.min(sh - rh, a.y - stabC.y * sf)); }
-      gl.uniform2f(glU.org, ox / sw, oy / sh); gl.uniform2f(glU.siz, rw / sw, rh / sh);
-      gl.uniform2f(glU.px, (rw / sw) / ow, (rh / sh) / oh);
+      gl.uniform2f(glU.org, k.ox / k.sw, k.oy / k.sh); gl.uniform2f(glU.siz, k.rw / k.sw, k.rh / k.sh);
+      gl.uniform2f(glU.px, (k.rw / k.sw) / k.ow, (k.rh / k.sh) / k.oh);
       gl.uniform1i(glU.mode, upMode === 'line' ? 1 : 0); gl.uniform1f(glU.gain, upGain); gl.uniform1f(glU.rad, upRad); gl.uniform1f(glU.inv, upInv ? 1 : 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       if (window.__dnAfterUp) window.__dnAfterUp(upGl);   // csak az automata tesztek használják: a frissen kirajzolt kép mérése
     } catch (e) { glFail = true; gl = null; return false; }
+    return true;
+  }
+
+  /* ----- Élő élesítés: ugyanaz a 3×3-as kernel, mint a rögzített képen (processImage, a = 1.0), a grafikus processzoron -----
+     A kernel a kamera natív képpontjain lép, ezért nagyítás közben azt látod, amit rögzítés után kapsz. A Kontraszt, a Szürke és az
+     Inverz továbbra is CSS-szűrőként megy a vászonra (ugyanúgy, mint eddig a videóra), tehát nem alkalmazódik kétszer. */
+  var sharpView = $('sharpView'), sg = null, sgTex = null, sgU = {}, sharpFail = false;
+  function sharpInit() {
+    if (sg || sharpFail) return !!sg;
+    try {
+      var fs = [
+        'uniform sampler2D t;uniform vec2 org,siz,tx,sub;uniform float amt,ss;varying vec2 p;',
+        'vec3 K(vec2 u){vec3 c=texture2D(t,u).rgb;',
+        ' vec3 n=texture2D(t,u+vec2(tx.x,0.0)).rgb+texture2D(t,u-vec2(tx.x,0.0)).rgb+texture2D(t,u+vec2(0.0,tx.y)).rgb+texture2D(t,u-vec2(0.0,tx.y)).rgb;',
+        ' return clamp((1.0+4.0*amt)*c-amt*n,0.0,1.0);}',
+        'void main(){',
+        ' vec2 uv=org+vec2(p.x,1.0-p.y)*siz; vec3 c;',
+        // ha a kirajzolás kisebb a forrásnál, képpontonként négy mintát átlagol, hogy a finom részlet ne vibráljon
+        ' if(ss>0.5){c=0.25*(K(uv+vec2(sub.x,sub.y))+K(uv+vec2(-sub.x,sub.y))+K(uv+vec2(sub.x,-sub.y))+K(uv+vec2(-sub.x,-sub.y)));}else{c=K(uv);}',
+        ' gl_FragColor=vec4(c,1.0);',
+        '}'].join('\n');
+      var built = glBuild(sharpView, fs, ['org', 'siz', 'tx', 'sub', 'amt', 'ss']);
+      sg = built.gl; sgTex = built.tex; sgU = built.U;
+      sharpView.addEventListener('webglcontextlost', function (e) { e.preventDefault(); sg = null; sharpFail = true; app.classList.remove('sharp-live'); });
+      return true;
+    } catch (e) { sg = null; sharpFail = true; return false; }
+  }
+  // Igaz, ha az élő képet élesítve kell kirajzolni.
+  function sharpLive() { return fx.sharp && !sharpFail && !isFrozen() && !upOn && !document.hidden; }
+  function sharpOff() { if (app.classList.contains('sharp-live')) app.classList.remove('sharp-live'); }
+  function sharpDraw() {
+    var k = glCrop(); if (!k) return false;
+    if (!sharpInit()) return false;
+    if (sharpView.width !== k.ow || sharpView.height !== k.oh) { sharpView.width = k.ow; sharpView.height = k.oh; }
+    try {
+      sg.viewport(0, 0, k.ow, k.oh);
+      sg.bindTexture(sg.TEXTURE_2D, sgTex);
+      sg.texImage2D(sg.TEXTURE_2D, 0, sg.RGB, sg.RGB, sg.UNSIGNED_BYTE, video);
+      sg.uniform2f(sgU.org, k.ox / k.sw, k.oy / k.sh); sg.uniform2f(sgU.siz, k.rw / k.sw, k.rh / k.sh);
+      sg.uniform2f(sgU.tx, 1 / k.sw, 1 / k.sh);                             // a kernel lépése: egy natív képpont
+      sg.uniform2f(sgU.sub, 0.25 * (k.rw / k.sw) / k.ow, 0.25 * (k.rh / k.sh) / k.oh);
+      sg.uniform1f(sgU.amt, 1.0); sg.uniform1f(sgU.ss, k.rw / k.ow > 1.25 ? 1 : 0);
+      sg.drawArrays(sg.TRIANGLE_STRIP, 0, 4);
+      if (window.__dnAfterSharp) window.__dnAfterSharp(sharpView);   // csak az automata tesztek használják
+    } catch (e) { sharpFail = true; sg = null; sharpOff(); return false; }
+    if (sharpView.style.filter !== (video.style.filter || '')) sharpView.style.filter = video.style.filter || '';
+    if (!app.classList.contains('sharp-live')) app.classList.add('sharp-live');
+    app.classList.remove('stab-live');
     return true;
   }
 
@@ -1481,6 +1549,8 @@
   // A stabilizált képet maga rajzolja ki: a képkocka és a hozzá tartozó korrekció így mindig együtt jelenik meg (nincs rángás).
   function stabDraw() {
     if (upOn) { app.classList.remove('stab-live'); renderUp(false); return; }   // Alnyomat-nézet: ott a saját vászna rajzol, ugyanezzel a korrekcióval
+    if (sharpLive() && sharpDraw()) return;                                 // élesítés bekapcsolva: az élesített vászon kapja a korrekciót
+    sharpOff();
     var sw = video.videoWidth, sh = video.videoHeight; if (!sw || !sh) return;
     var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
     var rw = b.x - a.x, rh = b.y - a.y, q = Math.min(2, window.devicePixelRatio || 1);
@@ -1526,13 +1596,29 @@
       sad = stabSad(P.d, C.d, w, h, dx, dy, m, 2); g[dx + ',' + dy] = sad;
       if (sad < fb) { fb = sad; fx = dx; fy = dy; }
     }
-    function sub(a, b, c) { if (a === undefined || c === undefined) return 0; var den = a - 2 * b + c; return den > 1e-6 ? Math.max(-0.5, Math.min(0.5, 0.5 * (a - c) / den)) : 0; }
-    return { x: fx + sub(g[(fx - 1) + ',' + fy], fb, g[(fx + 1) + ',' + fy]), y: fy + sub(g[fx + ',' + (fy - 1)], fb, g[fx + ',' + (fy + 1)]) };
+    // Tört képpontos finomítás a képek fényerő-változásából (gradiens-módszer). Azonos képekre pontosan nullát ad, így álló
+    // jelenetnél a stabilizált kép nem csúszik el. (A korábbi parabola-illesztés az eltérésösszegre torzított volt.)
+    var sxx = 0, sxy = 0, syy = 0, sxt = 0, syt = 0, pd = P.d, cd = C.d, i0, ix, iy, it;
+    for (y = m; y < h - m; y += 2) for (x = m; x < w - m; x += 2) {
+      i0 = y * w + x;
+      ix = (pd[i0 + 1] - pd[i0 - 1]) * 0.5; iy = (pd[i0 + w] - pd[i0 - w]) * 0.5; it = cd[(y + fy) * w + x + fx] - pd[i0];
+      sxx += ix * ix; sxy += ix * iy; syy += iy * iy; sxt += ix * it; syt += iy * it;
+    }
+    var det = sxx * syy - sxy * sxy, u = 0, v = 0;
+    if (det > 1e-3 * (sxx + syy) * (sxx + syy) + 1e-6) { u = -(syy * sxt - sxy * syt) / det; v = -(sxx * syt - sxy * sxt) / det; }
+    else if (sxx > 1e-6 && sxx >= syy) u = -sxt / sxx;                    // csak egyirányú szerkezet (pl. párhuzamos vonalak): abban az irányban becsül
+    else if (syy > 1e-6) v = -syt / syy;
+    u = Math.max(-0.75, Math.min(0.75, u)); v = Math.max(-0.75, Math.min(0.75, v));
+    return { x: fx + u, y: fy + v };
   }
 
   function stabTick() {
     var active = stabOn && !isFrozen() && !document.hidden && video.videoWidth && state.s > 1.15;
-    if (!active) { if (stabPrev || stabC.x || stabC.y) stabReset(); return; }
+    if (!active) {
+      if (stabPrev || stabC.x || stabC.y) stabReset();
+      if (sharpLive()) sharpDraw(); else sharpOff();                        // stabilizálás nélkül (pl. 1×-en) is képkockánként rajzol, ha kell
+      return;
+    }
     var sw = video.videoWidth, sh = video.videoHeight, r = viewport.getBoundingClientRect();
     var a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
     var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), asp = rw / rh, w = Math.max(48, Math.round(Math.sqrt(STW * STW * 0.9 * asp) / 2) * 2), h = Math.max(48, Math.round(w / asp / 2) * 2);
@@ -1570,7 +1656,7 @@
     function step() { try { stabTick(); } catch (e) {} next(); }
     function next() { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step); }
     // a videó-visszahívás csak futó videónál jön: mellette egy lassú időzítő gondoskodik a visszaállításról (rögzítés, kilépés)
-    setInterval(function () { if (!(stabOn && !isFrozen() && state.s > 1.15)) { if (stabPrev || stabC.x || stabC.y) stabReset(); } }, 300);
+    setInterval(function () { if (!(stabOn && !isFrozen() && state.s > 1.15)) { if (stabPrev || stabC.x || stabC.y) stabReset(); } if (!sharpLive()) sharpOff(); }, 300);
     next();
   })();
 

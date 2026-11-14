@@ -36,7 +36,7 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 ## Funkciók
 
 - **Legélesebb képkocka:** a pillanatkép gombra az app néhány képkockát rögzít, és a legélesebbet tartja meg.
-- **Képszűrők:** Kontraszt, Élesítés, Szürke, Inverz. Az Élesítés csak a rögzített képen látszik. A szűrők a mentett képre is rákerülnek.
+- **Képszűrők:** Kontraszt, Élesítés, Szürke, Inverz. Az Élesítés az élő képen is látszik, minden nagyításnál, ugyanolyan erősséggel, mint a rögzített képen: nagyítás közben azt látod, amit rögzítés után kapsz. A telefon grafikus processzora számolja; ha egy eszközön ez nem érhető el, ott az élesítés csak a rögzített képen jelenik meg, és az app erre egy rövid felirattal figyelmeztet. A szűrők a mentett képre is rákerülnek.
 - **Váltható keret:** a keret gombbal Bankkártya (ID-1) és Útlevél méret között válthatsz.
 - **Lupe:** hosszan nyomd az ujjad a képen, és a kép alatt egy kerek nagyító követi. Felengedésre eltűnik.
 - **Panel elrejtése:** a panel tetején lévő kis vonalra koppintva a vezérlők eltűnnek, csak a zárógomb marad.
