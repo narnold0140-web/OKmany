@@ -43,14 +43,14 @@
   #viewport { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
   #stage { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
   #video, #frozen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
-  #stabView { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
+  /* A stabilizált és az élesített kép vászna a videó fölött van, a nagyított stage-en belül, fordított transzformációval (így a képernyőt
+     tölti ki). A videót NEM rejtjük el átlátszósággal: iPhone-on a láthatatlan videóból a rögzítés régi, beragadt képkockát kapott. */
+  #stabView { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; transform-origin: 50% 50%; }
   .stab-live #stabView { display: block; }
   /* Élő élesítés: a grafikus processzor által rajzolt kép a videó helyén (a rávetített minta fölötte marad) */
-  #sharpView { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
+  #sharpView { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; transform-origin: 50% 50%; }
   .sharp-live #sharpView { display: block; }
-  .sharp-live #video { opacity: 0; }
-  .is-frozen #sharpView, .up #sharpView { display: none; }
-  .stab-live #video { opacity: 0; }
+  .is-frozen #sharpView, .up #sharpView, .is-frozen #stabView { display: none; }
   #frozen { display: none; }
   .is-frozen #video { display: none; }
   .is-frozen #frozen { display: block; }
@@ -191,6 +191,10 @@
   #upGl { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; background: #000; }
   .up.up-gl #upGl { display: block; }
   .up.up-gl #upCv { display: none; }
+  /* Alnyomat-felvétel: a megállított képernyőfotó látszik, a nézet vezérlői addig eltűnnek */
+  .up-shot #upCv { display: block; transform-origin: 50% 50%; }
+  .up-shot #upGl { display: none; }
+  .up-shot #upRow, .up-shot #upSetRow, .up-shot #ptCard { display: none; }
   .up #guide { opacity: 0; }
   .up #chipRow { display: none; }
   #upRow[hidden], #upSetRow[hidden] { display: none; }
@@ -252,11 +256,25 @@
   input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 20px; margin: 0; touch-action: pan-x; }
 
   #shutterWrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  #shutter {
-    width: 60px; height: 60px; border-radius: 50%; border: 3px solid #fff; display: grid; place-items: center; transition: transform .12s;
-  }
-  #shutter::after { content: ""; width: 48px; height: 48px; border-radius: 50%; background: #fff; }
-  #shutter:active { transform: scale(.92); }
+  /* Rögzítő gomb: fényképezőgép-írisz. Nyomásra a lamellák összezárnak, rögzítés közben forognak; Alnyomat-nézetben a közepén hullámvonal. */
+  #shutter { width: 64px; height: 64px; border-radius: 50%; padding: 0; display: grid; place-items: center; background: none; border: 0; transition: transform .12s; }
+  #shutter svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  #shutter .sh-ring { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 3 5.2; stroke-linecap: round; transform-origin: 32px 32px; animation: shSpin 14s linear infinite; }
+  #shutter .sh-disc { fill: #fff; }
+  #shutter .sh-iris { transform-origin: 32px 32px; transition: transform .22s ease; }
+  #shutter .sh-iris line { stroke: #10201d; stroke-width: 1.6; stroke-linecap: round; }
+  #shutter .sh-hole { fill: #10201d; transform-origin: 32px 32px; transition: transform .22s ease; }
+  #shutter .sh-wave { display: none; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+  #shutter:active { transform: scale(.94); }
+  #shutter:active .sh-iris { transform: rotate(38deg); }
+  #shutter:active .sh-hole { transform: scale(.35); }
+  #shutter.busy .sh-iris { animation: shSpin .7s linear infinite; }
+  #shutter.busy .sh-hole { transform: scale(.35); }
+  .up #shutter .sh-hole { transform: scale(1.55); }
+  .up #shutter .sh-wave { display: block; }
+  .up #shutter .sh-iris line { opacity: .35; }
+  @keyframes shSpin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #shutter .sh-ring, #shutter.busy .sh-iris { animation: none; } }
   #actions { display: none; gap: 12px; }
   .is-frozen #actions { display: flex; }
   .is-frozen #shutterWrap { display: none; }
@@ -332,8 +350,7 @@
     #fxChips { flex-wrap: wrap; justify-content: center; }
     .sep { display: none; }
     .presets { flex-wrap: wrap; justify-content: center; row-gap: 6px; }
-    #shutter { width: 54px; height: 54px; }
-    #shutter::after { width: 42px; height: 42px; }
+    #shutter { width: 56px; height: 56px; }
     .btn { padding: 11px 14px; font-size: 15px; }
     .logo { width: 56px; height: 56px; }
     .screen h1 { font-size: 24px; }
@@ -348,10 +365,10 @@
 <body>
 <div id="app">
   <div id="viewport">
-    <canvas id="stabView" aria-hidden="true"></canvas>
-    <canvas id="sharpView" aria-hidden="true"></canvas>
     <div id="stage">
       <video id="video" playsinline muted autoplay></video>
+      <canvas id="stabView" aria-hidden="true"></canvas>
+      <canvas id="sharpView" aria-hidden="true"></canvas>
       <canvas id="frozen"></canvas>
       <img id="overlayImg" alt="" hidden>
     </div>
@@ -445,7 +462,7 @@
       <button class="step" id="zoomIn" aria-label="Nagyítás">+</button>
     </div>
     <div id="shutterWrap">
-      <button id="shutter" aria-label="Pillanatkép rögzítése"></button>
+      <button id="shutter" aria-label="Pillanatkép rögzítése"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="sh-ring" cx="32" cy="32" r="29.5"/><circle class="sh-disc" cx="32" cy="32" r="24"/><g class="sh-iris"><line x1="32.00" y1="22.00" x2="55.27" y2="28.73"/><line x1="40.66" y1="27.00" x2="46.47" y2="50.52"/><line x1="40.66" y1="37.00" x2="23.20" y2="53.79"/><line x1="32.00" y1="42.00" x2="8.73" y2="35.27"/><line x1="23.34" y1="37.00" x2="17.53" y2="13.48"/><line x1="23.34" y1="27.00" x2="40.80" y2="10.21"/><polygon class="sh-hole" points="32.00,22.00 40.66,27.00 40.66,37.00 32.00,42.00 23.34,37.00 23.34,27.00"/></g><g class="sh-wave"><path d="M20 27c4-4 8 4 12 0s8 4 12 0"/><path d="M20 33c4-4 8 4 12 0s8 4 12 0"/><path d="M20 39c4-4 8 4 12 0s8 4 12 0"/></g></svg></button>
     </div>
     <div id="actions">
       <button class="btn" id="live">
@@ -466,7 +483,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v35</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v37</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -556,6 +573,10 @@
   function render() {
     clampPan();
     stage.style.transform = 'translate(' + state.x + 'px,' + state.y + 'px) scale(' + state.s + ')';
+    // a stage-en belüli vásznak fordított transzformációja: a nagyítás és az eltolás visszavonása, hogy a képernyőt töltsék ki
+    var invT = 'scale(' + (1 / state.s) + ') translate(' + (-state.x) + 'px,' + (-state.y) + 'px)';
+    $('stabView').style.transform = invT; $('sharpView').style.transform = invT;
+    if (upShotOn) $('upCv').style.transform = stage.style.transform;
     specStage.style.transform = stage.style.transform;
     slider.value = state.s;
     zoomLabel.textContent = state.s.toFixed(1) + '×';
@@ -1347,6 +1368,7 @@
 
   /* ----- Alnyomat-nézet ----- */
 
+  var upShotOn = false, upShotView = null;
   var vfDirty = true;   // igaz, ha a kamera új képkockát adott az utolsó kirajzolás óta
   var upOn = false, upMode = 'sharp', upRaf = 0, upLast = 0, upPrevLens = null, upKey = '';
   var upCv = $('upCv'), upCtx = upCv.getContext('2d');
@@ -1434,12 +1456,12 @@
   function glOk(g) { try { return g.getError() === g.NO_ERROR && !g.isContextLost(); } catch (e) { return false; } }
 
   // A látott terület a kamera natív képén, a kirajzolás mérete (legfeljebb a kijelző felbontása) és a stabilizálás eltolása.
-  function glCrop() {
+  function glCrop(capOverride) {
     var sw = video.videoWidth, sh = video.videoHeight;
     if (!sw || !sh || video.readyState < 2) return null;
     var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
     var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), q = Math.min(2, window.devicePixelRatio || 1);
-    var cap = Math.min(1500000, r.width * r.height * q * q);              // a kijelzőnél finomabbra nem érdemes számolni; 2× fölött alig látszik, de sokkal több munka
+    var cap = capOverride || Math.min(1500000, r.width * r.height * q * q);   // a kijelzőnél finomabbra nem érdemes számolni; a felvétel ennél nagyobbat kér
     var f = Math.min(1, Math.sqrt(cap / (rw * rh)));
     var ow = Math.max(8, Math.round(rw * f)), oh = Math.max(8, Math.round(rh * f));
     var sf = rw / r.width, ox = a.x, oy = a.y;                              // stabilizálás: a kivágás eltolása a korrekcióval
@@ -1475,8 +1497,8 @@
     } catch (e) { gl = null; glFail = true; return false; }
   }
 
-  function renderUpGl() {
-    var k = glCrop(); if (!k) return false;
+  function renderUpGl(capOverride) {
+    var k = glCrop(capOverride); if (!k) return false;
     if (!upGlInit()) return false;
     if (k.sw > glMax || k.sh > glMax) { glFail = true; gl = null; return false; }   // a kamera képe nem fér textúrába: marad a processzoros út
     if (upGl.width !== k.ow || upGl.height !== k.oh) { upGl.width = k.ow; upGl.height = k.oh; }
@@ -1550,7 +1572,7 @@
   }
 
   function renderUp(force) {
-    if (!upOn || document.hidden) return;
+    if (!upOn || document.hidden || upShotOn) return;   // felvétel közben a megállított kép marad
     if (!isFrozen() && !glFail && renderUpGl()) { app.classList.add('up-gl'); return; }   // élő kép: gyors út
     app.classList.remove('up-gl');
     var fr = isFrozen(), el = fr ? frozen : video;
@@ -1595,6 +1617,7 @@
 
   async function exitUp() {
     if (!upOn) return;
+    if (upShotOn) unfreeze();
     upOn = false;
     app.classList.remove('up'); app.classList.remove('up-gl');
     $('upRow').hidden = true; $('upSetRow').hidden = true;
@@ -1891,8 +1914,31 @@
 
   /* ----- Pillanatkép ----- */
 
+  // Alnyomat-nézetben a rögzítés képernyőfotó: pontosan az a feldolgozott kép áll meg, amit a kijelzőn látsz (a kamera natív
+  // részletességével), és utána választhatsz: vissza az élő képhez, vagy mentés.
+  function upShot() {
+    if (!upOn || upShotOn || capturing) return;
+    var f = $('flash'); f.classList.add('on'); setTimeout(function () { f.classList.remove('on'); }, 90);
+    if (navigator.vibrate) navigator.vibrate(15);
+    var ok = false;
+    try {
+      if (!glFail && renderUpGl(4200000)) {                               // egy képkocka nagy felbontáson, és rögtön át a 2D vászonra
+        if (upCv.width !== upGl.width || upCv.height !== upGl.height) { upCv.width = upGl.width; upCv.height = upGl.height; }
+        upCtx.drawImage(upGl, 0, 0); ok = true;
+      } else { app.classList.remove('up-gl'); renderUp(true); ok = upCv.width > 8; }   // grafikus gyorsítás nélkül a processzoros kép
+    } catch (e) { ok = false; }
+    if (!ok) { toast('A rögzítés nem sikerült.'); return; }
+    upShotOn = true; upShotView = { s: state.s, x: state.x, y: state.y };
+    app.classList.remove('up-gl'); app.classList.add('up-shot'); app.classList.add('is-frozen');
+    camPause();
+    state.s = 1; state.x = 0; state.y = 0; render();                       // a felvétel maga a nagyított kivágás: ezt lehet tovább nagyítani
+    $('modeLabel').textContent = 'Alnyomat-felvétel';
+    if (window.__dnOnShot) window.__dnOnShot(upCv);                        // csak az automata tesztek használják
+  }
+
   async function freeze() {
     if (capturing || isFrozen()) return;
+    if (upOn) { upShot(); return; }
     var w = video.videoWidth, h = video.videoHeight;
     if (!w || !h) { toast('A kép még nem áll készen.'); return; }
     capturing = true;
@@ -1900,17 +1946,18 @@
     setTimeout(function () { f.classList.remove('on'); }, 90);
     if (navigator.vibrate) navigator.vibrate(15);
     try {
+      $('shutter').classList.add('busy');
       await captureBest(6, w, h);
       processImage(frozenRaw, frozen);
       // A stabilizált élő kép a nyers képhez képest el volt tolva: a rögzített (nyers) képet ugyanoda tesszük, ahol az élőt láttad.
-      if (capC.x || capC.y) { state.x += capC.x; state.y += capC.y; }
+      if (capC.x || capC.y) { state.x += capC.x; state.y += capC.y; render(); }
       if (window.__dnOnFreeze) window.__dnOnFreeze({ x: capC.x, y: capC.y });   // csak az automata tesztek használják
     } catch (err) {
-      capturing = false;
+      capturing = false; $('shutter').classList.remove('busy');
       toast('A rögzítés nem sikerült.');
       return;
     }
-    capturing = false;
+    capturing = false; $('shutter').classList.remove('busy');
     camPause();                                  // rögzített kép vizsgálatához nem kell kamera
     app.classList.add('is-frozen');
     $('modeLabel').textContent = 'Rögzített kép';
@@ -1926,6 +1973,12 @@
     closeShareView();
     stopLupe();
     resetView();
+    if (upShotOn) {                                                         // Alnyomat-felvételből vissza: ugyanoda, ahol a felvétel előtt voltál
+      var v = upShotView; upShotOn = false; upShotView = null;
+      app.classList.remove('up-shot'); upCv.style.transform = '';
+      if (v) { state.s = v.s; state.x = v.x; state.y = v.y; render(); }
+      upKey = ''; vfDirty = true;
+    }
   }
 
   $('shutter').addEventListener('click', freeze);
@@ -1943,7 +1996,7 @@
   $('save').addEventListener('click', function () {
     if (!isFrozen()) return;
     var srcCv = frozen;
-    if (upOn) { renderUp(true); srcCv = upCv; }   // alnyomat-nézetben azt menti, amit látsz
+    if (upOn) { renderUp(true); srcCv = upCv; }   // alnyomat-nézetben azt menti, amit látsz (felvételnél a megállított képet)
     srcCv.toBlob(async function (blob) {
       if (!blob) { toast('A mentés nem sikerült.'); return; }
       var name = 'okmany-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.jpg';

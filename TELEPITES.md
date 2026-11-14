@@ -29,7 +29,7 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 - A nagyított képet ujjal mozgathatod.
 - Ha a telefonon több hátlapi kamera van, az Objektív sor gombjaival válthatsz: 0,5× (ultraszéles), 1× (fő), Tele (teleobjektív). A sor csak akkor jelenik meg, ha az eszköz több hátlapi kamerát ad át a böngészőnek.
 - Az ultraszéles kamera közelről csak az iPhone 13 Pro és újabb Pro modelleken élesít. Máshol közeli okmányhoz az 1× objektívet használd.
-- A kerek gomb megállítja a képet (pillanatkép). Ezt tovább nagyíthatod és mozgathatod.
+- Az írisz formájú kerek gomb megállítja a képet (pillanatkép). Nyomásra a lamellái összezárnak; Alnyomat-nézetben hullámvonal látszik a közepén, jelezve, hogy ott a feldolgozott képet rögzíti. Ezt tovább nagyíthatod és mozgathatod.
 - Az Élő kép gomb eldobja a pillanatképet.
 - A Mentés gomb csak akkor ment, ha megnyomod: megnyílik az iPhone megosztó menüje, ott válaszd a Kép mentése lehetőséget.
 
@@ -51,7 +51,7 @@ A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti v
 - A nézet a látott területet a kamera valódi felbontásán dolgozza fel, ezért nagyításkor is valódi részletet mutat.
 - A **Stabil** kapcsoló itt is érvényes: nagyításnál a kéz remegését az Alnyomat-nézetben is ellensúlyozza. A kapcsolót a nézetből kilépve, a szűrők sorában találod.
 - Az élő képet a telefon grafikus processzora számolja, ezért folyamatos, nem szaggat. Bekapcsoláskor egy rövid „Alnyomat-vizsgáló” felirat jelzi, hogy ebben a nézetben vagy.
-- A Mentés a feldolgozott képet menti, amit éppen látsz.
+- **Felvétel az Alnyomat-nézetben:** a rögzítő gomb itt képernyőfotót készít: pontosan az a feldolgozott kép áll meg, amit a kijelzőn látsz (a választott móddal, Erősséggel, Finomsággal és Inverzzel). A megállított képet tovább nagyíthatod, és két gomb közül választhatsz: **Élő kép** (vissza ugyanoda, ahol voltál) vagy **Mentés**. A felvétel közben a nézet beállításai nem látszanak, mert a megállított képen már nem változtatnak.
 - **Inverz:** megfordítja a világos és a sötét részeket. A világos alapon lévő halvány, világos vonalak sötét alapon gyakran jobban kivehetők. Az Éles és a Vonal móddal is működik, a rögzített képre és a mentésre is érvényes.
 - **Erősség:** mennyire emelje ki a mintát. Halvány, fakó alnyomatnál told feljebb. Ha a kép szemcsés, zajos, vagy a vonalak körül világos udvar jelenik meg, vedd lejjebb.
 - **Finomság:** a csúszka bal szélén a hajszálvékony vonalakra és a mikroszövegre érzékeny, jobbra tolva a vastagabb vonalakra és a nagyobb mintákra. Ha közelről, élesen látsz, hagyd balra. Ha távolabbról nézed, vagy a minta durvább, told jobbra.
