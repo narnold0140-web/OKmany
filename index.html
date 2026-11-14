@@ -303,6 +303,12 @@
   #shareView img { max-width: 100%; max-height: 62%; border-radius: 12px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
   #shareView p { margin: 0; text-align: center; color: var(--muted); max-width: 320px; line-height: 1.5; }
 
+  #idle { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center;
+    background: rgba(0,0,0,.82); color: var(--text); cursor: pointer; }
+  #idle[hidden] { display: none; }
+  #idle div { max-width: 320px; display: grid; gap: 8px; }
+  #idle b { font-size: 20px; }
+  #idle span { font-size: 14px; line-height: 1.45; color: var(--muted); }
   #toast {
     position: absolute; left: 50%; top: calc(var(--topH, 56px) + 8px); transform: translate(-50%, -10px); opacity: 0; pointer-events: none; z-index: 10;
     padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; background: rgba(255,255,255,.95); color: #111; transition: all .25s; max-width: calc(100% - 32px); text-align: center;
@@ -420,7 +426,7 @@
           <button class="chip" data-fx="gray" aria-pressed="false">Szürke</button>
           <button class="chip" data-fx="invert" aria-pressed="false">Inverz</button>
           <button class="chip" id="stabChip" aria-pressed="true">Stabil</button>
-          <button class="chip" id="fluidChip" aria-pressed="false">60 fps</button>
+          <button class="chip" id="camChip" aria-pressed="false">60 fps</button>
         </div>
       </div>
     </div>
@@ -460,7 +466,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v32</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v35</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -512,6 +518,7 @@
 
 
   <div id="insetProbe" aria-hidden="true"></div>
+  <div id="idle" hidden><div><b>Szüneteltetve</b><span>A kamera megállt, hogy a telefon ne melegedjen és kímélje az akkumulátort. Koppints a folytatáshoz.</span></div></div>
   <div id="toast" role="status"></div>
 </div>
 
@@ -602,7 +609,7 @@
   var lupeTimer = null, lupeActive = false, lupePos = { x: 0, y: 0 };
 
   function isControl(el) {
-    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard'));
+    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard, #idle'));
   }
 
   function doubleTap(x, y) {
@@ -758,8 +765,13 @@
 
   // deviceId: adott objektív; nélküle az utoljára használt, vagy első indításkor a fő hátlapi kamera.
   // silent: hiba esetén nem mutat hibaképernyőt, csak false-t ad vissza (objektívváltáshoz).
-  var fluidOn = false;
-  try { fluidOn = localStorage.getItem('dn_fluid') === '1'; } catch (e) {}
+  // Kameramód: 'detail' = legnagyobb felbontás, legfeljebb 30 képkocka; 'fluid' = kisebb felbontás 60 képkockával (60 fps kapcsoló).
+  var camMode = 'detail';
+  try {
+    var cmSaved = localStorage.getItem('dn_cam');
+    if (cmSaved === 'fluid') camMode = 'fluid';
+    else if (localStorage.getItem('dn_fluid') === '1') camMode = 'fluid';   // a korábbi 60 fps kapcsoló állása
+  } catch (e) {}
 
   async function startCamera(deviceId, silent) {
     var id = (typeof deviceId === 'string') ? deviceId : currentDeviceId;
@@ -769,8 +781,8 @@
     }
     try {
       stopCamera();
-      // Részletes: a legnagyobb felbontás. Folyékony (60 fps chip): kisebb felbontás, de kétszer annyi képkocka.
-      var constraints = fluidOn ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } } : { width: { ideal: 3840 }, height: { ideal: 2160 } };
+      var constraints = camMode === 'fluid' ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } }
+        : { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30, max: 30 } };
       if (id) constraints.deviceId = { exact: id };
       else constraints.facingMode = { ideal: 'environment' };
       stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
@@ -798,6 +810,8 @@
     // iPhone-on a vaku néha csak a kép elindulása után jelenik meg a kamera képességei között: később újra megnézzük
     setTimeout(checkTorch, 700); setTimeout(checkTorch, 2000); setTimeout(checkTorch, 5000);
     showScreen(null);
+    camPaused = false; idlePrev = null; markActive();
+    if (isFrozen() || idleOn) camPause();          // objektívváltás rögzített kép vagy szünet közben: az új kamera se dolgozzon fölöslegesen
     requestWakeLock();
     loadLenses();
     return true;
@@ -940,12 +954,66 @@
     return sum2 / n - mean * mean;
   }
 
+  var capC = { x: 0, y: 0 };
+  /* ----- Energiatakarékosság: a kamera csak akkor dolgozik, amikor élő képre van szükség -----
+     A fogyasztás és a melegedés nagy részét a kamera és a képkockánkénti feldolgozás adja. Rögzített kép vizsgálatakor és
+     tétlenség esetén a kamerát szüneteltetjük (a sávja megmarad, így a folytatás azonnali, és nem kér újra engedélyt). */
+  var camPaused = false, idleOn = false, lastActive = Date.now(), idlePrev = null;
+  var IDLE_MS = window.__dnIdleMs || 90000;
+  var idleCv = document.createElement('canvas'), idleCtx = idleCv.getContext('2d', { willReadFrequently: true });
+  function camPause() { camPaused = true; try { if (track) track.enabled = false; } catch (e) {} }
+  function camResume() { camPaused = false; try { if (track) track.enabled = true; } catch (e) {} }
+  function idleEnter() {
+    if (idleOn) return;
+    idleOn = true; camPause(); $('idle').hidden = false;
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }   // a kijelző is elalhat
+  }
+  function idleLeave() {
+    lastActive = Date.now(); idlePrev = null;
+    if (!idleOn) return;
+    idleOn = false; $('idle').hidden = true;
+    if (!isFrozen()) camResume();
+    requestWakeLock();
+  }
+  function markActive() { lastActive = Date.now(); }
+  ['touchstart', 'pointerdown', 'mousedown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, markActive, { capture: true, passive: true }); });
+  $('idle').addEventListener('click', idleLeave);
+  // Tétlenség: nincs érintés ÉS a kép sem változik (a telefon letéve). Kézben tartva a kép mindig mozog, ott nem szüneteltet.
+  setInterval(function () {
+    if (idleOn || document.hidden || !track || !$('start').hidden || !$('denied').hidden) return;
+    if (!isFrozen() && video.videoWidth) {
+      try {
+        idleCv.width = 32; idleCv.height = 18; idleCtx.drawImage(video, 0, 0, 32, 18);
+        var d = idleCtx.getImageData(0, 0, 32, 18).data, cur = new Uint8Array(576), i, j, ch = 0;
+        for (i = 0, j = 0; i < d.length; i += 4, j++) cur[j] = (d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10;
+        if (idlePrev) { for (j = 0; j < 576; j++) if (Math.abs(cur[j] - idlePrev[j]) > 14) ch++; if (ch > 17) markActive(); }   // a kép 3%-a változott
+        idlePrev = cur;
+      } catch (e) {}
+    }
+    var idle = Date.now() - lastActive > IDLE_MS;
+    if (isFrozen()) {
+      // Rögzített képnél a kamera már áll, és lehet, hogy éppen nézed a képet: nem takarjuk le, csak engedjük, hogy a kijelző
+      // a telefon saját beállítása szerint elaludjon. Érintésre újra ébren tartjuk.
+      if (idle && wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+      else if (!idle && !wakeLock) requestWakeLock();
+      return;
+    }
+    if (idle) idleEnter();
+  }, 2000);
+
   async function captureBest(n, w, h) {
     if (frozenRaw.width !== w || frozenRaw.height !== h) { frozenRaw.width = w; frozenRaw.height = h; }
     var rctx = frozenRaw.getContext('2d'), best = -1;
+    capC = { x: 0, y: 0 };
     for (var i = 0; i < n; i++) {
+      // a korrekciót pontosan erre a képkockára számoljuk ki, hogy a megtartott képhez a saját eltolása tartozzon
+      if (stabDriving()) { try { stabTick(); } catch (e) {} }
       var sc = sharpness(w, h);
-      if (sc > best) { best = sc; rctx.drawImage(video, 0, 0, w, h); }  // csak a eddigi legélesebbet tartja meg
+      if (sc > best) {                                                   // csak a eddigi legélesebbet tartja meg
+        best = sc; rctx.drawImage(video, 0, 0, w, h);
+        // a megtartott képkockához tartozó stabilizáló eltolás: rögzítéskor ezzel igazítjuk a nézetet, hogy a kép ne ugorjon
+        capC = stabDriving() ? { x: stabC.x, y: stabC.y } : { x: 0, y: 0 };
+      }
       if (i < n - 1) await nextFrame();
     }
   }
@@ -1279,6 +1347,7 @@
 
   /* ----- Alnyomat-nézet ----- */
 
+  var vfDirty = true;   // igaz, ha a kamera új képkockát adott az utolsó kirajzolás óta
   var upOn = false, upMode = 'sharp', upRaf = 0, upLast = 0, upPrevLens = null, upKey = '';
   var upCv = $('upCv'), upCtx = upCv.getContext('2d');
   var upSrc = document.createElement('canvas'), upSrcCtx = upSrc.getContext('2d', { willReadFrequently: true });
@@ -1369,8 +1438,8 @@
     var sw = video.videoWidth, sh = video.videoHeight;
     if (!sw || !sh || video.readyState < 2) return null;
     var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
-    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), q = Math.min(3, window.devicePixelRatio || 1);
-    var cap = Math.min(2600000, r.width * r.height * q * q);              // a kijelzőnél finomabbra nem érdemes számolni
+    var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), q = Math.min(2, window.devicePixelRatio || 1);
+    var cap = Math.min(1500000, r.width * r.height * q * q);              // a kijelzőnél finomabbra nem érdemes számolni; 2× fölött alig látszik, de sokkal több munka
     var f = Math.min(1, Math.sqrt(cap / (rw * rh)));
     var ow = Math.max(8, Math.round(rw * f)), oh = Math.max(8, Math.round(rh * f));
     var sf = rw / r.width, ox = a.x, oy = a.y;                              // stabilizálás: a kivágás eltolása a korrekcióval
@@ -1506,7 +1575,7 @@
   function upLoop(ts) {
     if (!upOn) { upRaf = 0; return; }
     upRaf = requestAnimationFrame(upLoop);
-    if (!glFail && !isFrozen()) { if (!stabDriving()) renderUp(false); return; }
+    if (!glFail && !isFrozen()) { if (!stabDriving() && vfDirty) { vfDirty = false; renderUp(false); } return; }
     if (ts - upLast >= 70) { upLast = ts; renderUp(false); }
   }
 
@@ -1559,7 +1628,10 @@
      (1×-nél nincs tartalék a kép szélén), a rögzített képet és a mentést nem érinti. */
   var stabOn = true, stabPrev = null, stabKey = '', stabP = { x: 0, y: 0 }, stabS = { x: 0, y: 0 }, stabC = { x: 0, y: 0 }, stabFail = 0;
   var stabCv = document.createElement('canvas'), stabCtx = stabCv.getContext('2d', { willReadFrequently: true });
-  var STW = 144, STR = 6;   // a becslés két lépcsőben megy: fél felbontáson durván (±STR), teljes felbontáson finoman
+  // Közbenső, gyorsított vászon: a nagy kameraképet a grafikus processzor kicsinyíti le, a processzor csak ezt a kis képet olvassa ki.
+  // (Közvetlenül a kis, kiolvasásra szánt vászonra rajzolva a telefon minden képkockánál a teljes kameraképet átmásolná a memóriába.)
+  var stabMid = document.createElement('canvas'), stabMidCtx = stabMid.getContext('2d');
+  var STW = 120, STR = 6;   // a becslés két lépcsőben megy: fél felbontáson durván (±STR), teljes felbontáson finoman
 
   var stabView = $('stabView'), stabViewCtx = stabView.getContext('2d');
   // A stabilizált képet maga rajzolja ki: a képkocka és a hozzá tartozó korrekció így mindig együtt jelenik meg (nincs rángás).
@@ -1640,7 +1712,9 @@
     var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), asp = rw / rh, w = Math.max(48, Math.round(Math.sqrt(STW * STW * 0.9 * asp) / 2) * 2), h = Math.max(48, Math.round(w / asp / 2) * 2);
     var key = [w, h, state.s.toFixed(3), Math.round(state.x), Math.round(state.y)].join();
     if (stabCv.width !== w || stabCv.height !== h) { stabCv.width = w; stabCv.height = h; }
-    try { stabCtx.drawImage(video, a.x, a.y, rw, rh, 0, 0, w, h); } catch (e) { return; }
+    var mw = w * 4, mh = h * 4;
+    if (stabMid.width !== mw || stabMid.height !== mh) { stabMid.width = mw; stabMid.height = mh; }
+    try { stabMidCtx.drawImage(video, a.x, a.y, rw, rh, 0, 0, mw, mh); stabCtx.drawImage(stabMid, 0, 0, mw, mh, 0, 0, w, h); } catch (e) { return; }
     var d = stabCtx.getImageData(0, 0, w, h).data, cur = { d: new Float32Array(w * h), w: w, h: h }, i, j;
     for (i = 0, j = 0; i < d.length; i += 4, j++) cur.d[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
     cur.half = stabHalf(cur.d, w, h);
@@ -1669,23 +1743,24 @@
   }
 
   (function stabLoop() {
-    function step() { try { stabTick(); } catch (e) {} next(); }
+    function step() { vfDirty = true; try { stabTick(); } catch (e) {} next(); }
     function next() { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step); }
     // a videó-visszahívás csak futó videónál jön: mellette egy lassú időzítő gondoskodik a visszaállításról (rögzítés, kilépés)
     setInterval(function () { if (!(stabOn && !isFrozen() && state.s > 1.15)) { if (stabPrev || stabC.x || stabC.y) stabReset(); } if (!sharpLive()) sharpOff(); }, 300);
     next();
   })();
 
-  $('fluidChip').setAttribute('aria-pressed', String(fluidOn));
-  $('fluidChip').addEventListener('click', async function () {
+  function camChipShow() { $('camChip').setAttribute('aria-pressed', String(camMode === 'fluid')); }
+  camChipShow();
+  $('camChip').addEventListener('click', async function () {
     if (isFrozen()) { toast('Előbb térj vissza az élő képre.'); return; }
-    fluidOn = !fluidOn; this.setAttribute('aria-pressed', String(fluidOn));
-    try { localStorage.setItem('dn_fluid', fluidOn ? '1' : '0'); } catch (e) {}
+    camMode = camMode === 'fluid' ? 'detail' : 'fluid'; camChipShow();
+    try { localStorage.setItem('dn_cam', camMode); } catch (e) {}
     stabReset();
     await startCamera(currentDeviceId, true);
     var st = (track && track.getSettings) ? track.getSettings() : {};
     var info = (st.width && st.height ? st.width + '×' + st.height : '') + (st.frameRate ? ', ' + Math.round(st.frameRate) + ' kép/mp' : '');
-    toast((fluidOn ? 'Folyékony mód' : 'Részletes mód') + (info ? ': ' + info : ''));
+    toast((camMode === 'fluid' ? 'Folyékony mód' : 'Részletes mód') + (info ? ': ' + info : ''));
   });
   $('stabChip').addEventListener('click', function () {
     stabOn = !stabOn; this.setAttribute('aria-pressed', String(stabOn)); stabReset();
@@ -1827,12 +1902,16 @@
     try {
       await captureBest(6, w, h);
       processImage(frozenRaw, frozen);
+      // A stabilizált élő kép a nyers képhez képest el volt tolva: a rögzített (nyers) képet ugyanoda tesszük, ahol az élőt láttad.
+      if (capC.x || capC.y) { state.x += capC.x; state.y += capC.y; }
+      if (window.__dnOnFreeze) window.__dnOnFreeze({ x: capC.x, y: capC.y });   // csak az automata tesztek használják
     } catch (err) {
       capturing = false;
       toast('A rögzítés nem sikerült.');
       return;
     }
     capturing = false;
+    camPause();                                  // rögzített kép vizsgálatához nem kell kamera
     app.classList.add('is-frozen');
     $('modeLabel').textContent = 'Rögzített kép';
   }
@@ -1841,6 +1920,8 @@
     frozen.width = 1; frozen.height = 1;          // felszabadítja a kép memóriáját
     frozenRaw.width = 1; frozenRaw.height = 1;
     app.classList.remove('is-frozen');
+    if (!idleOn) camResume();
+    markActive();
     $('modeLabel').textContent = 'Élő kép';
     closeShareView();
     stopLupe();

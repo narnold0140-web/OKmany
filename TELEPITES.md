@@ -67,7 +67,17 @@ A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti v
 A szűrők sorában két kapcsoló van:
 
 - **Stabil** (alapból be): nagyításnál a kéz remegését digitálisan ellensúlyozza az élő képen. A stabilizált képet az app maga rajzolja ki, így a mozgás sima, nem rángat. A lassú, szándékos mozgást követi, a gyors remegést kiveszi. 1× nagyításnál nem dolgozik, mert ott nincs tartalék a kép szélén. A rögzített képet és a mentést nem érinti. Egyszínű felületen, ahol nincs mihez igazítani, lágyan elengedi a korrekciót.
-- **60 fps:** a kamera kisebb felbontáson, de másodpercenként kétszer annyi képkockával megy, ezért a mozgás folyékonyabb. Az ára, hogy erős nagyításnál és a rögzített képen kevesebb a részlet. Apró részletek vizsgálatához kapcsold ki. Bekapcsoláskor az app kiírja, milyen felbontást és képkockaszámot adott a telefon, mert nem minden modell és objektív tud 60-at. A beállítást az app megjegyzi.
+- **60 fps:** a kamera kisebb felbontáson, de másodpercenként kétszer annyi képkockával megy, ezért a mozgás folyékonyabb. Az ára, hogy erős nagyításnál és a rögzített képen kevesebb a részlet, és többet fogyaszt. Bekapcsoláskor az app kiírja, milyen felbontást és képkockaszámot adott a telefon. A beállítást megjegyzi.
+
+## Fogyasztás és melegedés
+
+A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak akkor dolgoztatja a kamerát, amikor kell:
+
+- **Rögzített képnél a kamera pihen.** Amíg a megállított képet vizsgálod, nagyítod vagy mented, a kamera nem dolgozik. Az Élő kép gombra azonnal folytatja.
+- **Letett telefonnál szünet.** Ha másfél percig nem érsz a kijelzőhöz, és a kép sem változik (a telefon le van téve), a kamera megáll, és a kijelző is elalhat. Koppintásra folytatja. Kézben tartott telefonnál a kép mindig mozog, ott nem szüneteltet.
+- Hosszabb vizsgálatnál a legtakarékosabb, ha rögzíted a képet, és azon dolgozol, nem az élő képen.
+- Az app a képkockánkénti számítást úgy végzi, hogy a telefonnak a lehető legkevesebb adatot kelljen mozgatnia: a kamera képét a grafikus processzor kicsinyíti és dolgozza fel, és minden képkockát csak egyszer.
+- Az Élesítés, a Stabil, a 60 fps és az Alnyomat-nézet élő képen többletmunkát ad a telefonnak. Ha nincs rájuk szükség, kikapcsolva kevesebbet fogyaszt.
 
 ## Mintaokmány-tár
 
@@ -86,7 +96,7 @@ A mintaképek csak a telefonon tárolódnak (az app böngészőtárolójában), 
 ## Adatvédelem
 
 - A kép csak a telefon memóriájában van, és kilépéskor vagy háttérbe váltáskor törlődik.
-- Az app nem küld el semmit sehova. Az app fájljai, a választott keretméret, a 60 fps kapcsoló állása, az Alnyomat-nézet két csúszkájának állása és az általad betöltött mintaképek a telefonon tárolódnak, hogy internet nélkül is elinduljon. A vizsgált okmányról készült képet az app nem tárolja.
+- Az app nem küld el semmit sehova. Az app fájljai, a választott keretméret, a kameramód, az Alnyomat-nézet két csúszkájának állása és az általad betöltött mintaképek a telefonon tárolódnak, hogy internet nélkül is elinduljon. A vizsgált okmányról készült képet az app nem tárolja.
 - Képernyőképet az app nem tud megakadályozni.
 
 ## Tudnivalók
