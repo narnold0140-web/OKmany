@@ -79,6 +79,25 @@ A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak 
 - Az app a képkockánkénti számítást úgy végzi, hogy a telefonnak a lehető legkevesebb adatot kelljen mozgatnia: a kamera képét a grafikus processzor kicsinyíti és dolgozza fel, és minden képkockát csak egyszer.
 - Az Élesítés, a Stabil, a 60 fps és az Alnyomat-nézet élő képen többletmunkát ad a telefonnak. Ha nincs rájuk szükség, kikapcsolva kevesebbet fogyaszt.
 
+## Okmány felismerése a gépi sorból
+
+A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az okmány alján a << jeleket tartalmazó sorok) felismeri az okmányt, ellenőrzi, és a megfelelő PRADO-oldalra visz.
+
+1. Koppints a mezőbe, és a felugró menüben válaszd a **Szöveg beolvasása** lehetőséget (vagy a billentyűzet fölötti beolvasás ikont).
+2. Tartsd a kamerát a gépi sorra, és koppints a **Beszúrás** gombra. A gépi sort be is gépelheted.
+3. Az app megmutatja:
+   - a kiállító országot és az okmány típusát (útlevél, személyi igazolvány, tartózkodási engedély, vízum);
+   - a gépi sor adatait (név, okmányszám, állampolgárság, születési dátum, nem, lejárat), hogy összevesd őket az okmányra nyomtatott adatokkal;
+   - az ellenőrző számjegyeket mezőnként (✓ vagy ✗), és ha az okmány lejárt.
+4. A **PRADO** gomb a kiállító ország megfelelő okmánykategóriájának oldalát nyitja meg. Alatta ugyanennek a kiállítónak a többi kategóriája és az összes okmánya is elérhető.
+
+Tudnivalók:
+- A beolvasást az iPhone saját szövegfelismerője végzi (iOS 15-től, iPhone XS és újabb). Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor és háttérbe váltáskor törli.
+- **Eltérés az ellenőrző számjegyekben:** lehet beolvasási hiba is. Hasonlítsd össze a mezőt a gépi sorral, főleg a könnyen összetéveszthető karaktereket (O és 0, I és 1, B és 8, S és 5, Z és 2). Ha a beolvasás biztosan pontos, az eltérés átírt adatra utalhat.
+- Az okmányszámban az app szándékosan nem javít semmit automatikusan, mert ott betű és szám is szabályos lehet, és egy átírt adatot is „rendbe tehetne”. A dátumokban, ahol betű nem állhat, a betűt számjegynek olvassa (például O → 0), de ezt narancssárgán jelzi.
+- Ha az ellenőrző számjegyek stimmelnek, az csak azt jelenti, hogy a gépi sor önmagában ellentmondásmentes. Egy jól elkészített hamisítványon is stimmelhetnek, ezért ez nem helyettesíti az okmány vizsgálatát.
+- A típus a dokumentumkódból becsült: kártyaformátumú okmányoknál (személyi igazolvány, tartózkodási engedély) nem mindig egyértelmű, ezért a többi kategória is elérhető. Ha a PRADO-ban a kiállítónak nincs ilyen kategóriája, hibaoldal jelenik meg: ilyenkor nyisd meg az összes okmányát.
+
 ## Mintaokmány-tár
 
 A felső sávban a rétegek ikonnal nyitható. Itt saját mintaképeket tölthetsz be (Minta hozzáadása), és az okmány méretét is megadod, így a keret erre igazodik.

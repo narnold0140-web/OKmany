@@ -228,6 +228,45 @@
     #ptTag { margin-top: 0; }
   }
 
+  /* Okmányfelismerés a gépi sorból */
+  #mrzSheet {
+    position: absolute; inset: 0; z-index: 8; background: #05090a; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+    padding: calc(var(--sat) + 16px) calc(var(--sar) + 18px) calc(var(--sab) + 24px) calc(var(--sal) + 18px);
+    -webkit-user-select: auto; user-select: auto;
+  }
+  #mrzSheet[hidden] { display: none; }
+  #mrzSheet .mrz-wrap { max-width: 620px; margin: 0 auto; }
+  #mrzSheet ol { margin: 0 0 12px; padding-left: 20px; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+  #mrzSheet ol b { color: var(--text); font-weight: 600; }
+  #mrzIn {
+    display: block; width: 100%; min-height: 96px; resize: vertical; border-radius: 14px; border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.06); color: var(--text); padding: 12px; font: 600 14px/1.5 ui-monospace, Menlo, "SF Mono", monospace;
+    letter-spacing: .02em; text-transform: uppercase; -webkit-user-select: text; user-select: text;
+  }
+  #mrzIn:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .mrz-btns { display: flex; gap: 8px; margin: 10px 0 14px; flex-wrap: wrap; }
+  #mrzRes:empty { display: none; }
+  #mrzRes { display: grid; gap: 12px; }
+  .mrz-card { border-radius: 16px; background: rgba(255,255,255,.06); padding: 12px 14px; }
+  .mrz-head { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; }
+  .mrz-head small { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .mrz-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; }
+  .mrz-badge.ok { background: rgba(64,217,196,.2); color: var(--accent); }
+  .mrz-badge.bad { background: rgba(255,171,64,.22); color: var(--warn); }
+  .mrz-rows { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; margin-top: 10px; font-size: 14px; align-items: baseline; }
+  .mrz-rows span { color: var(--muted); font-size: 13px; }
+  .mrz-rows b { font-weight: 600; word-break: break-all; }
+  .mrz-rows i { font-style: normal; font-weight: 700; }
+  .mrz-rows i.ok { color: var(--accent); }
+  .mrz-rows i.bad { color: var(--warn); }
+  .mrz-msg { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+  .mrz-msg.bad { color: var(--warn); }
+  .mrz-links { display: grid; gap: 8px; }
+  .mrz-links a.btn { text-decoration: none; color: var(--text); justify-content: center; padding: 12px 14px; font-size: 15px; }
+  .mrz-links a.btn.primary { color: #05211d; }
+  .mrz-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mrz-cats a { text-decoration: none; }
+
   /* Összecsukható panel */
   .handle { width: 100%; height: 20px; flex: none; display: grid; place-items: center; }
   .handle span { width: 38px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.42); }
@@ -391,6 +430,9 @@
     <button class="round" id="upBtn" aria-label="Alnyomat-nézet" aria-pressed="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7c3-3 6 3 9 0s6 3 9 0"/><path d="M3 12c3-3 6 3 9 0s6 3 9 0"/><path d="M3 17c3-3 6 3 9 0s6 3 9 0"/></svg>
       </button>
+    <button class="round" id="mrzBtn" aria-label="Okmány felismerése a gépi sorból">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 14h10"/><path d="M7 17h3m2 0h1m2 0h2"/><circle cx="8.5" cy="9.5" r="1.5"/></svg>
+      </button>
     <button class="round" id="specBtn" aria-label="Mintaokmány-tár">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/></svg>
       </button>
@@ -483,7 +525,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v37</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v38</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -497,6 +539,21 @@
     <img id="shareImg" alt="Rögzített kép">
     <p>Nyomd hosszan a képet, és válaszd a Mentés a Fotókba lehetőséget.</p>
     <button class="btn" id="shareClose" style="flex:none;width:100%;max-width:320px">Bezárás</button>
+  </section>
+
+  <section id="mrzSheet" hidden>
+    <div class="mrz-wrap">
+      <div class="lib-head"><h2>Okmány felismerése</h2><button class="mini" id="mrzClose">Bezár</button></div>
+      <ol>
+        <li>Koppints az alábbi mezőbe.</li>
+        <li>A felugró menüben válaszd a <b>Szöveg beolvasása</b> lehetőséget (vagy a billentyűzet fölötti beolvasás ikont).</li>
+        <li>Tartsd a kamerát az okmány <b>gépi sorára</b> (a &lt;&lt; jeleket tartalmazó sorok), és koppints a <b>Beszúrás</b> gombra.</li>
+      </ol>
+      <textarea id="mrzIn" rows="3" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="P&lt;HUNMINTA&lt;&lt;ANNA&lt;&lt;&lt;…" aria-label="Gépi sor"></textarea>
+      <div class="mrz-btns"><button class="mini" id="mrzClear">Törlés</button></div>
+      <div id="mrzRes" aria-live="polite"></div>
+      <p class="lib-note" style="margin-top:14px">A beolvasást az iPhone saját szövegfelismerője végzi, a telefonon. Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor törli.</p>
+    </div>
   </section>
 
   <section id="specLib" hidden>
@@ -630,7 +687,7 @@
   var lupeTimer = null, lupeActive = false, lupePos = { x: 0, y: 0 };
 
   function isControl(el) {
-    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard, #idle'));
+    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard, #idle, #mrzSheet'));
   }
 
   function doubleTap(x, y) {
@@ -1911,6 +1968,196 @@
   $('ptClose').addEventListener('click', function () { ptToggle(false); });
   $('ptPrev').addEventListener('click', function () { ptShow(ptIdx - 1); });
   $('ptNext').addEventListener('click', function () { ptShow(ptIdx + 1); });
+
+  /* ----- Okmányfelismerés a gépi sorból (MRZ, ICAO 9303) -----
+     A szöveget az iPhone saját „Szöveg beolvasása” funkciója írja a mezőbe. Az app felismeri a formátumot (TD1, TD2, TD3, vízum),
+     ellenőrzi az ellenőrző számjegyeket, kijavítja a tipikus beolvasási tévesztéseket (O/0, I/1, B/8 …, csak ha a számjegy igazolja),
+     és a kiállító ország + okmánytípus alapján a megfelelő PRADO-oldalra visz. Semmit nem tárol. */
+  /* PURE-MRZ-START */
+  var MRZ_C = {"EUE":"Európai Unió","AUT":"Ausztria","BEL":"Belgium","BGR":"Bulgária","CYP":"Ciprus","CZE":"Csehország","DEU":"Németország","DNK":"Dánia","ESP":"Spanyolország","EST":"Észtország","FIN":"Finnország","FRA":"Franciaország","GRC":"Görögország","HRV":"Horvátország","HUN":"Magyarország","IRL":"Írország","ITA":"Olaszország","LTU":"Litvánia","LUX":"Luxemburg","LVA":"Lettország","MLT":"Málta","NLD":"Hollandia","POL":"Lengyelország","PRT":"Portugália","ROU":"Románia","SVK":"Szlovákia","SVN":"Szlovénia","SWE":"Svédország","CHE":"Svájc","ISL":"Izland","NOR":"Norvégia","LIE":"Liechtenstein","AFG":"Afganisztán","AGO":"Angola","AIA":"Anguilla","ALB":"Albánia","AND":"Andorra","ARE":"Egyesült Arab Emírségek","ARG":"Argentína","ARM":"Örményország","AUS":"Ausztrália","AZE":"Azerbajdzsán","BDI":"Burundi","BEN":"Benin","BFA":"Burkina Faso","BGD":"Banglades","BHR":"Bahrein","BHS":"Bahama-szigetek","BIH":"Bosznia-Hercegovina","BLR":"Fehéroroszország","BLZ":"Belize","BMU":"Bermuda","BRA":"Brazília","BRN":"Brunei","BTN":"Bhután","BWA":"Botswana","CAF":"Közép-afrikai Köztársaság","CAN":"Kanada","CHL":"Chile","CHN":"Kína","CIV":"Elefántcsontpart","CMR":"Kamerun","COD":"Kongói Demokratikus Köztársaság","COG":"Kongói Köztársaság","COL":"Kolumbia","COM":"Comore-szigetek","CPV":"Zöld-foki Köztársaság","CRI":"Costa Rica","CUB":"Kuba","DJI":"Dzsibuti","DMA":"Dominikai Közösség","DOM":"Dominikai Köztársaság","DZA":"Algéria","ECU":"Ecuador","EGY":"Egyiptom","ERI":"Eritrea","ETH":"Etiópia","FRO":"Feröer","GAB":"Gabon","GBD":"Brit tengerentúli területek","GBR":"Egyesült Királyság","GEO":"Grúzia","GGY":"Guernsey","GHA":"Ghána","GIB":"Gibraltár","GIN":"Guinea","GMB":"Gambia","GNB":"Bissau-Guinea","GNQ":"Egyenlítői-Guinea","GRD":"Grenada","GRL":"Grönland","GUY":"Guyana","HKG":"Hongkong","HND":"Honduras","HTI":"Haiti","IMN":"Man-sziget","IND":"India","IRN":"Irán","IRQ":"Irak","ISR":"Izrael","JAM":"Jamaica","JEY":"Jersey","JOR":"Jordánia","JPN":"Japán","KAZ":"Kazahsztán","KEN":"Kenya","KGZ":"Kirgizisztán","KHM":"Kambodzsa","KNA":"Saint Kitts és Nevis","KOR":"Dél-Korea","KWT":"Kuvait","LAO":"Laosz","LBR":"Libéria","LBN":"Libanon","LBY":"Líbia","LKA":"Srí Lanka","LSO":"Lesotho","MAC":"Makaó","MAR":"Marokkó","MCO":"Monaco","MDA":"Moldova","MDG":"Madagaszkár","MDV":"Maldív-szigetek","MEX":"Mexikó","MKD":"Észak-Macedónia","MLI":"Mali","MNE":"Montenegró","MNG":"Mongólia","MOZ":"Mozambik","MRT":"Mauritánia","MSR":"Montserrat","MWI":"Malawi","MYS":"Malajzia","NAM":"Namíbia","NCL":"Új-Kaledónia","NGA":"Nigéria","NIC":"Nicaragua","NPL":"Nepál","NZL":"Új-Zéland","OMN":"Omán","PAK":"Pakisztán","PAN":"Panama","PER":"Peru","PHL":"Fülöp-szigetek","PLW":"Palau","PRK":"Észak-Korea","PRY":"Paraguay","PYF":"Francia Polinézia","QAT":"Katar","RUS":"Oroszország","RWA":"Ruanda","SAU":"Szaúd-Arábia","SDN":"Szudán","SEN":"Szenegál","SGP":"Szingapúr","SHN":"Szent Ilona","SLE":"Sierra Leone","SLV":"Salvador","SMR":"San Marino","SOM":"Szomália","SRB":"Szerbia","SSD":"Dél-Szudán","STP":"São Tomé és Príncipe","SUR":"Suriname","SYC":"Seychelle-szigetek","SYR":"Szíria","TCA":"Turks- és Caicos-szigetek","TCD":"Csád","TGO":"Togo","THA":"Thaiföld","TKM":"Türkmenisztán","TLS":"Kelet-Timor","TUN":"Tunézia","TUR":"Törökország","TUV":"Tuvalu","TWN":"Tajvan","TZA":"Tanzánia","UAP":"Afrikai Unió","UGA":"Uganda","UKR":"Ukrajna","UNO":"Egyesült Nemzetek","URY":"Uruguay","USA":"Egyesült Államok","UZB":"Üzbegisztán","VAT":"Vatikán","VEN":"Venezuela","VGB":"Brit Virgin-szigetek","VNM":"Vietnám","YEM":"Jemen","ZAF":"Dél-afrikai Köztársaság","ZMB":"Zambia","ZWE":"Zimbabwe","XEC":"ECOWAS","XOM":"Máltai Lovagrend","XPO":"INTERPOL","INT":"Nemzetközi szervezet","OPT":"Palesztin terület","XKX":"Koszovó"};
+  var MRZ_ALIAS = { D: 'DEU', GBN: 'GBR', GBO: 'GBR', GBP: 'GBR', GBS: 'GBR', UNA: 'UNO', UNK: 'UNO' };
+  var MRZ_CAT = { A: 'Útlevél', B: 'Személyi igazolvány', C: 'Vízum', H: 'Tartózkodási engedély', J: 'Úti okmány külföldinek', T: 'Egyéb úti okmány' };
+
+  function mrzVal(ch) { if (ch >= '0' && ch <= '9') return ch.charCodeAt(0) - 48; if (ch >= 'A' && ch <= 'Z') return ch.charCodeAt(0) - 55; return 0; }
+  function mrzCd(str) { var w = [7, 3, 1], s = 0; for (var i = 0; i < str.length; i++) s += mrzVal(str[i]) * w[i % 3]; return String(s % 10); }
+
+  // A beolvasott szöveg egységesítése: nagybetű, szóközök ki, a tipikusan félreolvasott kitöltőjelek (« ‹ ﹤ ＜) visszaírása.
+  function mrzNormLine(l) {
+    return l.toUpperCase().replace(/«/g, '<<').replace(/[‹﹤＜〈❮]/g, '<').replace(/[\s ]/g, '').replace(/[^A-Z0-9<]/g, '');
+  }
+  function mrzFiller(l) { var p; do { p = l; l = l.replace(/<[KCL](?=<)/g, '<<'); } while (l !== p); return l; }
+  function mrzSplit(raw) {
+    var lines = String(raw || '').split(/\r?\n/).map(mrzNormLine).filter(function (l) { return l.length >= 20; });
+    var joined = lines.join('');
+    var fmts = [[3, 30, 'TD1'], [2, 44, 'TD3'], [2, 36, 'TD2']], i;
+    var fix = function (ls, f) { return ls.map(function (l, k) { return (f === 'TD1' ? k < 2 : k === 1) ? mrzFiller(l) : l; }); };   // a névsorhoz nem nyúl
+    for (i = 0; i < fmts.length; i++) if (lines.length === fmts[i][0] && lines.every(function (l) { return l.length === fmts[i][1]; })) return { fmt: fmts[i][2], lines: fix(lines, fmts[i][2]) };
+    for (i = 0; i < fmts.length; i++) if (joined.length === fmts[i][0] * fmts[i][1]) {   // sortörés nélkül érkezett
+      var out = [], k; for (k = 0; k < fmts[i][0]; k++) out.push(joined.substr(k * fmts[i][1], fmts[i][1])); return { fmt: fmts[i][2], lines: fix(out, fmts[i][2]) };
+    }
+    var all = String(raw || '').split(/\r?\n/).map(mrzNormLine).join('');   // a rövid, még befejezetlen beolvasás is számít
+    return { fmt: null, lines: lines, len: all.length };
+  }
+
+  var MRZ_TO_DIGIT = { O: '0', Q: '0', D: '0', I: '1', L: '1', Z: '2', B: '8', S: '5', G: '6', T: '7', '<': '0' };
+  var MRZ_TO_ALPHA = { '0': 'O', '1': 'I', '2': 'Z', '5': 'S', '8': 'B', '6': 'G' };
+  function mrzDigits(s) { return s.split('').map(function (c) { return MRZ_TO_DIGIT[c] || c; }).join(''); }
+  function mrzAlpha(s) { return s.split('').map(function (c) { return MRZ_TO_ALPHA[c] || c; }).join(''); }
+
+  // Egy ellenőrzött mező: ha a számjegy nem stimmel, egyetlen tipikus tévesztés javítását próbálja, és csak akkor fogadja el, ha a számjegy igazolja.
+  function mrzField(data, cd, numeric) {
+    var d = numeric ? mrzDigits(data) : data, c = mrzDigits(cd), fixed = d !== data || c !== cd;
+    if (cd === '<' && /^<+$/.test(data)) return { v: data, ok: true, fixed: false, empty: true };
+    if (mrzCd(d) === c) return { v: d, ok: true, fixed: fixed };
+    // Betűt és számot is tartalmazó mezőt (okmányszám) szándékosan NEM javítunk: egy átírt adatot is „rendbe tehetne”, és a csalás rejtve maradna.
+    return { v: d, ok: false, fixed: fixed };
+  }
+
+  function mrzDate(yymmdd, future) {
+    if (!/^\d{6}$/.test(yymmdd)) return null;
+    var yy = +yymmdd.slice(0, 2), mm = +yymmdd.slice(2, 4), dd = +yymmdd.slice(4, 6), now = new Date(), cy = now.getFullYear() % 100;
+    var y = future ? 2000 + yy : (yy > cy ? 1900 + yy : 2000 + yy);
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+    return new Date(y, mm - 1, dd);
+  }
+  function mrzName(f) {
+    var parts = f.replace(/<+$/, '').split('<<');
+    return { sur: (parts[0] || '').replace(/</g, ' ').trim(), given: (parts.slice(1).join(' ') || '').replace(/</g, ' ').trim() };
+  }
+  function mrzState(code) {
+    var c = code.replace(/</g, '');
+    if (MRZ_ALIAS[c]) c = MRZ_ALIAS[c];
+    return { code: c, name: MRZ_C[c] || null };
+  }
+
+  // A PRADO-kategória a dokumentumkódból. A TD1/TD2 kártyáknál (I, A, C) a második betű R tartózkodási engedélyre utal.
+  function mrzCategory(type, fmt) {
+    var t0 = type[0], t1 = type[1] || '<';
+    if (t0 === 'P') return { cat: 'A', sure: true };
+    if (t0 === 'V') return { cat: 'C', sure: true };
+    if (t1 === 'R' || (t0 === 'A' && t1 === 'R')) return { cat: 'H', sure: false };
+    if (t0 === 'I' || t0 === 'A' || t0 === 'C') return { cat: 'B', sure: false };
+    return { cat: null, sure: false };
+  }
+
+  function mrzParse(raw) {
+    var sp = mrzSplit(raw), L = sp.lines, r = { fmt: sp.fmt, checks: [], fixed: false };
+    if (!sp.fmt) { r.error = sp.len ? 'len' : 'empty'; r.len = sp.len; return r; }
+    var visa = L[0][0] === 'V' || L[0][0] === 'v';
+    var docnum, dob, exp, comp, opt, line2;
+    if (sp.fmt === 'TD1') {
+      r.type = L[0].slice(0, 2); r.state = mrzAlpha(L[0].slice(2, 5));
+      var dn = L[0].slice(5, 14), dcd = L[0][14], o1 = L[0].slice(15, 30);
+      if (dcd === '<' && o1[0] !== '<') {                                  // 9 karakternél hosszabb okmányszám: a folytatás az opcionális mezőben
+        var m = o1.match(/^([A-Z0-9]*?)([0-9A-Z])</) || o1.match(/^([A-Z0-9]*)([0-9A-Z])$/);
+        if (m) { dn = dn + m[1]; dcd = m[2]; }
+      }
+      docnum = mrzField(dn, dcd, false);
+      dob = mrzField(L[1].slice(0, 6), L[1][6], true); r.sex = L[1][7];
+      exp = mrzField(L[1].slice(8, 14), L[1][14], true);
+      r.nat = mrzAlpha(L[1].slice(15, 18));
+      // összesítő: a javított mezőkből, saját javítás nélkül (különben egy átírt adatot is „rendbe tehetne”)
+      var l1fix = docnum.ok && dn.length === 9 ? docnum.v + L[0].slice(14, 30) : L[0].slice(5, 30);
+      var compData = l1fix + dob.v + mrzDigits(L[1][6]) + exp.v + mrzDigits(L[1][14]) + L[1].slice(18, 29);
+      comp = mrzField(compData, L[1][29], false);
+      r.name = mrzName(L[2]);
+    } else {
+      var l1 = L[0], l2 = L[1];
+      r.type = l1.slice(0, 2); r.state = mrzAlpha(l1.slice(2, 5)); r.name = mrzName(l1.slice(5));
+      docnum = mrzField(l2.slice(0, 9), l2[9], false);
+      r.nat = mrzAlpha(l2.slice(10, 13));
+      dob = mrzField(l2.slice(13, 19), l2[19], true); r.sex = l2[20];
+      exp = mrzField(l2.slice(21, 27), l2[27], true);
+      if (visa) r.fmt = sp.fmt === 'TD3' ? 'MRV-A' : 'MRV-B';
+      else if (sp.fmt === 'TD3') {
+        opt = mrzField(l2.slice(28, 42), l2[42], false);
+        comp = mrzField(docnum.v + mrzDigits(l2[9]) + dob.v + mrzDigits(l2[19]) + exp.v + mrzDigits(l2[27]) + opt.v + (opt.empty ? l2[42] : mrzDigits(l2[42])), l2[43], false);
+      } else {
+        comp = mrzField(docnum.v + mrzDigits(l2[9]) + dob.v + mrzDigits(l2[19]) + exp.v + mrzDigits(l2[27]) + l2.slice(28, 35), l2[35], false);
+      }
+    }
+    r.docnum = docnum.v.replace(/<+$/, ''); r.dob = mrzDate(dob.v, false); r.exp = mrzDate(exp.v, true);
+    r.checks.push({ n: 'Okmányszám', ok: docnum.ok });
+    r.checks.push({ n: 'Születési dátum', ok: dob.ok && !!r.dob });
+    r.checks.push({ n: 'Lejárat', ok: exp.ok && !!r.exp });
+    if (opt && !opt.empty) r.checks.push({ n: 'Személyes azonosító', ok: opt.ok });
+    if (comp) r.checks.push({ n: 'Összesítő', ok: comp.ok });
+    r.fixed = [docnum, dob, exp, opt, comp].some(function (f) { return f && f.ok && f.fixed; });
+    r.allOk = r.checks.every(function (c) { return c.ok; });
+    r.st = mrzState(r.state); r.natSt = mrzState(r.nat);
+    r.cat = mrzCategory(r.type, r.fmt);
+    r.expired = r.exp ? r.exp < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) : null;
+    return r;
+  }
+  function pradoUrl(code, cat) {
+    if (!code || !MRZ_C[code]) return 'https://www.consilium.europa.eu/prado/hu/search-by-document-country.html';
+    if (!cat) return 'https://www.consilium.europa.eu/prado/hu/prado-documents/' + code + '/index.html';
+    return 'https://www.consilium.europa.eu/prado/en/prado-documents/' + code + '/' + cat + '/docs-per-category.html';
+  }
+  /* PURE-MRZ-END */
+
+  function mrzRender() {
+    var box = $('mrzRes'), r = mrzParse($('mrzIn').value);
+    box.innerHTML = '';
+    var el = function (tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+    if (r.error === 'empty') return;
+    if (r.error === 'len') {
+      var c0 = el('div', 'mrz-card'); c0.appendChild(el('div', 'mrz-head', 'A gépi sor még nem teljes'));
+      c0.appendChild(el('p', 'mrz-msg', r.len + ' karakter érkezett. Útlevélnél 2 × 44, személyi igazolványnál 3 × 30 vagy 2 × 36 karakter kell. Olvasd be újra az összes sort, a << jelekkel együtt.'));
+      box.appendChild(c0); return;
+    }
+    var fmtName = { TD1: 'kártya (3 sor)', TD2: 'okmány (2 × 36)', TD3: 'útlevél (2 × 44)', 'MRV-A': 'vízum (2 × 44)', 'MRV-B': 'vízum (2 × 36)' }[r.fmt];
+    var catName = r.cat.cat ? MRZ_CAT[r.cat.cat] : 'Ismeretlen típus';
+    var c1 = el('div', 'mrz-card'), h = el('div', 'mrz-head');
+    h.appendChild(el('span', null, (r.st.name || ('Ismeretlen kiállító: ' + r.st.code)) + ' · ' + catName));
+    c1.appendChild(h);
+    c1.appendChild(el('div', 'mrz-msg', 'Formátum: ' + fmtName + ' · dokumentumkód: ' + r.type.replace(/</g, '') + (r.cat.sure ? '' : ' (a típus a kódból becsült, lent másik kategória is választható)')));
+    var b = el('span', 'mrz-badge ' + (r.allOk && !r.fixed ? 'ok' : 'bad'), !r.allOk ? 'Eltérés az ellenőrző számjegyekben' : r.fixed ? 'Stimmel, de a gépi sorban betű állt szám helyén' : 'Minden ellenőrző számjegy stimmel');
+    var bw = el('div'); bw.style.marginTop = '10px'; bw.appendChild(b); c1.appendChild(bw);
+    var rows = el('div', 'mrz-rows');
+    var fmtD = function (d) { return d ? d.getFullYear() + '. ' + String(d.getMonth() + 1).padStart(2, '0') + '. ' + String(d.getDate()).padStart(2, '0') + '.' : '–'; };
+    var row = function (lab, val, chk) { rows.appendChild(el('span', null, lab)); rows.appendChild(el('b', null, val)); var i = el('i', chk == null ? '' : (chk ? 'ok' : 'bad'), chk == null ? '' : (chk ? '✓' : '✗')); rows.appendChild(i); };
+    var ck = function (n) { for (var i = 0; i < r.checks.length; i++) if (r.checks[i].n === n) return r.checks[i].ok; return null; };
+    row('Név', (r.name.sur + (r.name.given ? ', ' + r.name.given : '')) || '–', null);
+    row('Okmányszám', r.docnum || '–', ck('Okmányszám'));
+    row('Állampolgárság', r.natSt.name ? r.natSt.name + ' (' + r.natSt.code + ')' : r.nat.replace(/</g, ''), null);
+    row('Születési dátum', fmtD(r.dob), ck('Születési dátum'));
+    row('Nem', r.sex === 'F' ? 'nő' : r.sex === 'M' ? 'férfi' : 'nincs megadva', null);
+    row('Lejárat', fmtD(r.exp) + (r.expired ? ' – LEJÁRT' : ''), ck('Lejárat'));
+    if (ck('Személyes azonosító') != null) row('Személyes azonosító', '', ck('Személyes azonosító'));
+    if (ck('Összesítő') != null) row('Összesítő számjegy', '', ck('Összesítő'));
+    c1.appendChild(rows);
+    if (!r.allOk) c1.appendChild(el('p', 'mrz-msg bad', 'Lehet beolvasási hiba is: hasonlítsd össze a mezőt a gépi sorral, főleg a könnyen összetéveszthető karaktereket (O és 0, I és 1, B és 8, S és 5, Z és 2). Ha kell, javítsd a mezőben vagy olvasd be újra. Ha a beolvasás biztosan pontos, az eltérés átírt adatra utalhat.'));
+    else if (r.fixed) c1.appendChild(el('p', 'mrz-msg bad', 'A gépi sor egy csak számjegyet tartalmazó mezőjében (dátum vagy ellenőrző számjegy) betű állt; az app ezt számjegynek olvasta (például O → 0). Nézd meg szemmel a gépi sort.'));
+    if (r.expired) c1.appendChild(el('p', 'mrz-msg bad', 'Az okmány a gépi sor szerint lejárt.'));
+    c1.appendChild(el('p', 'mrz-msg', 'Hasonlítsd össze ezeket az adatokat az okmányra nyomtatott adatokkal: ha eltérnek, az hamisításra utalhat.'));
+    box.appendChild(c1);
+    var c2 = el('div', 'mrz-card mrz-links');
+    if (r.st.name) {
+      var a1 = el('a', 'btn primary', 'PRADO: ' + r.st.name + (r.cat.cat ? ' – ' + MRZ_CAT[r.cat.cat] : '') + ' ↗');
+      a1.href = pradoUrl(r.st.code, r.cat.cat); a1.target = '_blank'; a1.rel = 'noopener'; c2.appendChild(a1);
+      var a2 = el('a', 'btn', r.st.name + ': az összes okmány ↗'); a2.href = pradoUrl(r.st.code, null); a2.target = '_blank'; a2.rel = 'noopener'; c2.appendChild(a2);
+      var cats = el('div', 'mrz-cats');
+      ['A', 'B', 'H', 'C', 'J', 'T'].forEach(function (k) {
+        if (k === r.cat.cat) return;
+        var a = el('a', 'chip', MRZ_CAT[k]); a.href = pradoUrl(r.st.code, k); a.target = '_blank'; a.rel = 'noopener'; cats.appendChild(a);
+      });
+      c2.appendChild(el('p', 'mrz-msg', 'Másik kategória ugyanennél a kiállítónál:')); c2.appendChild(cats);
+      c2.appendChild(el('p', 'mrz-msg', 'Ha a PRADO-ban ennek a kiállítónak nincs ilyen kategóriája, hibaoldal jelenik meg: ilyenkor nyisd meg az összes okmányát.'));
+    } else {
+      c2.appendChild(el('p', 'mrz-msg', 'Ez a kiállító kód (' + r.st.code + ') nincs a PRADO kiállítói között.'));
+      var a3 = el('a', 'btn', 'PRADO keresés ország szerint ↗'); a3.href = pradoUrl(null); a3.target = '_blank'; a3.rel = 'noopener'; c2.appendChild(a3);
+    }
+    box.appendChild(c2);
+  }
+  function mrzOpen() { $('mrzSheet').hidden = false; }
+  function mrzWipe() { $('mrzIn').value = ''; $('mrzRes').innerHTML = ''; }
+  function mrzClose() { $('mrzSheet').hidden = true; mrzWipe(); try { $('mrzIn').blur(); } catch (e) {} }
+  $('mrzBtn').addEventListener('click', mrzOpen);
+  $('mrzClose').addEventListener('click', mrzClose);
+  $('mrzClear').addEventListener('click', function () { mrzWipe(); $('mrzIn').focus(); });
+  $('mrzIn').addEventListener('input', mrzRender);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) mrzWipe(); });   // háttérbe téve a gépi sor törlődik
 
   /* ----- Pillanatkép ----- */
 
