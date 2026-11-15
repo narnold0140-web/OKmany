@@ -122,6 +122,8 @@ A lista a felhasználó által küldött magyar szövegen alapul, a hatályos á
 
 **Automatikus figyelés:** a csomagban lévő `.github/workflows/vizumlista-figyelo.yml` hetente megnézi az EUR-Lexen, van-e új hatályos változata a vízumlistának. Ha van, nyit egy Issue-t a repóban, és erről a GitHub e-mailt küld. Ilyenkor kérd meg Claude-ot a lista frissítésére. Ha a `.github` mappa feltöltése a GitHub weboldalán nem megy (a ponttal kezdődő mappák néha kimaradnak), hozd létre kézzel: **Add file → Create new file**, a név `.github/workflows/vizumlista-figyelo.yml`, és másold bele a fájl tartalmát; ugyanígy a `.github/vizumlista-allapot.txt` fájlt `2025-12-30` tartalommal. Az **Actions** fülön a **Run workflow** gombbal kézzel is kipróbálható.
 
+**Gyorsabb olvasás (v55-től):** a kamera a Scan indításakor egyből teljes felbontásban indul, az olvasó kb. négyszer gyorsabban dolgozik fel egy képet, és sűrűbben olvas. A „Másik kategória” gombok közül az „Egyéb úti okmány” kikerült; a sorrend: Személyi igazolvány, Tartózkodási engedély, Úti okmány külföldinek, Vízum.
+
 ## Mintaokmány-tár
 
 A felső sávban a rétegek ikonnal nyitható. Itt saját mintaképeket tölthetsz be (Minta hozzáadása), és az okmány méretét is megadod, így a keret erre igazodik.
