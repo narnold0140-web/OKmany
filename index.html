@@ -564,7 +564,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v45</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v46</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -2288,11 +2288,24 @@
       if (best) for (var k2 = 0; k2 < 3; k2++) setChar(cp[0], cp[1] + k2, best[k2]);
     });
   }
+  // Az okmányszám legbizonytalanabb karaktere: a legjobb és a második legjobb megengedett karakter pontszámkülönbsége.
+  // Az ellenőrző számjegy (mod 10) két egyidejű tévesztést néha nem vesz észre, ezért kétes karakternél nem mondjuk „biztosnak”.
+  var OCR_DOCPOS = { TD3: [1, 0, 9], TD2: [1, 0, 9], TD1: [0, 5, 9] };
+  function ocrDocMargin(fmt, getScores) {
+    var dp = OCR_DOCPOS[fmt]; if (!dp) return 0;
+    var lay = OCR_LAYOUT[fmt][dp[0]], mm = 1;
+    for (var i = dp[1]; i < dp[1] + dp[2]; i++) {
+      var al = ocrAllowed(lay[i]), sc = getScores(dp[0], i), b1 = -1e9, b2 = -1e9;
+      for (var k = 0; k < al.length; k++) { var v = sc[OCR_CH.indexOf(al[k])]; if (v > b1) { b2 = b1; b1 = v; } else if (v > b2) b2 = v; }
+      if (b1 - b2 < mm) mm = b1 - b2;
+    }
+    return mm;
+  }
   function ocrSetAt(s, i, ch) { return s.slice(0, i) + ch + s.slice(i + 1); }
   // A név sor hihető-e: a vezeték- és utónevet „<<” választja el, utána kitöltő jelek jönnek.
   function ocrNameOk(fmt, lines) {
     var nl = fmt === 'TD1' ? lines[2] : lines[0].slice(5);
-    return /^[A-Z]/.test(nl) && /<</.test(nl) && /<$/.test(nl) && !/<[A-Z]<[A-Z]<[A-Z]</.test(nl);   // a nagyon hosszú, sorvégig érő név ritka: azt nem vesszük biztosnak
+    return /^[A-Z]/.test(nl) && /<</.test(nl) && /<$/.test(nl) && !/<[A-Z]<[A-Z]<[A-Z]</.test(nl) && !/<<<+[A-Z]/.test(nl);   // a nagyon hosszú, sorvégig érő név ritka: azt nem vesszük biztosnak
   }   // előkészített minták: { tw, th, ratio, n: [Float32Array (nullátlagú, egységnyi)] }
 
   function ocrInitTemplates(tw, th, ratio, b64) {
@@ -2398,14 +2411,51 @@
     }
     // a sáv magassága a karakterlépésből (a betűkészlet aránya szerint), az alapvonalhoz igazítva: így nem függ attól, van-e a sorban számjegy
     var Hf = bp / OCR_T.ratio;
-    return { x0: bx, p: bp, t: b - Hf + 1, b: b + 0.5, H: Hf };
+    var g = { x0: bx, p: bp, t: b - Hf + 1, b: b + 0.5, H: Hf, yc: null };
+    // Hajlott vagy perspektivikus lap: a sor közepének magassága szakaszonként, erre illesztett (legfeljebb másodfokú) görbe.
+    var K = Math.max(3, Math.min(8, Math.round(n / 6))), pts = [], y0 = Math.max(0, Math.floor(t - H * 0.35)), y1 = Math.min(h - 1, Math.ceil(b + H * 0.35));
+    for (var k = 0; k < K; k++) {
+      var c0 = Math.round(bx + (k * n / K - 0.5) * bp), c1 = Math.round(bx + ((k + 1) * n / K - 0.5) * bp), pr = [], pm = 0;
+      for (y = y0; y <= y1; y++) { var s2 = 0; for (x = Math.max(0, c0); x < Math.min(w, c1); x++) s2 += ink[y * w + x] > 0.3 ? 1 : 0; pr.push(s2); if (s2 > pm) pm = s2; }
+      if (pm < 2) continue;
+      // a sáv közepéhez legközelebbi összefüggő festékes szakasz
+      var mid = Math.round((t + b) / 2) - y0, lo = -1, hi = -1, thr2 = pm * 0.3, yy, bestD = 1e9;
+      for (yy = 0; yy < pr.length; yy++) if (pr[yy] > thr2) { var d = Math.abs(yy - mid); if (d < bestD) { bestD = d; lo = hi = yy; } }
+      if (lo < 0) continue;
+      while (lo > 0 && pr[lo - 1] > thr2) lo--; while (hi < pr.length - 1 && pr[hi + 1] > thr2) hi++;
+      if ((hi - lo + 1) < Hf * 0.5 || (hi - lo + 1) > Hf * 1.5) continue;
+      pts.push({ x: (c0 + c1) / 2, y: y0 + (lo + hi) / 2, wgt: pm });
+    }
+    if (pts.length >= 3) {
+      var deg = pts.length >= 5 ? 2 : 1, xm = (bx + bx + (n - 1) * bp) / 2, sc2 = Math.max(1, (n - 1) * bp / 2);
+      var A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], B = [0, 0, 0], m = deg + 1, r2, c2;
+      pts.forEach(function (q) { var u = (q.x - xm) / sc2, f = [1, u, u * u]; for (r2 = 0; r2 < m; r2++) { B[r2] += q.wgt * f[r2] * q.y; for (c2 = 0; c2 < m; c2++) A[r2][c2] += q.wgt * f[r2] * f[c2]; } });
+      var co = ocrSolve(A, B, m);
+      if (co) {
+        var ok = true, yb = (t + b) / 2;
+        pts.forEach(function (q) { var u = (q.x - xm) / sc2, v = co[0] + co[1] * u + (m > 2 ? co[2] * u * u : 0); if (Math.abs(v - q.y) > Hf * 0.35) ok = false; });
+        if (ok) g.yc = function (x) { var u = (x - xm) / sc2; return co[0] + co[1] * u + (m > 2 ? co[2] * u * u : 0); };
+      }
+    }
+    return g;
   }
 
+  function ocrSolve(A, B, m) {   // kis lineáris egyenletrendszer (Gauss)
+    var M = [], i, j, k;
+    for (i = 0; i < m; i++) { M.push(A[i].slice(0, m).concat([B[i]])); }
+    for (i = 0; i < m; i++) {
+      var piv = i; for (k = i + 1; k < m; k++) if (Math.abs(M[k][i]) > Math.abs(M[piv][i])) piv = k;
+      if (Math.abs(M[piv][i]) < 1e-9) return null; var tmp = M[i]; M[i] = M[piv]; M[piv] = tmp;
+      for (k = 0; k < m; k++) if (k !== i) { var f = M[k][i] / M[i][i]; for (j = i; j <= m; j++) M[k][j] -= f * M[i][j]; }
+    }
+    var out = []; for (i = 0; i < m; i++) out.push(M[i][m] / M[i][i]); return out;
+  }
   // Egy cella mintavétele a minták rácsára (2×2 részmintával), eltolással.
   function ocrCell(ink, w, h, cx, grid, dx, dy, out) {
     var T = OCR_T, tw = T.tw, th = T.th, x0 = cx - grid.p / 2, sx = grid.p / tw, sy = (grid.b - grid.t + 1) / th, i, j, m = 0, q = 0;
+    var gt = grid.yc ? grid.yc(cx) - (grid.b - grid.t + 1) / 2 : grid.t;
     for (j = 0; j < th; j++) for (i = 0; i < tw; i++) {
-      var X = x0 + (i + dx) * sx, Y = grid.t + (j + dy) * sy;
+      var X = x0 + (i + dx) * sx, Y = gt + (j + dy) * sy;
       var v = (ocrBil(ink, w, h, X + sx * 0.25, Y + sy * 0.25) + ocrBil(ink, w, h, X + sx * 0.75, Y + sy * 0.25) + ocrBil(ink, w, h, X + sx * 0.25, Y + sy * 0.75) + ocrBil(ink, w, h, X + sx * 0.75, Y + sy * 0.75)) / 4;
       out[j * tw + i] = v; m += v;
     }
@@ -2417,7 +2467,7 @@
   function ocrScores(ink, w, h, cx, grid) {
     var T = OCR_T, sz = T.tw * T.th, buf = new Float32Array(sz), sc = new Float32Array(OCR_CH.length), k, i, dx, dy;
     for (k = 0; k < sc.length; k++) sc[k] = -1;
-    for (dy = -0.8; dy <= 0.81; dy += 0.8) for (dx = -0.8; dx <= 0.81; dx += 0.8) {
+    for (dy = -0.8; dy <= 0.81; dy += 0.8) for (dx = -1.6; dx <= 1.61; dx += 0.8) {
       var q = ocrCell(ink, w, h, cx, grid, dx, dy, buf); if (q < 1e-6) continue;
       for (k = 0; k < sc.length; k++) { var t = T.n[k], s = 0; for (i = 0; i < sz; i++) s += buf[i] * t[i]; s /= q; if (s > sc[k]) sc[k] = s; }
     }
@@ -2485,18 +2535,21 @@
         if (!best || mean > best.mean) best = { fmt: fmt, lines: lines, mean: mean, angle: ang };
       });
     });
+    if (best) best.docMargin = ocrDocMargin(best.fmt, function (l, i) { return best.lines[l].scores[i]; });
     if (best) ocrFixCodes(best.fmt, best.lines, function (l, i) { return best.lines[l].scores[i]; }, function (l, i, ch) { best.lines[l].txt = ocrSetAt(best.lines[l].txt, i, ch); });
     return best;
   }
+  // A sor tényleges kiterjedése: a festékes oszlopokat szakaszokra bontja (egy karakternyinél kisebb rés nem bont), és a legtöbb
+  // festéket tartalmazó szakaszt adja vissza. Így az okmány széle, egy fotó széle vagy egy alnyomatfolt nem téveszti meg.
   function ocrMainExtent(col, w, mx, H) {
-    var thr = mx * 0.12, pe = H * (OCR_T ? OCR_T.ratio : 0.92), maxGap = Math.max(3, pe * 1.15), x, peak = 0;
-    for (x = 0; x < w; x++) if (col[x] > col[peak]) peak = x;
-    if (col[peak] <= thr) return null;
-    var xl = peak, xr = peak, gap = 0;
-    for (x = peak - 1; x >= 0; x--) { if (col[x] > thr) { xl = x; gap = 0; } else if (++gap > maxGap) break; }
-    gap = 0;
-    for (x = peak + 1; x < w; x++) { if (col[x] > thr) { xr = x; gap = 0; } else if (++gap > maxGap) break; }
-    return [xl, xr];
+    var thr = mx * 0.12, pe = H * (OCR_T ? OCR_T.ratio : 0.92), maxGap = Math.max(3, pe * 1.15), x;
+    var best = null, cur = null, gap = 0;
+    for (x = 0; x <= w; x++) {
+      var on = x < w && col[x] > thr;
+      if (on) { if (!cur) cur = { l: x, r: x, s: 0 }; cur.r = x; cur.s += col[x]; gap = 0; }
+      else if (cur && (++gap > maxGap || x === w)) { if (!best || cur.s > best.s) best = cur; cur = null; gap = 0; }
+    }
+    return best ? [best.l, best.r] : null;
   }
   function ocrExtent(ink, w, h, band) {
     var x, y, xl = -1, xr = -1, mx = 0, col = new Float32Array(w);
@@ -2524,7 +2577,8 @@
       out.push(txt);
     }
     ocrFixCodes(fmt, out, function (l, i) { var s = new Float32Array(OCR_CH.length); for (var r = 0; r < same.length; r++) for (var c = 0; c < s.length; c++) s[c] += same[r].lines[l].scores[i][c]; return s; }, function (l, i, ch) { out[l] = ocrSetAt(out[l], i, ch); });
-    return { fmt: fmt, lines: out, n: same.length };
+    var dm = ocrDocMargin(fmt, function (l, i) { var s = new Float32Array(OCR_CH.length); for (var r = 0; r < same.length; r++) for (var c = 0; c < s.length; c++) s[c] += same[r].lines[l].scores[i][c] / same.length; return s; });
+    return { fmt: fmt, lines: out, n: same.length, docMargin: dm };
   }
   /* PURE-OCR-END */
 
@@ -2584,13 +2638,13 @@
         var txt = r.lines.map(function (l) { return l.txt; }).join('\n'), p = mrzParse(txt);
         mrzReads.push(r); if (mrzReads.length > 6) mrzReads.shift();
         $('mrzBand').classList.add('hit');
-        if (mrzSure(p, r.fmt, r.lines.map(function (l) { return l.txt; }))) {
+        if (mrzSure(p, r.fmt, r.lines.map(function (l) { return l.txt; }), r.docMargin)) {
           if (txt === mrzPrevOk) { mrzCamDone(txt, true); done = true; }
           else { mrzPrevOk = txt; mrzCamMsg('Megvan, még egy megerősítő olvasás… tartsd mozdulatlanul'); }
         } else mrzCamMsg(mrzReads.length > 4 ? 'Olvasom… tartsd egyenesebben, közelebb, vagy kapcsold be a lámpát' : 'Olvasom…');
         if (!done && mrzReads.length >= 3) {
           var v = ocrVote(mrzReads), vt = v && v.n >= 3 ? v.lines.join('\n') : '';
-          if (vt) { var pv = mrzParse(vt); if (mrzSure(pv, v.fmt, v.lines)) { if (vt === mrzPrevVote) { mrzCamDone(vt, true); done = true; } else mrzPrevVote = vt; } }
+          if (vt) { var pv = mrzParse(vt); if (mrzSure(pv, v.fmt, v.lines, v.docMargin)) { if (vt === mrzPrevVote) { mrzCamDone(vt, true); done = true; } else mrzPrevVote = vt; } }
         }
       } else { $('mrzBand').classList.remove('hit'); if (t - mrzCamT0 > 3000) mrzCamMsg('Nem látok gépi sort: a << jeles sorokat tedd a keretbe, ne tükrözzön'); }
     } catch (e) { if (window.__dnOcrErr) window.__dnOcrErr(e); }
@@ -2605,7 +2659,7 @@
     mrzCamT = setTimeout(mrzCamStep, Math.max(120, 320 - spent));
   }
   // Biztosnak csak akkor vesszük, ha minden ellenőrző szám stimmel, a kiállító és az állampolgárság valós kód, és a név sor hihető.
-  function mrzSure(p, fmt, lines) { return !!(p && p.allOk && !p.fixed && p.st && p.st.name && p.natSt && p.natSt.name && ocrNameOk(fmt, lines)); }
+  function mrzSure(p, fmt, lines, dm) { return !!(dm >= 0.045 && p && p.allOk && !p.fixed && p.st && p.st.name && p.natSt && p.natSt.name && ocrNameOk(fmt, lines)); }
   function mrzCamDone(txt, sure) {
     mrzCamStop();
     mrzSrc = sure ? 'cam' : 'cam-unsure';
