@@ -245,6 +245,10 @@
   }
   #mrzIn:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .mrz-btns { display: flex; gap: 8px; margin: 10px 0 14px; flex-wrap: wrap; }
+  #mrzScan { width: 100%; justify-content: center; gap: 10px; font-size: 17px; padding: 14px; margin: 4px 0 10px; color: #05211d; }
+  #mrzScan svg { width: 24px; height: 24px; }
+  #mrzHint { margin: 0 0 10px; padding: 10px 12px; border-radius: 14px; background: rgba(64,217,196,.14); border: 1px solid rgba(64,217,196,.45); font-size: 13.5px; line-height: 1.45; }
+  #mrzHint[hidden] { display: none; }
   #mrzRes:empty { display: none; }
   #mrzRes { display: grid; gap: 12px; }
   .mrz-card { border-radius: 16px; background: rgba(255,255,255,.06); padding: 12px 14px; }
@@ -540,7 +544,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v42</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v43</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -560,13 +564,18 @@
     <div class="mrz-wrap">
       <div class="lib-head"><h2>Okmány felismerése</h2><button class="mini" id="mrzClose">Bezár</button></div>
       <ol>
-        <li>Koppints az alábbi mezőbe, majd koppints bele még egyszer, hogy megjelenjen a menü.</li>
-        <li>Válaszd az <b>Automatikus kitöltés → Szöveg beolvasása</b> lehetőséget (régebbi iOS-en közvetlenül a <b>Szöveg beolvasása</b> pontot, vagy a billentyűzet fölötti beolvasás ikont).</li>
+        <li>Koppints a <b>Scan</b> gombra.</li>
+        <li>Koppints a billentyűzet fölötti <b>beolvasás ikonra</b>, vagy a mezőbe még egyszer, és válaszd: <b>Automatikus kitöltés → Szöveg beolvasása</b>.</li>
         <li>Tartsd a kamerát az okmány <b>gépi sorára</b> (a &lt;&lt; jeleket tartalmazó sorok), és koppints a <b>Beszúrás</b> gombra.</li>
       </ol>
-      <p class="lib-note">Ha a menüben nincs Szöveg beolvasása: az iPhone szövegfelismerője csak bizonyos nyelveken működik. Beállítások → Általános → Nyelv és régió: add hozzá az <b>English</b> nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar), majd ugyanott kapcsold be az <b>Élő szöveg</b> kapcsolót. Kimásolt gépi sort a Beillesztés gombbal is behozhatsz.</p>
+      <p class="lib-note">Ha a Scan nem működik, kapcsold be az Élő szöveget: <b>Beállítások → Általános → Nyelv és régió → Élő szöveg</b>. Ha ott nincs ilyen kapcsoló, előbb add hozzá az <b>English</b> nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar).</p>
+      <button class="btn primary" id="mrzScan" aria-label="Scan: gépi sor beolvasása az iPhone Élő szöveg funkciójával">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 10h8M8 14h5"/></svg>
+        Scan
+      </button>
+      <div id="mrzHint" hidden>Most koppints a billentyűzet fölötti <b>beolvasás ikonra</b>, vagy koppints a mezőbe még egyszer, és válaszd: <b>Automatikus kitöltés → Szöveg beolvasása</b>. Tartsd a kamerát a gépi sorra, majd koppints a <b>Beszúrás</b> gombra.</div>
       <textarea id="mrzIn" rows="3" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="P&lt;HUNMINTA&lt;&lt;ANNA&lt;&lt;&lt;…" aria-label="Gépi sor"></textarea>
-      <div class="mrz-btns"><button class="mini" id="mrzPaste">Beillesztés</button><button class="mini" id="mrzClear">Törlés</button></div>
+      <div class="mrz-btns"><button class="mini" id="mrzClear">Törlés</button></div>
       <div id="mrzRes" aria-live="polite"></div>
       <p class="lib-note" style="margin-top:14px">A beolvasást az iPhone saját szövegfelismerője végzi, a telefonon. Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor törli.</p>
     </div>
@@ -2277,20 +2286,19 @@
     box.appendChild(c2);
   }
   function mrzOpen() { $('mrzSheet').hidden = false; }
-  function mrzWipe() { $('mrzIn').value = ''; $('mrzRes').innerHTML = ''; }
+  function mrzWipe() { $('mrzIn').value = ''; $('mrzRes').innerHTML = ''; $('mrzHint').hidden = true; }
   function mrzClose() { $('mrzSheet').hidden = true; mrzWipe(); try { $('mrzIn').blur(); } catch (e) {} }
   $('mrzBtn').addEventListener('click', mrzOpen);
   $('mrzClose').addEventListener('click', mrzClose);
   $('mrzClear').addEventListener('click', function () { mrzWipe(); $('mrzIn').focus(); });
-  $('mrzIn').addEventListener('input', mrzRender);
-  // Beillesztés: például a Kamera vagy a Fotók Élő szöveg funkciójával kimásolt gépi sor (az iPhone rákérdez az engedélyre)
-  $('mrzPaste').addEventListener('click', async function () {
-    try {
-      if (!navigator.clipboard || !navigator.clipboard.readText) throw new Error('nincs');
-      var t = await navigator.clipboard.readText();
-      if (!t) { toast('A vágólap üres.'); return; }
-      $('mrzIn').value = t; mrzRender();
-    } catch (e) { toast('A beillesztés itt nem engedélyezett: koppints a mezőbe, és illeszd be onnan.', 4000); $('mrzIn').focus(); }
+  $('mrzIn').addEventListener('input', function () { if (this.value) $('mrzHint').hidden = true; mrzRender(); });
+  // Scan: weboldalból az iPhone Élő szöveg kamerája közvetlenül nem indítható (az Apple csak a felhasználó koppintására engedi, a mező
+  // menüjéből). A gomb ezért a mezőbe teszi a kurzort, feldobja a billentyűzetet, és megmutatja, hova kell még koppintani.
+  $('mrzScan').addEventListener('click', function () {
+    var f = $('mrzIn');
+    f.value = ''; $('mrzRes').innerHTML = '';
+    $('mrzHint').hidden = false;
+    try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); }
   });
   document.addEventListener('visibilitychange', function () { if (document.hidden) mrzWipe(); });   // háttérbe téve a gépi sor törlődik
 

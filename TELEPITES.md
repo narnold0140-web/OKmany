@@ -88,10 +88,11 @@ A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak 
 
 A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az okmány alján a << jeleket tartalmazó sorok) felismeri az okmányt, ellenőrzi, és a megfelelő PRADO-oldalra visz.
 
-1. Koppints a mezőbe, majd még egyszer, hogy megjelenjen a menü. Válaszd az **Automatikus kitöltés → Szöveg beolvasása** lehetőséget (régebbi iOS-en közvetlenül a **Szöveg beolvasása** pontot, vagy a billentyűzet fölötti beolvasás ikont).
-2. Tartsd a kamerát a gépi sorra, és koppints a **Beszúrás** gombra. A gépi sort be is gépelheted, vagy a **Beillesztés** gombbal behozhatod, ha máshonnan (például a Kamera vagy a Fotók Élő szöveg funkciójával) kimásoltad.
+1. Koppints a **Scan** gombra: a kurzor a mezőbe kerül, és feljön a billentyűzet.
+2. Koppints a billentyűzet fölötti **beolvasás ikonra**, vagy a mezőbe még egyszer, és válaszd: **Automatikus kitöltés → Szöveg beolvasása**. Tartsd a kamerát a gépi sorra, és koppints a **Beszúrás** gombra. (Az Élő szöveg kameráját weboldal közvetlenül nem indíthatja el, ezért ez az egy koppintás marad.) A gépi sort be is gépelheted.
 
-**Ha nincs Szöveg beolvasása a menüben:** az iPhone szövegfelismerője (Élő szöveg) csak bizonyos nyelveken működik, és magyar nyelvű telefonon valószínűleg nem jelenik meg. Beállítások → Általános → Nyelv és régió: add hozzá az **English** nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar), majd ugyanott kapcsold be az **Élő szöveg** kapcsolót. iPhone XS vagy újabb és iOS 15 vagy újabb kell hozzá.
+**Ha a Scan nem működik,** kapcsold be az Élő szöveget: **Beállítások → Általános → Nyelv és régió → Élő szöveg**. Ha ott nincs ilyen kapcsoló, előbb add hozzá az **English** nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar). iPhone XS vagy újabb és iOS 15 vagy újabb kell hozzá.
+
 3. Az app megmutatja:
    - a kiállító országot és az okmány típusát (útlevél, személyi igazolvány, tartózkodási engedély, vízum);
    - a gépi sor adatait (név, okmányszám, állampolgárság, születési dátum, nem, lejárat), hogy összevesd őket az okmányra nyomtatott adatokkal;
