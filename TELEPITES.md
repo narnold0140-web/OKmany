@@ -71,6 +71,9 @@ A szűrők sorában két kapcsoló van:
 
 ## Fogyasztás és melegedés
 
+- **Sötét kép (v54-től):** ha a kamera 15 másodpercig csak feketét lát (letakart lencse, zseb, arccal lefelé letett telefon), magától kikapcsol, és ezt egy felirat jelzi. A felső kamera gombbal kapcsolható vissza.
+- **Okmány felismerése lap (v54-től):** amíg a lap nyitva van, a kamera áll; csak a **Scan** idejére kapcsol be, utána újra leáll. A lap bezárásakor visszaáll az előző állapot (ha előtte ki volt kapcsolva, kikapcsolva marad).
+
 - **Felbontás igény szerint:** élő képen a kamera Full HD-ban fut, mert a kijelző ennél többet úgysem mutat, a 4K pedig négyszer annyi adatot mozgat és melegíti a telefont. 2× nagyítás fölött és a rögzítés pillanatában az app magától teljes felbontásra vált, így a rögzített kép ugyanolyan részletes, mint eddig. Rögzítéskor ezért a kép egy pillanattal később áll meg.
 - A gombok és a panel háttere nem elmosott, hanem átlátszatlan: az elmosás a videó mögött minden képkockánál terhelte a grafikus processzort.
 
@@ -88,22 +91,8 @@ A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak 
 
 A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az okmány alján a << jeleket tartalmazó sorok) felismeri az okmányt, ellenőrzi, és a megfelelő PRADO-oldalra visz.
 
-1. Koppints a **Scan** gombra: a kurzor a mezőbe kerül, és feljön a billentyűzet.
-2. Koppints a billentyűzet fölötti **beolvasás ikonra**, vagy a mezőbe még egyszer, és válaszd: **Automatikus kitöltés → Szöveg beolvasása**. Tartsd a kamerát a gépi sorra, és koppints a **Beszúrás** gombra. (Az Élő szöveg kameráját weboldal közvetlenül nem indíthatja el, ezért ez az egy koppintás marad.) A gépi sort be is gépelheted.
-
-**Olvasás az app kamerájával (v44-től):** a Scan alatti gombbal az app a saját kamerájával olvassa a gépi sort, Élő szöveg nélkül.
-- Igazítsd a gépi sort a képernyő közepén lévő keretbe. Ha a keret fehérre vált, az app látja a sort. Tartsd mozdulatlanul.
-- A **Lámpa** gombbal a zseblámpa bekapcsolható (ha a telefon engedi), a **Mégse** visszavisz a lapra. Olvasás közben a kamera teljes felbontáson fut; a végén visszaáll, és a lámpa kikapcsol.
-- Az app másodpercenként többször olvas. Csak akkor fogadja el az eredményt („megerősítve”), ha két olvasás karakterre egyezik, minden ellenőrző számjegy stimmel, a kiállító és az állampolgárság létező országkód, és a név sor hihető. Ha 25 másodperc alatt ez nem jön össze, a több kép alapján legvalószínűbb szöveget írja be, narancssárga figyelmeztetéssel.
-- **A nevet nem védi ellenőrző számjegy**: kamerás olvasás után a nevet mindig vesd össze szemmel a gépi sorral.
-- Az olvasó az OCR-B betűtípusra (a gépi sor szabványos betűjére) készült, a telefonon fut, a képet nem menti és nem küldi el. A pontosságot eddig szimulált okmányképeken mértük; valódi okmányon, csillogó fólián vagy erős alnyomaton gyengébb lehet. Ilyenkor a Scan (Élő szöveg) a tartalék.
-
-**Chip olvasás (v49-től):** a gomb a chipet olvasó ingyenes **ReadID Me** alkalmazást nyitja meg. (Saját, appba épített chipolvasáshoz az Apple fizetős fejlesztői fiókot kér.)
-- Első koppintáskor az app megkérdezi, fent van-e a ReadID Me. Ha nincs, a gomb felirata **ReadID telepítése** lesz, és az App Store-ban nyitja meg. Telepítés után koppints az alatta lévő **Már telepítettem** feliratra.
-- Ha fent van, a gomb felirata **Chip olvasás**. Egyszer be kell állítani egy parancsot: **Parancsok** app → **+** → **Művelet hozzáadása** → keresés: **Megnyitás** → **App megnyitása** → az **App** szóra koppintva válaszd a **ReadID Me**-t. A parancs neve pontosan: **ReadID**.
-- Az app csak azt jegyzi meg, hogy a ReadID Me fent van-e; semmilyen okmányadatot nem ad át.
-
-**Ha a Scan nem működik,** kapcsold be az Élő szöveget: **Beállítások → Általános → Nyelv és régió → Élő szöveg**. Ha ott nincs ilyen kapcsoló, előbb add hozzá az **English** nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar). iPhone XS vagy újabb és iOS 15 vagy újabb kell hozzá.
+1. Koppints a **Scan** gombra (v54-től ez az app saját kamerás olvasója; az Élő szöveges beolvasás kikerült).
+2. Igazítsd a gépi sort a keretbe, és tartsd mozdulatlanul. Sötétben kapcsold be a **Lámpát**. A gépi sort be is gépelheted a mezőbe.
 
 3. Az app megmutatja:
    - a kiállító országot és az okmány típusát (útlevél, személyi igazolvány, tartózkodási engedély, vízum);
