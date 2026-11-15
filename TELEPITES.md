@@ -124,6 +124,10 @@ A lista a felhasználó által küldött magyar szövegen alapul, a hatályos á
 
 **Gyorsabb olvasás (v55-től):** a kamera a Scan indításakor egyből teljes felbontásban indul, az olvasó kb. négyszer gyorsabban dolgozik fel egy képet, és sűrűbben olvas. A „Másik kategória” gombok közül az „Egyéb úti okmány” kikerült; a sorrend: Személyi igazolvány, Tartózkodási engedély, Úti okmány külföldinek, Vízum.
 
+**PRADO-linkek (v56-tól):** a kezdőképernyőről indított appban a PRADO-oldalak a teljes Safariban nyílnak meg (a beágyazott ablakban üresek maradhattak). Az „összes okmány” link az angol nyelvű országoldalra mutat, mert magyar nyelvű országoldal nincs.
+
+**PRADO-gombok (v58-tól):** uniós és schengeni kiállítónál a gombok közvetlenül a PRADO megfelelő kategóriájára visznek (útlevél, személyi igazolvány, tartózkodási engedély, úti okmány külföldinek, vízum). Harmadik országnál csak az **útlevél** és a **vezetői engedély** (ha a PRADO-ban van ilyen), valamint az **összes okmány** gomb látszik. Hogy a vezetői engedély fent van-e, a PRADO-index mondja meg; amíg egy ország nincs benne, a gomb látszik. Az adatot a `prado-index.json` tartalmazza, amelyet a `.github/workflows/prado-index.yml` feladat hetente (kedden) frissít a PRADO-ból, és a változást magától a repóba menti. **Első alkalommal indítsd el kézzel:** GitHub → a repó **Actions** füle → **PRADO-index** → **Run workflow**. (Kb. 5–10 perc; a PRADO oldala sok kérést elutasít, a feladat ezért többször próbálkozik, és a sikertelen országoknál a régi adat marad.) Amíg egy ország nincs az indexben, nála minden kategória-gomb látszik, a régi módon. Ha a `.github` mappa nem töltődik fel, a fájlokat kézzel kell létrehozni (Add file → Create new file), ugyanazzal az útvonallal és tartalommal.
+
 ## Mintaokmány-tár
 
 A felső sávban a rétegek ikonnal nyitható. Itt saját mintaképeket tölthetsz be (Minta hozzáadása), és az okmány méretét is megadod, így a keret erre igazodik.

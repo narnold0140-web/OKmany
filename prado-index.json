@@ -1,0 +1,19 @@
+{
+"countries": {
+"HUN": {
+"A": 18,
+"B": 16,
+"C": 5,
+"F": 5,
+"G": 3,
+"H": 31,
+"J": 12,
+"P": 6,
+"X": 2
+}
+},
+"failed": [],
+"note": "kezdő index (csak Magyarország, a PRADO országoldalának linkjei alapján); a PRADO-index GitHub-feladat teljesre frissíti",
+"source": "https://www.consilium.europa.eu/prado/en/",
+"updated": "2026-11-15"
+}

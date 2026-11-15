@@ -1,7 +1,7 @@
 // Csak az app saját fájljait tárolja el, hogy offline is elinduljon.
 // Kamerakép és pillanatkép soha nem kerül ide.
-const CACHE = 'dokunezo-v55';
-const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'dokunezo-v58';
+const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'prado-index.json'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
