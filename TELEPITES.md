@@ -98,6 +98,11 @@ A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az
 - **A nevet nem védi ellenőrző számjegy**: kamerás olvasás után a nevet mindig vesd össze szemmel a gépi sorral.
 - Az olvasó az OCR-B betűtípusra (a gépi sor szabványos betűjére) készült, a telefonon fut, a képet nem menti és nem küldi el. A pontosságot eddig szimulált okmányképeken mértük; valódi okmányon, csillogó fólián vagy erős alnyomaton gyengébb lehet. Ilyenkor a Scan (Élő szöveg) a tartalék.
 
+**Chip olvasás (v49-től):** a gomb a chipet olvasó ingyenes **ReadID Me** alkalmazást nyitja meg. (Saját, appba épített chipolvasáshoz az Apple fizetős fejlesztői fiókot kér.)
+- Első koppintáskor az app megkérdezi, fent van-e a ReadID Me. Ha nincs, a gomb felirata **ReadID telepítése** lesz, és az App Store-ban nyitja meg. Telepítés után koppints az alatta lévő **Már telepítettem** feliratra.
+- Ha fent van, a gomb felirata **Chip olvasás**. Egyszer be kell állítani egy parancsot: **Parancsok** app → **+** → **Művelet hozzáadása** → keresés: **Megnyitás** → **App megnyitása** → az **App** szóra koppintva válaszd a **ReadID Me**-t. A parancs neve pontosan: **ReadID**.
+- Az app csak azt jegyzi meg, hogy a ReadID Me fent van-e; semmilyen okmányadatot nem ad át.
+
 **Ha a Scan nem működik,** kapcsold be az Élő szöveget: **Beállítások → Általános → Nyelv és régió → Élő szöveg**. Ha ott nincs ilyen kapcsoló, előbb add hozzá az **English** nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar). iPhone XS vagy újabb és iOS 15 vagy újabb kell hozzá.
 
 3. Az app megmutatja:
@@ -113,6 +118,20 @@ Tudnivalók:
 - Az okmányszámban az app szándékosan nem javít semmit automatikusan, mert ott betű és szám is szabályos lehet, és egy átírt adatot is „rendbe tehetne”. A dátumokban, ahol betű nem állhat, a betűt számjegynek olvassa (például O → 0), de ezt narancssárgán jelzi.
 - Ha az ellenőrző számjegyek stimmelnek, az csak azt jelenti, hogy a gépi sor önmagában ellentmondásmentes. Egy jól elkészített hamisítványon is stimmelhetnek, ezért ez nem helyettesíti az okmány vizsgálatát.
 - A típus a dokumentumkódból becsült: kártyaformátumú okmányoknál (személyi igazolvány, tartózkodási engedély) nem mindig egyértelmű, ezért a többi kategória is elérhető. Ha a PRADO-ban a kiállítónak nincs ilyen kategóriája, hibaoldal jelenik meg: ilyenkor nyisd meg az összes okmányát.
+
+## Belépési feltételek (v51-től)
+
+Az okmány felismerése után az eredmény alatt egy **Belépési feltételek** kártya jelenik meg, a gépi sor állampolgársága és okmánytípusa alapján:
+- **Szabad mozgás joga**: uniós, EGT-s (Izland, Norvégia, Liechtenstein) vagy svájci állampolgár.
+- **Vízummentes** vagy **Vízumköteles**, és közvetlenül alatta kiemelve a **tartózkodási idő** (v52-től): vízummentesnél 90 nap bármely 180 napon belül; vízumkötelesnél a vízum „Tartózkodás időtartama” mezője szerint (C vízummal legfeljebb 90/180, D vízummal vagy tartózkodási engedéllyel a kiállító országban az érvényesség alatt); uniós/EGT/svájci polgárnál nincs 90/180 napos korlát. Vízum gépi sorának beolvasásakor a vízumbélyeg mezőire utal.
+- A státusz az uniós vízumlista (2018/1806 rendelet) szerint. Külön jelzés: csak biometrikus útlevéllel mentes országok, a szerb Koordinációs Igazgatóság útlevele, Tajvan, Hongkong/Makaó, a brit tengerentúli jogállások, a grúz diplomata-, szolgálati és hivatalos útlevelek felfüggesztése (2026. 03. 06-tól 12 hónapig).
+- **Repülőtéri tranzitvízum** az érintett 12 országnál.
+- Schengeni ország által kiadott **tartózkodási engedély**, illetve uniós polgár **családtagja** (emlékeztető).
+- **Különleges jogállás** (hontalan, menekült, ENSZ stb.), **diplomata- / szolgálati útlevél**, **3 hónapon belül lejáró** útlevél, **kiskorú**.
+
+A lista a felhasználó által küldött magyar szövegen alapul, a hatályos állapotra igazítva: Koszovó 2024. 01. 01. óta vízummentes, Vanuatu 2025. 02. 03. óta vízumköteles, az Egyesült Királyság vízummentes, Észak-Macedónia új néven. A kártya alján látszik a lista dátuma; fél év után az app figyelmeztet, hogy frissíteni kell. Ez gyors tájékoztató, nem helyettesíti a hatályos jogszabályt és a belső utasításokat.
+
+**Automatikus figyelés:** a csomagban lévő `.github/workflows/vizumlista-figyelo.yml` hetente megnézi az EUR-Lexen, van-e új hatályos változata a vízumlistának. Ha van, nyit egy Issue-t a repóban, és erről a GitHub e-mailt küld. Ilyenkor kérd meg Claude-ot a lista frissítésére. Ha a `.github` mappa feltöltése a GitHub weboldalán nem megy (a ponttal kezdődő mappák néha kimaradnak), hozd létre kézzel: **Add file → Create new file**, a név `.github/workflows/vizumlista-figyelo.yml`, és másold bele a fájl tartalmát; ugyanígy a `.github/vizumlista-allapot.txt` fájlt `2025-12-30` tartalommal. Az **Actions** fülön a **Run workflow** gombbal kézzel is kipróbálható.
 
 ## Mintaokmány-tár
 

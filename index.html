@@ -249,6 +249,15 @@
   #mrzScan svg { width: 24px; height: 24px; }
   #mrzCamBtn { width: 100%; justify-content: center; gap: 10px; font-size: 16px; padding: 13px; margin: 0 0 10px; }
   #mrzCamBtn svg { width: 22px; height: 22px; }
+  #chipBox { margin: 0 0 12px; }
+  #chipBtn { width: 100%; justify-content: center; gap: 10px; font-size: 16px; padding: 13px; }
+  #chipBtn svg { width: 22px; height: 22px; }
+  #chipAsk, #chipSetup { margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.06); font-size: 13.5px; line-height: 1.45; }
+  #chipAsk[hidden], #chipSetup[hidden] { display: none; }
+  #chipAsk .mrz-btns, #chipSetup .mrz-btns { margin: 8px 0 0; }
+  #chipSetup ol { margin: 6px 0 0; padding-left: 20px; }
+  .chip-alt[hidden] { display: none; }
+  .chip-alt { display: block; margin: 6px auto 0; background: none; border: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; padding: 4px; }
   #mrzCam { position: absolute; inset: 0; z-index: 9; pointer-events: auto; touch-action: none; }
   #mrzCam[hidden] { display: none; }
   .mrz-reading #top, .mrz-reading #bottom, .mrz-reading #guide, .mrz-reading #lupe, .mrz-reading #ptCard, .mrz-reading #ovWrap { visibility: hidden; }
@@ -288,8 +297,20 @@
   .mrz-links { display: grid; gap: 8px; }
   .mrz-links a.btn { text-decoration: none; color: var(--text); justify-content: center; padding: 12px 14px; font-size: 15px; }
   .mrz-links a.btn.primary { color: #05211d; }
+  .entry-row { margin-top: 10px; padding: 9px 12px; border-radius: 12px; border-left: 4px solid var(--muted); background: rgba(255,255,255,.04); }
+  .entry-row b { display: block; font-size: 15px; }
+  .entry-row span { display: block; margin-top: 2px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .entry-row.ok { border-left-color: var(--accent); } .entry-row.ok b { color: var(--accent); }
+  .entry-row.warn { border-left-color: var(--warn); } .entry-row.warn b { color: var(--warn); }
+  .entry-row.bad { border-left-color: #ff6b6b; } .entry-row.bad b { color: #ff8a80; }
+  .entry-row.info b { color: var(--text); }
+  .entry-row.stay { border-left-color: var(--accent); background: rgba(64,217,196,.13); }
+  .entry-row.stay b { font-size: 16.5px; color: var(--text); }
+  .entry-row.stay span { color: var(--text); opacity: .85; }
   .mrz-cats { display: flex; flex-wrap: wrap; gap: 6px; }
-  .mrz-cats a { text-decoration: none; }
+  .mrz-cats a { text-decoration: none; color: var(--text); background: rgba(64,217,196,.10); box-shadow: inset 0 0 0 1px rgba(64,217,196,.45); padding: 7px 13px; font-size: 13.5px; }
+  .mrz-cats a:active { background: rgba(64,217,196,.28); }
+  .mrz-cats a::after { content: ' ↗'; color: var(--accent); }
 
   /* Összecsukható panel */
   .handle { width: 100%; height: 20px; flex: none; display: grid; place-items: center; }
@@ -564,7 +585,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v46</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v52</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -598,6 +619,24 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.6"/></svg>
         Olvasás az app kamerájával
       </button>
+      <div id="chipBox">
+        <button class="btn" id="chipBtn" aria-label="Chip olvasás a ReadID Me alkalmazással">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg>
+          <span id="chipLbl">Chip olvasás</span>
+        </button>
+        <div id="chipAsk" hidden>Fent van a telefonodon a <b>ReadID Me</b> (ingyenes chipolvasó)?
+          <div class="mrz-btns"><button class="mini" id="chipYes">Igen, fent van</button><button class="mini" id="chipNo">Nincs, telepítem</button></div>
+        </div>
+        <div id="chipSetup" hidden><b>Egyszeri beállítás</b>, hogy a gomb egy koppintással megnyissa a ReadID Me-t:
+          <ol>
+            <li>Nyisd meg a <b>Parancsok</b> appot, és koppints a <b>+</b> jelre.</li>
+            <li>Válaszd: <b>Művelet hozzáadása → App megnyitása</b>, az appnak pedig a <b>ReadID Me</b>-t (az App szóra koppintva kereshető).</li>
+            <li>Nevezd el a parancsot pontosan így: <b>ReadID</b>, majd koppints a <b>Kész</b> gombra.</li>
+          </ol>
+          <div class="mrz-btns"><button class="mini primary" id="chipSetupOk">Kész, beállítottam</button></div>
+        </div>
+        <button class="chip-alt" id="chipAlt"></button>
+      </div>
       <div id="mrzHint" hidden>Most koppints a billentyűzet fölötti <b>beolvasás ikonra</b>, vagy koppints a mezőbe még egyszer, és válaszd: <b>Automatikus kitöltés → Szöveg beolvasása</b>. Tartsd a kamerát a gépi sorra, majd koppints a <b>Beszúrás</b> gombra.</div>
       <textarea id="mrzIn" rows="3" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="P&lt;HUNMINTA&lt;&lt;ANNA&lt;&lt;&lt;…" aria-label="Gépi sor"></textarea>
       <div class="mrz-btns"><button class="mini" id="mrzClear">Törlés</button></div>
@@ -2091,7 +2130,7 @@
      és a kiállító ország + okmánytípus alapján a megfelelő PRADO-oldalra visz. Semmit nem tárol. */
   /* PURE-MRZ-START */
   var MRZ_C = {"EUE":"Európai Unió","AUT":"Ausztria","BEL":"Belgium","BGR":"Bulgária","CYP":"Ciprus","CZE":"Csehország","DEU":"Németország","DNK":"Dánia","ESP":"Spanyolország","EST":"Észtország","FIN":"Finnország","FRA":"Franciaország","GRC":"Görögország","HRV":"Horvátország","HUN":"Magyarország","IRL":"Írország","ITA":"Olaszország","LTU":"Litvánia","LUX":"Luxemburg","LVA":"Lettország","MLT":"Málta","NLD":"Hollandia","POL":"Lengyelország","PRT":"Portugália","ROU":"Románia","SVK":"Szlovákia","SVN":"Szlovénia","SWE":"Svédország","CHE":"Svájc","ISL":"Izland","NOR":"Norvégia","LIE":"Liechtenstein","AFG":"Afganisztán","AGO":"Angola","AIA":"Anguilla","ALB":"Albánia","AND":"Andorra","ARE":"Egyesült Arab Emírségek","ARG":"Argentína","ARM":"Örményország","AUS":"Ausztrália","AZE":"Azerbajdzsán","BDI":"Burundi","BEN":"Benin","BFA":"Burkina Faso","BGD":"Banglades","BHR":"Bahrein","BHS":"Bahama-szigetek","BIH":"Bosznia-Hercegovina","BLR":"Fehéroroszország","BLZ":"Belize","BMU":"Bermuda","BRA":"Brazília","BRN":"Brunei","BTN":"Bhután","BWA":"Botswana","CAF":"Közép-afrikai Köztársaság","CAN":"Kanada","CHL":"Chile","CHN":"Kína","CIV":"Elefántcsontpart","CMR":"Kamerun","COD":"Kongói Demokratikus Köztársaság","COG":"Kongói Köztársaság","COL":"Kolumbia","COM":"Comore-szigetek","CPV":"Zöld-foki Köztársaság","CRI":"Costa Rica","CUB":"Kuba","DJI":"Dzsibuti","DMA":"Dominikai Közösség","DOM":"Dominikai Köztársaság","DZA":"Algéria","ECU":"Ecuador","EGY":"Egyiptom","ERI":"Eritrea","ETH":"Etiópia","FRO":"Feröer","GAB":"Gabon","GBD":"Brit tengerentúli területek","GBR":"Egyesült Királyság","GEO":"Grúzia","GGY":"Guernsey","GHA":"Ghána","GIB":"Gibraltár","GIN":"Guinea","GMB":"Gambia","GNB":"Bissau-Guinea","GNQ":"Egyenlítői-Guinea","GRD":"Grenada","GRL":"Grönland","GUY":"Guyana","HKG":"Hongkong","HND":"Honduras","HTI":"Haiti","IMN":"Man-sziget","IND":"India","IRN":"Irán","IRQ":"Irak","ISR":"Izrael","JAM":"Jamaica","JEY":"Jersey","JOR":"Jordánia","JPN":"Japán","KAZ":"Kazahsztán","KEN":"Kenya","KGZ":"Kirgizisztán","KHM":"Kambodzsa","KNA":"Saint Kitts és Nevis","KOR":"Dél-Korea","KWT":"Kuvait","LAO":"Laosz","LBR":"Libéria","LBN":"Libanon","LBY":"Líbia","LKA":"Srí Lanka","LSO":"Lesotho","MAC":"Makaó","MAR":"Marokkó","MCO":"Monaco","MDA":"Moldova","MDG":"Madagaszkár","MDV":"Maldív-szigetek","MEX":"Mexikó","MKD":"Észak-Macedónia","MLI":"Mali","MNE":"Montenegró","MNG":"Mongólia","MOZ":"Mozambik","MRT":"Mauritánia","MSR":"Montserrat","MWI":"Malawi","MYS":"Malajzia","NAM":"Namíbia","NCL":"Új-Kaledónia","NGA":"Nigéria","NIC":"Nicaragua","NPL":"Nepál","NZL":"Új-Zéland","OMN":"Omán","PAK":"Pakisztán","PAN":"Panama","PER":"Peru","PHL":"Fülöp-szigetek","PLW":"Palau","PRK":"Észak-Korea","PRY":"Paraguay","PYF":"Francia Polinézia","QAT":"Katar","RUS":"Oroszország","RWA":"Ruanda","SAU":"Szaúd-Arábia","SDN":"Szudán","SEN":"Szenegál","SGP":"Szingapúr","SHN":"Szent Ilona","SLE":"Sierra Leone","SLV":"Salvador","SMR":"San Marino","SOM":"Szomália","SRB":"Szerbia","SSD":"Dél-Szudán","STP":"São Tomé és Príncipe","SUR":"Suriname","SYC":"Seychelle-szigetek","SYR":"Szíria","TCA":"Turks- és Caicos-szigetek","TCD":"Csád","TGO":"Togo","THA":"Thaiföld","TKM":"Türkmenisztán","TLS":"Kelet-Timor","TUN":"Tunézia","TUR":"Törökország","TUV":"Tuvalu","TWN":"Tajvan","TZA":"Tanzánia","UAP":"Afrikai Unió","UGA":"Uganda","UKR":"Ukrajna","UNO":"Egyesült Nemzetek","URY":"Uruguay","USA":"Egyesült Államok","UZB":"Üzbegisztán","VAT":"Vatikán","VEN":"Venezuela","VGB":"Brit Virgin-szigetek","VNM":"Vietnám","YEM":"Jemen","ZAF":"Dél-afrikai Köztársaság","ZMB":"Zambia","ZWE":"Zimbabwe","XEC":"ECOWAS","XOM":"Máltai Lovagrend","XPO":"INTERPOL","INT":"Nemzetközi szervezet","OPT":"Palesztin terület","XKX":"Koszovó"};
-  var MRZ_ALIAS = { D: 'DEU', GBN: 'GBR', GBO: 'GBR', GBP: 'GBR', GBS: 'GBR', UNA: 'UNO', UNK: 'UNO' };
+  var MRZ_ALIAS = { RKS: 'XKX', D: 'DEU', GBN: 'GBR', GBO: 'GBR', GBP: 'GBR', GBS: 'GBR', UNA: 'UNO', UNK: 'UNO' };
   var MRZ_CAT = { A: 'Útlevél', B: 'Személyi igazolvány', C: 'Vízum', H: 'Tartózkodási engedély', J: 'Úti okmány külföldinek', T: 'Egyéb úti okmány' };
 
   function mrzVal(ch) { if (ch >= '0' && ch <= '9') return ch.charCodeAt(0) - 48; if (ch >= 'A' && ch <= 'Z') return ch.charCodeAt(0) - 55; return 0; }
@@ -2173,10 +2212,15 @@
     var parts = f.replace(/<+$/, '').split('<<');
     return { sur: (parts[0] || '').replace(/</g, ' ').trim(), given: (parts.slice(1).join(' ') || '').replace(/</g, ' ').trim() };
   }
+  // A PRADO-ban nem szereplő, de a vízumlistán lévő kódok neve (csak megjelenítéshez)
+  var MRZ_N = { BOL: 'Bolívia', SWZ: 'Eswatini', FJI: 'Fidzsi-szigetek', IDN: 'Indonézia', MMR: 'Mianmar', NER: 'Niger', PNG: 'Pápua Új-Guinea', TJK: 'Tádzsikisztán',
+    VUT: 'Vanuatu', PSE: 'Palesztina', ATG: 'Antigua és Barbuda', BRB: 'Barbados', FSM: 'Mikronézia', GTM: 'Guatemala', KIR: 'Kiribati', LCA: 'Saint Lucia',
+    MHL: 'Marshall-szigetek', MUS: 'Mauritius', NRU: 'Nauru', SLB: 'Salamon-szigetek', TON: 'Tonga', TTO: 'Trinidad és Tobago', VCT: 'Saint Vincent és a Grenadine-szigetek',
+    WSM: 'Szamoa', XXA: 'hontalan', XXB: 'menekült', XXC: 'menekült', XXX: 'tisztázatlan állampolgárság' };
   function mrzState(code) {
     var c = code.replace(/</g, '');
     if (MRZ_ALIAS[c]) c = MRZ_ALIAS[c];
-    return { code: c, name: MRZ_C[c] || null };
+    return { code: c, name: MRZ_C[c] || MRZ_N[c] || null, prado: !!MRZ_C[c] };
   }
 
   // A PRADO-kategória a dokumentumkódból. A TD1/TD2 kártyáknál (I, A, C) a második betű R tartózkodási engedélyre utal.
@@ -2238,7 +2282,7 @@
       exp = mrzField(l2.slice(21, 27), l2[27], true);
       if (visa) r.fmt = sp.fmt === 'TD3' ? 'MRV-A' : 'MRV-B';
       else if (sp.fmt === 'TD3') {
-        opt = mrzField(l2.slice(28, 42), l2[42], false);
+        opt = mrzField(l2.slice(28, 42), l2[42], false); r.opt = l2.slice(28, 42);
         comp = mrzField(docnum.v + mrzDigits(l2[9]) + dob.v + mrzDigits(l2[19]) + exp.v + mrzDigits(l2[27]) + opt.v + (opt.empty ? l2[42] : mrzDigits(l2[42])), l2[43], false);
       } else {
         comp = mrzField(docnum.v + mrzDigits(l2[9]) + dob.v + mrzDigits(l2[19]) + exp.v + mrzDigits(l2[27]) + l2.slice(28, 35), l2[35], false);
@@ -2261,6 +2305,77 @@
     if (!code || !MRZ_C[code]) return 'https://www.consilium.europa.eu/prado/hu/search-by-document-country.html';
     if (!cat) return 'https://www.consilium.europa.eu/prado/hu/prado-documents/' + code + '/index.html';
     return 'https://www.consilium.europa.eu/prado/en/prado-documents/' + code + '/' + cat + '/docs-per-category.html';
+  }
+  /* ----- Belépési feltételek (tájékoztató) -----
+     Forrás: (EU) 2018/1806 rendelet I. és II. melléklete, hatályos egységes szerkezet 2025.12.30-ig bezárólag (Koszovó vízummentes 2024.01.01-től,
+     Vanuatu vízumköteles 2025.02.03-tól, Egyesült Királyság a II. mellékletben), a grúz diplomata-, szolgálati és hivatalos útlevelek
+     felfüggesztése (2026/496, 2026.03.06-tól 12 hónapig), a repülőtéri tranzitvízum a Vízumkódex IV. melléklete szerint. */
+  var ENTRY_LIST_DATE = '2026. 11. 15.', ENTRY_LIST_TS = new Date(2026, 10, 15);
+  var ENTRY_EU = 'AUT BEL BGR CYP CZE D DEU DNK ESP EST FIN FRA GRC HRV HUN IRL ITA LTU LUX LVA MLT NLD POL PRT ROU SVK SVN SWE'.split(' ');
+  var ENTRY_EEA = 'ISL NOR LIE'.split(' ');
+  var ENTRY_SCHENGEN = 'AUT BEL BGR CZE D DEU DNK ESP EST FIN FRA GRC HRV HUN ITA LTU LUX LVA MLT NLD POL PRT ROU SVK SVN SWE ISL NOR LIE CHE'.split(' ');
+  var ENTRY_VISA = ('AFG ARM AGO AZE BGD BFA BHR BDI BEN BOL BTN BWA BLR BLZ COD CAF COG CIV CMR CHN CUB CPV DJI DOM DZA ECU EGY ERI SWZ ETH FJI GAB GHA ' +
+    'GMB GIN GNQ GNB GUY HTI IDN IND IRQ IRN JAM JOR KEN KGZ KHM COM PRK KWT KAZ LAO LBN LKA LBR LSO LBY MAR MDG MLI MMR MNG MRT MDV MWI MOZ NAM NER NGA ' +
+    'NPL OMN PNG PHL PAK QAT RUS RWA SAU SDN SLE SEN SOM SUR SSD STP SYR TCD TGO THA TJK TKM TUN TUR TZA UGA UZB VNM YEM ZAF ZMB ZWE VUT PSE').split(' ');
+  var ENTRY_FREE = ('MKD AND ARE ATG ALB ARG AUS BIH BRB BRN BRA BHS CAN CHL COL CRI DMA FSM GRD GEO GTM HND ISR JPN KIR KNA KOR LCA MCO MDA MNE MHL MUS MEX ' +
+    'MYS NIC NRU NZL PAN PER PLW PRY SRB SLB SYC SGP SMR SLV TLS TON TTO TUV UKR USA URY VAT VCT VEN WSM HKG MAC TWN RKS XKX GBR GBD GBN GBO GBP GBS').split(' ');
+  var ENTRY_BIO = { MKD: 1, ALB: 1, BIH: 1, GEO: 1, MDA: 1, MNE: 1, SRB: 1, UKR: 1 };   // csak biometrikus útlevéllel vízummentes
+  var ENTRY_ATV = 'AFG BGD COD ERI ETH GHA IRN IRQ NGA PAK SOM LKA'.split(' '); // repülőtéri tranzitvízum
+  var ENTRY_SPECIAL = { XXA: 'hontalan személy', XXB: 'menekült (1951-es genfi egyezmény)', XXC: 'menekült (egyéb)', XXX: 'tisztázatlan állampolgárságú személy',
+    UNO: 'ENSZ-tisztviselő', UNA: 'ENSZ szakosított szervezetének tisztviselője', UNK: 'koszovói lakos (UNMIK által kiadott okmány)', XOM: 'Máltai Lovagrend', XPO: 'INTERPOL', XEC: 'ECOWAS' };
+  var ENTRY_GEO_DIP = { from: new Date(2026, 2, 6), to: new Date(2027, 2, 6) };
+
+  // r: mrzParseLines eredménye; vissza: [{ lvl: 'ok'|'info'|'warn'|'bad', t: cím, d: magyarázat }]
+  function entryInfo(r, today) {
+    today = today || new Date();
+    var nat = (r.nat || '').replace(/</g, ''), iss = (r.state || '').replace(/</g, ''), out = [];
+    var t0 = (r.type || '')[0], t1 = (r.type || '')[1] || '<';
+    var add = function (lvl, t, d) { out.push({ lvl: lvl, t: t, d: d || '' }); };
+    var isEU = ENTRY_EU.indexOf(nat) >= 0, isEEA = ENTRY_EEA.indexOf(nat) >= 0, isCH = nat === 'CHE';
+    if (isEU || isEEA || isCH) {
+      add('ok', 'Szabad mozgás joga', isEU ? 'Uniós polgár: vízum nélkül, szabadon beléphet és tartózkodhat.' : (isCH ? 'Svájci állampolgár' : 'EGT-állampolgár') + ': az uniós polgárokkal azonos szabad mozgás joga.');
+      out.push({ lvl: 'stay', t: 'Tartózkodás: nincs 90/180 napos korlát', d: '3 hónapig csak érvényes útlevél vagy személyi igazolvány kell; azon túl a szabad mozgás feltételei szerint (munka, tanulás, elegendő anyagi fedezet), regisztrációval.' });
+      return out;
+    }
+    if (ENTRY_SPECIAL[nat]) add('warn', 'Különleges jogállás: ' + ENTRY_SPECIAL[nat], 'A vízumkötelezettség az okmányt kiállító országtól függ. Ha uniós vagy schengeni ország adta ki, és ott lakik, általában vízummentes.');
+    // Tartózkodási engedély, amelyet schengeni ország adott ki
+    if (r.cat && r.cat.cat === 'H' && ENTRY_SCHENGEN.indexOf(iss) >= 0) add('ok', 'Schengeni tartózkodási engedély', 'Érvényes engedéllyel és útlevéllel vízum nélkül beléphet (90/180 nap a többi schengeni országban).');
+    if (r.cat && r.cat.cat === 'H' && ENTRY_EU.indexOf(iss) >= 0) add('info', 'Uniós polgár családtagja?', 'Ha a kártyán „uniós polgár családtagja” (Family member) felirat áll, a tulajdonost megilleti a szabad mozgás joga.');
+    // Vízumkötelezettség
+    var geoDip = nat === 'GEO' && t0 === 'P' && /[DSO]/.test(t1) && today >= ENTRY_GEO_DIP.from && today < ENTRY_GEO_DIP.to;
+    var STAY_FREE = { lvl: 'stay', t: 'Tartózkodás: 90 nap / 180 nap', d: 'Vízum nélkül legfeljebb 90 napot tartózkodhat a schengeni térségben bármely 180 napos időszakon belül. A visszafelé számolt 180 napba minden korábbi schengeni tartózkodás beleszámít.' };
+    var STAY_VISA = { lvl: 'stay', t: 'Tartózkodás: a vízum szerint', d: 'Annyi napot tartózkodhat, amennyit a vízum „Tartózkodás időtartama” mezője enged, a vízum érvényességi idején belül. Schengeni (C) vízummal legfeljebb 90 napot bármely 180 napon belül. Nemzeti (D) vízummal vagy tartózkodási engedéllyel a kiállító országban az érvényesség alatt, a többi schengeni országban legfeljebb 90 napot bármely 180 napon belül.' };
+    if (geoDip) add('bad', 'Vízumköteles: grúz diplomata-/szolgálati útlevél', 'A vízummentesség 2026. 03. 06-tól 12 hónapra felfüggesztve a grúz diplomata-, szolgálati és hivatalos útlevelekre.');
+    else if (ENTRY_FREE.indexOf(nat) >= 0) {
+      var txt = 'Rövid tartózkodásra vízum nélkül beléphet.';
+      if (ENTRY_BIO[nat]) txt += ' Csak biometrikus (chipes) útlevéllel.';
+      add('ok', 'Vízummentes', txt);
+      if (nat === 'SRB') add('warn', 'Szerbia: kivétel', 'Ha az útlevelet a Koordinációs Igazgatóság (Koordinaciona uprava) adta ki, vízumköteles.');
+      if (nat === 'TWN' && r.opt != null && !/[A-Z0-9]/.test(r.opt)) add('warn', 'Tajvan: nincs személyi azonosító', 'Csak a személyiigazolvány-számot tartalmazó tajvani útlevél vízummentes; ebben a gépi sorban nem látszik ilyen szám.');
+      if (/^GB[DNOPS]$/.test(nat)) add('info', 'Brit (nem egyesült királysági) állampolgárság', 'Tengerentúli brit jogállás: vízummentes, de nem uniós polgár.');
+    } else if (ENTRY_VISA.indexOf(nat) >= 0) {
+      add('bad', 'Vízumköteles', 'Schengeni vízum vagy schengeni tartózkodási engedély kell a belépéshez.');
+      if (nat === 'CHN') add('info', 'Hongkong vagy Makaó?', 'A hongkongi (HKSAR) és a makaói (MSAR) útlevél vízummentes: nézd meg az útlevél borítóját.');
+    } else if (!ENTRY_SPECIAL[nat]) add('warn', 'Ismeretlen kód: ' + nat, 'Ez az állampolgársági kód nincs a listán: ellenőrizd a hatályos jegyzékben.');
+    var isFree = !geoDip && ENTRY_FREE.indexOf(nat) >= 0, isVisa = geoDip || ENTRY_VISA.indexOf(nat) >= 0;
+    // a tartózkodási sor közvetlenül a vízumstátusz után kerüljön
+    var si = -1; out.forEach(function (it, i) { if (si < 0 && /^Vízum(mentes|köteles)/.test(it.t)) si = i; });
+    var putStay = function (row) { out.splice(si >= 0 ? si + 1 : 0, 0, row); };
+    if (r.fmt === 'MRV-A' || r.fmt === 'MRV-B') putStay({ lvl: 'stay', t: 'Ez egy vízum gépi sora', d: 'A tartózkodás hossza a vízumbélyeg „Tartózkodás időtartama” mezőjében áll, a „-tól / -ig” érvényességi időn belül. Schengeni (C) vízummal legfeljebb 90 nap bármely 180 napon belül.' });
+    else if (isFree) putStay(STAY_FREE);
+    else if (isVisa) putStay(STAY_VISA);
+    if (ENTRY_ATV.indexOf(nat) >= 0) add('warn', 'Repülőtéri tranzitvízum', 'Schengeni repülőtér nemzetközi tranzitterületén való átszálláshoz is vízum kell (kivételekkel).');
+    // Okmány
+    if (t0 === 'P' && /[DSO]/.test(t1)) add('info', t1 === 'D' ? 'Diplomata-útlevél' : t1 === 'S' ? 'Szolgálati útlevél' : 'Hivatalos útlevél', 'Kétoldalú megállapodás eltérő szabályt adhat.');
+    if (r.exp && !r.expired) {
+      var lim = new Date(today.getFullYear(), today.getMonth() + 3, today.getDate());
+      if (r.exp < lim) add('warn', 'Hamarosan lejár', 'Harmadik országbelinél az úti okmánynak a tervezett kiutazás után még legalább 3 hónapig érvényesnek kell lennie.');
+    }
+    if (r.dob) {
+      var a18 = new Date(r.dob.getFullYear() + 18, r.dob.getMonth(), r.dob.getDate());
+      if (a18 > today) add('warn', 'Kiskorú', '18 év alatti: ellenőrizd a kísérőt és a szülői hozzájárulást.');
+    }
+    return out;
   }
   /* PURE-MRZ-END */
 
@@ -2587,7 +2702,7 @@
   var mrzCamOn = false, mrzCamT = 0, mrzCamT0 = 0, mrzReads = [], mrzPrevOk = '', mrzPrevVote = '', mrzSrc = '', mrzCv = null;
   function mrzCamMsg(t) { $('mrzCamMsg').textContent = t; }
   async function mrzCamStart() {
-    if (!OCR_T) { try { ocrInitTemplates(16, 20, 0.91807208994709, MRZ_OCR_B64); ocrSetCodes(Object.keys(MRZ_C).concat(Object.keys(MRZ_ALIAS))); } catch (e) { toast('Az olvasó nem indult el ezen az eszközön.'); return; } }
+    if (!OCR_T) { try { ocrInitTemplates(16, 20, 0.91807208994709, MRZ_OCR_B64); ocrSetCodes(Object.keys(MRZ_C).concat(Object.keys(MRZ_ALIAS), Object.keys(MRZ_N))); } catch (e) { toast('Az olvasó nem indult el ezen az eszközön.'); return; } }
     $('mrzSheet').hidden = true; mrzWipe();
     if (upOn && !upShotOn) { try { await exitUp(); } catch (e) {} }
     if (isFrozen()) unfreeze();
@@ -2668,6 +2783,38 @@
     if (window.__dnOnMrz) window.__dnOnMrz(txt, sure);   // csak az automata tesztek használják
   }
   $('mrzCamBtn').addEventListener('click', mrzCamStart);
+
+  /* ----- Chip olvasás: a ReadID Me megnyitása (ha fent van), különben telepítése az App Store-ból -----
+     Weboldal nem tudhatja, milyen appok vannak a telefonon, ezért egyszer megkérdezzük, és megjegyezzük (csak ezt az egy jelzőt).
+     A megnyitás egy Parancsok-parancson át megy („ReadID”), mert a ReadID Me nem ad nyilvános megnyitási címet. */
+  var READID_STORE = 'https://apps.apple.com/app/id1463949991';
+  var READID_RUN = 'shortcuts://run-shortcut?name=' + encodeURIComponent('ReadID');
+  function chipState() { try { return localStorage.getItem('dn-readid'); } catch (e) { return null; } }
+  function chipSet(v) { try { if (v == null) localStorage.removeItem('dn-readid'); else localStorage.setItem('dn-readid', v); } catch (e) {} chipUi(); }
+  function chipUi() {
+    var s = chipState();
+    $('chipLbl').textContent = s === 'no' ? 'ReadID telepítése' : 'Chip olvasás';
+    $('chipBtn').setAttribute('aria-label', s === 'no' ? 'A ReadID Me telepítése az App Store-ból' : 'Chip olvasás a ReadID Me alkalmazással');
+    $('chipAlt').textContent = s === 'no' ? 'Már telepítettem' : s === 'yes' ? 'Nincs meg a ReadID Me? Telepítés' : '';
+    $('chipAlt').hidden = !s;
+  }
+  function chipOpenStore() { window.location.href = READID_STORE; }
+  function chipRun() { window.location.href = READID_RUN; }
+  $('chipBtn').addEventListener('click', function () {
+    var s = chipState();
+    $('chipSetup').hidden = true;
+    if (s === 'yes') { try { if (localStorage.getItem('dn-readid-setup') !== '1') { $('chipSetup').hidden = false; return; } } catch (e) {} chipRun(); }
+    else if (s === 'no') chipOpenStore();
+    else $('chipAsk').hidden = !$('chipAsk').hidden;
+  });
+  $('chipYes').addEventListener('click', function () { $('chipAsk').hidden = true; chipSet('yes'); $('chipSetup').hidden = false; });
+  $('chipNo').addEventListener('click', function () { $('chipAsk').hidden = true; chipSet('no'); chipOpenStore(); });
+  $('chipSetupOk').addEventListener('click', function () { try { localStorage.setItem('dn-readid-setup', '1'); } catch (e) {} $('chipSetup').hidden = true; chipRun(); });
+  $('chipAlt').addEventListener('click', function () {
+    var s = chipState(); $('chipAsk').hidden = true;
+    if (s === 'no') { chipSet('yes'); $('chipSetup').hidden = false; } else { chipSet('no'); chipOpenStore(); }
+  });
+  chipUi();
   $('mrzCamCancel').addEventListener('click', function () { mrzCamStop(); mrzOpen(); });
   $('mrzCamTorch').addEventListener('click', function () { torchBtn.click(); });
   // Hibakeresés: elmenti pontosan azt a képrészletet, amit az olvasó lát (PNG, veszteségmentes).
@@ -2729,8 +2876,16 @@
     if (mrzSrc === 'cam-unsure') c1.appendChild(el('p', 'mrz-msg bad', 'Az app kamerájával olvasva, de az olvasást nem sikerült megerősíteni: ez a több kép alapján legvalószínűbb szöveg. Vesd össze a gépi sorral karakterenként, és javítsd a mezőben, vagy olvasd be újra.'));
     c1.appendChild(el('p', 'mrz-msg', 'Hasonlítsd össze ezeket az adatokat az okmányra nyomtatott adatokkal: ha eltérnek, az hamisításra utalhat.'));
     box.appendChild(c1);
+    var ei = entryInfo(r);
+    if (ei.length) {
+      var ce = el('div', 'mrz-card entry'); ce.appendChild(el('div', 'mrz-head', 'Belépési feltételek'));
+      ei.forEach(function (it) { var row2 = el('div', 'entry-row ' + it.lvl); row2.appendChild(el('b', null, it.t)); if (it.d) row2.appendChild(el('span', null, it.d)); ce.appendChild(row2); });
+      if (Date.now() - ENTRY_LIST_TS.getTime() > 183 * 864e5) ce.appendChild(el('p', 'mrz-msg bad', 'A vízumlista fél évnél régebbi: kérj frissítést, mert azóta változhatott.'));
+      ce.appendChild(el('p', 'mrz-msg', 'Gyors tájékoztató a gépi sor alapján (uniós vízumlista, állapot: ' + ENTRY_LIST_DATE + '). Nem helyettesíti a hatályos jogszabályt és a belső utasításokat.'));
+      box.appendChild(ce);
+    }
     var c2 = el('div', 'mrz-card mrz-links');
-    if (r.st.name) {
+    if (r.st.prado) {
       var a1 = el('a', 'btn primary', 'PRADO: ' + r.st.name + (r.cat.cat ? ' – ' + MRZ_CAT[r.cat.cat] : '') + ' ↗');
       a1.href = pradoUrl(r.st.code, r.cat.cat); a1.target = '_blank'; a1.rel = 'noopener'; c2.appendChild(a1);
       var a2 = el('a', 'btn', r.st.name + ': az összes okmány ↗'); a2.href = pradoUrl(r.st.code, null); a2.target = '_blank'; a2.rel = 'noopener'; c2.appendChild(a2);
