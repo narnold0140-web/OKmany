@@ -91,6 +91,13 @@ A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az
 1. Koppints a **Scan** gombra: a kurzor a mezőbe kerül, és feljön a billentyűzet.
 2. Koppints a billentyűzet fölötti **beolvasás ikonra**, vagy a mezőbe még egyszer, és válaszd: **Automatikus kitöltés → Szöveg beolvasása**. Tartsd a kamerát a gépi sorra, és koppints a **Beszúrás** gombra. (Az Élő szöveg kameráját weboldal közvetlenül nem indíthatja el, ezért ez az egy koppintás marad.) A gépi sort be is gépelheted.
 
+**Olvasás az app kamerájával (v44-től):** a Scan alatti gombbal az app a saját kamerájával olvassa a gépi sort, Élő szöveg nélkül.
+- Igazítsd a gépi sort a képernyő közepén lévő keretbe. Ha a keret fehérre vált, az app látja a sort. Tartsd mozdulatlanul.
+- A **Lámpa** gombbal a zseblámpa bekapcsolható (ha a telefon engedi), a **Mégse** visszavisz a lapra. Olvasás közben a kamera teljes felbontáson fut; a végén visszaáll, és a lámpa kikapcsol.
+- Az app másodpercenként többször olvas. Csak akkor fogadja el az eredményt („megerősítve”), ha két olvasás karakterre egyezik, minden ellenőrző számjegy stimmel, a kiállító és az állampolgárság létező országkód, és a név sor hihető. Ha 25 másodperc alatt ez nem jön össze, a több kép alapján legvalószínűbb szöveget írja be, narancssárga figyelmeztetéssel.
+- **A nevet nem védi ellenőrző számjegy**: kamerás olvasás után a nevet mindig vesd össze szemmel a gépi sorral.
+- Az olvasó az OCR-B betűtípusra (a gépi sor szabványos betűjére) készült, a telefonon fut, a képet nem menti és nem küldi el. A pontosságot eddig szimulált okmányképeken mértük; valódi okmányon, csillogó fólián vagy erős alnyomaton gyengébb lehet. Ilyenkor a Scan (Élő szöveg) a tartalék.
+
 **Ha a Scan nem működik,** kapcsold be az Élő szöveget: **Beállítások → Általános → Nyelv és régió → Élő szöveg**. Ha ott nincs ilyen kapcsoló, előbb add hozzá az **English** nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar). iPhone XS vagy újabb és iOS 15 vagy újabb kell hozzá.
 
 3. Az app megmutatja:
@@ -100,7 +107,7 @@ A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az
 4. A **PRADO** gomb a kiállító ország megfelelő okmánykategóriájának oldalát nyitja meg. Alatta ugyanennek a kiállítónak a többi kategóriája és az összes okmánya is elérhető.
 
 Tudnivalók:
-- A beolvasást az iPhone saját szövegfelismerője végzi (iOS 15-től, iPhone XS és újabb). Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor és háttérbe váltáskor törli.
+- A Scan beolvasását az iPhone saját szövegfelismerője végzi (iOS 15-től, iPhone XS és újabb), a kamerás olvasást az app saját olvasója. Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor és háttérbe váltáskor törli.
 - **Eltérés az ellenőrző számjegyekben:** lehet beolvasási hiba is. Hasonlítsd össze a mezőt a gépi sorral, főleg a könnyen összetéveszthető karaktereket (O és 0, I és 1, B és 8, S és 5, Z és 2). Ha a beolvasás biztosan pontos, az eltérés átírt adatra utalhat.
 - A szövegfelismerő a hosszú << sorokban gyakran kevesebb vagy több kitöltőjelet ad vissza, és egy sort néha két darabra tör. Az app ezt pótolja, illetve összeilleszti, és csak akkor fogadja el, ha az ellenőrző számjegyek igazolják; erről külön üzenetet ír. Ha egy sor nagyon hiányos, megmutatja soronként, hány karakter érkezett.
 - Az okmányszámban az app szándékosan nem javít semmit automatikusan, mert ott betű és szám is szabályos lehet, és egy átírt adatot is „rendbe tehetne”. A dátumokban, ahol betű nem állhat, a betűt számjegynek olvassa (például O → 0), de ezt narancssárgán jelzi.

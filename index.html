@@ -247,6 +247,25 @@
   .mrz-btns { display: flex; gap: 8px; margin: 10px 0 14px; flex-wrap: wrap; }
   #mrzScan { width: 100%; justify-content: center; gap: 10px; font-size: 17px; padding: 14px; margin: 4px 0 10px; color: #05211d; }
   #mrzScan svg { width: 24px; height: 24px; }
+  #mrzCamBtn { width: 100%; justify-content: center; gap: 10px; font-size: 16px; padding: 13px; margin: 0 0 10px; }
+  #mrzCamBtn svg { width: 22px; height: 22px; }
+  #mrzCam { position: absolute; inset: 0; z-index: 9; pointer-events: auto; touch-action: none; }
+  #mrzCam[hidden] { display: none; }
+  .mrz-reading #top, .mrz-reading #bottom, .mrz-reading #guide, .mrz-reading #lupe, .mrz-reading #ptCard, .mrz-reading #ovWrap { visibility: hidden; }
+  #mrzCamTop { text-shadow: 0 1px 6px rgba(0,0,0,.8); }
+  #mrzBand {
+    position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: min(92%, 150vh); aspect-ratio: 3.6 / 1;
+    border: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 200vmax rgba(0,0,0,.55);
+  }
+  #mrzBand.hit { border-color: #fff; }
+  #mrzBand i { position: absolute; left: 6%; right: 6%; height: 2px; background: rgba(64,217,196,.55); }
+  #mrzCamTop { position: absolute; left: 0; right: 0; top: calc(var(--sat) + 14px); text-align: center; padding: 0 18px; }
+  #mrzCamTop b { display: block; font-size: 18px; }
+  #mrzCamMsg { display: block; margin: 6px auto 0; max-width: 420px; font-size: 14.5px; color: #e8eeee; min-height: 2.9em; }
+  #mrzCamBar { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 22px); display: flex; justify-content: center; gap: 12px; padding: 0 18px; }
+  #mrzCamBar .btn { flex: 0 1 200px; justify-content: center; padding: 13px 16px; font-size: 16px; }
+  #mrzCamTorch.on { background: var(--accent); color: var(--on-accent); }
+  #mrzCamTorch[hidden] { display: none; }
   #mrzHint { margin: 0 0 10px; padding: 10px 12px; border-radius: 14px; background: rgba(64,217,196,.14); border: 1px solid rgba(64,217,196,.45); font-size: 13.5px; line-height: 1.45; }
   #mrzHint[hidden] { display: none; }
   #mrzRes:empty { display: none; }
@@ -544,7 +563,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v43</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v44</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -568,16 +587,30 @@
         <li>Koppints a billentyűzet fölötti <b>beolvasás ikonra</b>, vagy a mezőbe még egyszer, és válaszd: <b>Automatikus kitöltés → Szöveg beolvasása</b>.</li>
         <li>Tartsd a kamerát az okmány <b>gépi sorára</b> (a &lt;&lt; jeleket tartalmazó sorok), és koppints a <b>Beszúrás</b> gombra.</li>
       </ol>
+      <p class="lib-note">Vagy: <b>Olvasás az app kamerájával</b>. Ez az app saját olvasója, zseblámpával is használható, és nem kell hozzá Élő szöveg.</p>
       <p class="lib-note">Ha a Scan nem működik, kapcsold be az Élő szöveget: <b>Beállítások → Általános → Nyelv és régió → Élő szöveg</b>. Ha ott nincs ilyen kapcsoló, előbb add hozzá az <b>English</b> nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar).</p>
       <button class="btn primary" id="mrzScan" aria-label="Scan: gépi sor beolvasása az iPhone Élő szöveg funkciójával">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 10h8M8 14h5"/></svg>
         Scan
       </button>
+      <button class="btn" id="mrzCamBtn" aria-label="Gépi sor olvasása az app kamerájával">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.6"/></svg>
+        Olvasás az app kamerájával
+      </button>
       <div id="mrzHint" hidden>Most koppints a billentyűzet fölötti <b>beolvasás ikonra</b>, vagy koppints a mezőbe még egyszer, és válaszd: <b>Automatikus kitöltés → Szöveg beolvasása</b>. Tartsd a kamerát a gépi sorra, majd koppints a <b>Beszúrás</b> gombra.</div>
       <textarea id="mrzIn" rows="3" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="P&lt;HUNMINTA&lt;&lt;ANNA&lt;&lt;&lt;…" aria-label="Gépi sor"></textarea>
       <div class="mrz-btns"><button class="mini" id="mrzClear">Törlés</button></div>
       <div id="mrzRes" aria-live="polite"></div>
-      <p class="lib-note" style="margin-top:14px">A beolvasást az iPhone saját szövegfelismerője végzi, a telefonon. Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor törli.</p>
+      <p class="lib-note" style="margin-top:14px">A beolvasás a telefonon történik (az iPhone szövegfelismerőjével vagy az app saját olvasójával). Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor törli.</p>
+    </div>
+  </section>
+
+  <section id="mrzCam" hidden aria-label="Gépi sor olvasása">
+    <div id="mrzBand"><i style="top:36%"></i><i style="top:68%"></i></div>
+    <div id="mrzCamTop"><b>Igazítsd a gépi sort a keretbe</b><span id="mrzCamMsg" aria-live="polite">Keresem a gépi sort…</span></div>
+    <div id="mrzCamBar">
+      <button class="btn" id="mrzCamTorch" hidden aria-label="Zseblámpa">Lámpa</button>
+      <button class="btn" id="mrzCamCancel">Mégse</button>
     </div>
   </section>
 
@@ -713,7 +746,7 @@
   var lupeTimer = null, lupeActive = false, lupePos = { x: 0, y: 0 };
 
   function isControl(el) {
-    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard, #idle, #mrzSheet, #camOffView'));
+    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard, #idle, #mrzSheet, #mrzCam, #camOffView'));
   }
 
   function doubleTap(x, y) {
@@ -897,7 +930,7 @@
     return new Promise(function (res) { var t0 = performance.now(); (function chk() { if (video.videoWidth >= minW || performance.now() - t0 > ms) res(); else setTimeout(chk, 50); })(); });
   }
   function resWatch() {
-    if (isFrozen() || !camOn || camMode === 'fluid') return;
+    if (isFrozen() || !camOn || camMode === 'fluid' || mrzCamOn) return;
     var want = state.s >= 2 ? 'uhd' : state.s < 1.6 ? 'hd' : camRes;
     clearTimeout(resTimer);
     if (want === camRes) return;
@@ -1045,7 +1078,7 @@
   function stopCamera() {
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
     stream = null; track = null; torchOn = false;
-    torchBtn.classList.remove('on');
+    torchBtn.classList.remove('on'); try { $('mrzCamTorch').classList.remove('on'); } catch (e) {}
   }
 
   torchBtn.addEventListener('click', async function () {
@@ -1054,6 +1087,7 @@
       torchOn = !torchOn;
       await track.applyConstraints({ advanced: [{ torch: torchOn }] });
       torchBtn.classList.toggle('on', torchOn);
+      $('mrzCamTorch').classList.toggle('on', torchOn);
     } catch (e) {
       torchOn = false;
       torchBtn.classList.remove('on');
@@ -2228,6 +2262,361 @@
   }
   /* PURE-MRZ-END */
 
+  /* PURE-OCR-START */
+  /* Saját gépisor-olvasó (MRZ, OCR-B). Bemenet: szürkeárnyalatos kép (0..255) a gépi sor környékéről.
+     Lépések: helyi háttérhez mért „festék” térkép → ferdeség becslése és kiegyenesítés → sorok keresése → a karakterrács illesztése
+     (a karakterek közti rések alapján) → minden cella összevetése a betűkészletből készült 37 mintával → a pozíció szerint megengedett
+     karakterek közül a legjobb. Az eredményt a meglévő mrzParse ellenőrzi (ellenőrző számjegyek). */
+  var OCR_CH = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<';
+  var OCR_T = null;
+  var OCR_CODES = null;   // érvényes 3 betűs kiállító/állampolgárság kódok ('D<<' alakban is)
+  function ocrSetCodes(list) { OCR_CODES = list.map(function (c) { return (c + '<<<').slice(0, 3); }); }
+  // A kódmezők helye: [sor, kezdet]
+  var OCR_CODEPOS = { TD3: [[0, 2], [1, 10]], TD2: [[0, 2], [1, 10]], TD1: [[0, 2], [1, 15]] };
+  // A kódmezőben a legjobban illeszkedő érvényes kód (az O/Q, I/1 jellegű tévesztés itt nem bújhat el, mert ezt nem védi ellenőrző szám)
+  function ocrFixCodes(fmt, lines, getScores, setChar) {
+    if (!OCR_CODES || !OCR_CODEPOS[fmt]) return;
+    OCR_CODEPOS[fmt].forEach(function (cp) {
+      var best = null, bs = -1e9;
+      for (var c = 0; c < OCR_CODES.length; c++) {
+        var code = OCR_CODES[c], s = 0;
+        for (var k = 0; k < 3; k++) s += getScores(cp[0], cp[1] + k)[OCR_CH.indexOf(code[k])];
+        if (s > bs) { bs = s; best = code; }
+      }
+      if (best) for (var k2 = 0; k2 < 3; k2++) setChar(cp[0], cp[1] + k2, best[k2]);
+    });
+  }
+  function ocrSetAt(s, i, ch) { return s.slice(0, i) + ch + s.slice(i + 1); }
+  // A név sor hihető-e: a vezeték- és utónevet „<<” választja el, utána kitöltő jelek jönnek.
+  function ocrNameOk(fmt, lines) {
+    var nl = fmt === 'TD1' ? lines[2] : lines[0].slice(5);
+    return /^[A-Z]/.test(nl) && /<</.test(nl) && /<$/.test(nl) && !/<[A-Z]<[A-Z]<[A-Z]</.test(nl);   // a nagyon hosszú, sorvégig érő név ritka: azt nem vesszük biztosnak
+  }   // előkészített minták: { tw, th, ratio, n: [Float32Array (nullátlagú, egységnyi)] }
+
+  function ocrInitTemplates(tw, th, ratio, b64) {
+    var raw = typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
+    var sz = tw * th, list = [], k, i;
+    for (k = 0; k < OCR_CH.length; k++) {
+      var v = new Float32Array(sz), m = 0, q = 0;
+      for (i = 0; i < sz; i++) { v[i] = raw.charCodeAt(k * sz + i) / 255; m += v[i]; }
+      m /= sz; for (i = 0; i < sz; i++) { v[i] -= m; q += v[i] * v[i]; }
+      q = Math.sqrt(q) || 1; for (i = 0; i < sz; i++) v[i] /= q;
+      list.push(v);
+    }
+    OCR_T = { tw: tw, th: th, ratio: ratio, n: list };
+  }
+
+  // Integrálkép (gyors dobozátlaghoz)
+  function ocrIntegral(a, w, h) {
+    var I = new Float64Array((w + 1) * (h + 1)), x, y, s;
+    for (y = 0; y < h; y++) { s = 0; for (x = 0; x < w; x++) { s += a[y * w + x]; I[(y + 1) * (w + 1) + x + 1] = I[y * (w + 1) + x + 1] + s; } }
+    return I;
+  }
+  function ocrBoxMean(I, w, h, x0, y0, x1, y1) {
+    x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(w, x1); y1 = Math.min(h, y1);
+    var W = w + 1, n = (x1 - x0) * (y1 - y0);
+    return n > 0 ? (I[y1 * W + x1] - I[y0 * W + x1] - I[y1 * W + x0] + I[y0 * W + x0]) / n : 0;
+  }
+
+  // Festéktérkép 0..1: mennyivel sötétebb a pont a környezeténél (a háttér helyi átlaga). Az egyenetlen fényt és a tükröződést kiegyenlíti.
+  function ocrInk(g, w, h, r) {
+    var I = ocrIntegral(g, w, h), out = new Float32Array(w * h), x, y;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      var m = ocrBoxMean(I, w, h, x - r, y - r, x + r + 1, y + r + 1), v = (m - g[y * w + x]) / (m * 0.45 + 6);
+      out[y * w + x] = v < 0 ? 0 : v > 1 ? 1 : v;
+    }
+    return out;
+  }
+
+  // Ferdeség: az a szög, amelynél a sorok vízszintes vetülete a legélesebb.
+  function ocrSkew(ink, w, h) {
+    var best = 0, bestS = -1, a, x, y, step = 2;
+    for (a = -4.5; a <= 4.51; a += 0.25) {
+      var t = Math.tan(a * Math.PI / 180), hist = new Float32Array(h + w), off = Math.ceil(Math.abs(t) * w) + 1, s = 0;
+      for (y = 0; y < h; y++) for (x = 0; x < w; x += step) { var v = ink[y * w + x]; if (v > 0.3) { var yy = Math.round(y - x * t) + off; if (yy >= 0 && yy < hist.length) hist[yy] += v; } }
+      for (y = 0; y < hist.length; y++) s += hist[y] * hist[y];
+      if (s > bestS) { bestS = s; best = a; }
+    }
+    return best;
+  }
+  // Kiegyenesítés: forgatás a kép közepe körül (bilineáris mintavétel).
+  function ocrRotate(src, w, h, deg) {
+    if (Math.abs(deg) < 0.01) return src;
+    var r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), cx = w / 2, cy = h / 2, out = new Float32Array(w * h), x, y;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      var dx = x - cx, dy = y - cy, sx = cx + dx * c - dy * s, sy = cy + dx * s + dy * c;
+      out[y * w + x] = ocrBil(src, w, h, sx, sy);
+    }
+    return out;
+  }
+  function ocrBil(a, w, h, x, y) {
+    if (x < 0 || y < 0 || x > w - 1 || y > h - 1) return 0;
+    var x0 = x | 0, y0 = y | 0, x1 = Math.min(w - 1, x0 + 1), y1 = Math.min(h - 1, y0 + 1), fx = x - x0, fy = y - y0;
+    return (a[y0 * w + x0] * (1 - fx) + a[y0 * w + x1] * fx) * (1 - fy) + (a[y1 * w + x0] * (1 - fx) + a[y1 * w + x1] * fx) * fy;
+  }
+
+  // Sorok: a vízszintes vetület sávjai.
+  function ocrBands(ink, w, h) {
+    var p = new Float32Array(h), x, y, mx = 0;
+    for (y = 0; y < h; y++) { var s = 0; for (x = 0; x < w; x++) s += ink[y * w + x] > 0.3 ? 1 : 0; p[y] = s; }
+    var sm = new Float32Array(h); for (y = 0; y < h; y++) { var a = 0, n = 0; for (var k = -1; k <= 1; k++) if (y + k >= 0 && y + k < h) { a += p[y + k]; n++; } sm[y] = a / n; if (sm[y] > mx) mx = sm[y]; }
+    var bands = [], inB = false, st = 0, th = mx * 0.22;
+    for (y = 0; y <= h; y++) {
+      var on = y < h && sm[y] > th;
+      if (on && !inB) { inB = true; st = y; } else if (!on && inB) { inB = false; bands.push({ t: st, b: y - 1, sum: 0 }); }
+    }
+    // a sáv széleinek kiterjesztése a halványabb (de még festékes) sorokra, hogy a teljes betűmagasság benne legyen
+    bands.forEach(function (bd) {
+      var lim = th * 0.25, k;
+      for (k = bd.t - 1; k >= 0 && sm[k] > lim && bd.t - k < (bd.b - bd.t + 1) * 0.35; k--) bd.t = k;
+      for (k = bd.b + 1; k < h && sm[k] > lim && k - bd.b < (bd.b - bd.t + 1) * 0.35; k++) bd.b = k;
+      for (k = bd.t; k <= bd.b; k++) bd.sum += p[k];
+    });
+    return bands.filter(function (bd) { return bd.b - bd.t + 1 >= 6; });
+  }
+
+  // Egy sor karakterrácsa: a karakterek közti rések helyére illesztett egyenletes osztás.
+  function ocrGrid(ink, w, h, band, n) {
+    var col = new Float32Array(w), x, y, t = band.t, b = band.b, H = b - t + 1;
+    for (x = 0; x < w; x++) { var s = 0; for (y = t; y <= b; y++) s += ink[y * w + x]; col[x] = s; }
+    var mx = 0; for (x = 0; x < w; x++) if (col[x] > mx) mx = col[x];
+    var ext = ocrMainExtent(col, w, mx, H); if (!ext) return null;
+    var xl = ext[0], xr = ext[1];
+    var E = xr - xl + 1, p0 = E / (n - 1 + 0.62);
+    var sc = new Float32Array(w); for (x = 0; x < w; x++) sc[x] = (col[Math.max(0, x - 1)] + 2 * col[x] + col[Math.min(w - 1, x + 1)]) / 4;
+    var best = 1e18, bp = p0, bx = xl + 0.31 * p0, p, x0, i;
+    for (p = p0 * 0.96; p <= p0 * 1.04; p += p0 * 0.002) {
+      for (x0 = xl + 0.12 * p; x0 <= xl + 0.5 * p; x0 += 0.25) {
+        var cost = 0;
+        for (i = 0; i < n - 1; i++) { var gx = Math.round(x0 + (i + 0.5) * p); cost += gx >= 0 && gx < w ? sc[gx] : 0; }
+        // az utolsó karakter jobb széle se lógjon túl a festéken
+        var last = x0 + (n - 1) * p; cost += Math.abs(last + 0.31 * p - xr) * mx * 0.02;
+        if (cost < best) { best = cost; bp = p; bx = x0; }
+      }
+    }
+    // a sáv magassága a karakterlépésből (a betűkészlet aránya szerint), az alapvonalhoz igazítva: így nem függ attól, van-e a sorban számjegy
+    var Hf = bp / OCR_T.ratio;
+    return { x0: bx, p: bp, t: b - Hf + 1, b: b + 0.5, H: Hf };
+  }
+
+  // Egy cella mintavétele a minták rácsára (2×2 részmintával), eltolással.
+  function ocrCell(ink, w, h, cx, grid, dx, dy, out) {
+    var T = OCR_T, tw = T.tw, th = T.th, x0 = cx - grid.p / 2, sx = grid.p / tw, sy = (grid.b - grid.t + 1) / th, i, j, m = 0, q = 0;
+    for (j = 0; j < th; j++) for (i = 0; i < tw; i++) {
+      var X = x0 + (i + dx) * sx, Y = grid.t + (j + dy) * sy;
+      var v = (ocrBil(ink, w, h, X + sx * 0.25, Y + sy * 0.25) + ocrBil(ink, w, h, X + sx * 0.75, Y + sy * 0.25) + ocrBil(ink, w, h, X + sx * 0.25, Y + sy * 0.75) + ocrBil(ink, w, h, X + sx * 0.75, Y + sy * 0.75)) / 4;
+      out[j * tw + i] = v; m += v;
+    }
+    m /= tw * th; for (i = 0; i < out.length; i++) { out[i] -= m; q += out[i] * out[i]; }
+    return Math.sqrt(q);
+  }
+
+  // Egy cella pontszámai mind a 37 mintára (a legjobb eltolással).
+  function ocrScores(ink, w, h, cx, grid) {
+    var T = OCR_T, sz = T.tw * T.th, buf = new Float32Array(sz), sc = new Float32Array(OCR_CH.length), k, i, dx, dy;
+    for (k = 0; k < sc.length; k++) sc[k] = -1;
+    for (dy = -0.8; dy <= 0.81; dy += 0.8) for (dx = -0.8; dx <= 0.81; dx += 0.8) {
+      var q = ocrCell(ink, w, h, cx, grid, dx, dy, buf); if (q < 1e-6) continue;
+      for (k = 0; k < sc.length; k++) { var t = T.n[k], s = 0; for (i = 0; i < sz; i++) s += buf[i] * t[i]; s /= q; if (s > sc[k]) sc[k] = s; }
+    }
+    return sc;
+  }
+
+  // A pozíción megengedett karakterek (a formátum szerint): D szám, A betű vagy <, X betű, szám vagy <, S nem (M F <), C ellenőrző számjegy, F kitöltő vagy szám
+  var OCR_LAYOUT = {
+    TD3: ['P' + 'A'.repeat(43), 'XXXXXXXXXC' + 'AAA' + 'DDDDDDC' + 'S' + 'DDDDDDC' + 'XXXXXXXXXXXXXX' + 'F' + 'C'],
+    TD2: ['A'.repeat(36), 'XXXXXXXXXC' + 'AAA' + 'DDDDDDC' + 'S' + 'DDDDDDC' + 'XXXXXXX' + 'C'],
+    TD1: ['A' + 'A' + 'AAA' + 'XXXXXXXXX' + 'F' + 'XXXXXXXXXXXXXXX', 'DDDDDDC' + 'S' + 'DDDDDDC' + 'AAA' + 'XXXXXXXXXXX' + 'C', 'A'.repeat(30)]
+  };
+  function ocrAllowed(code) {
+    switch (code) {
+      case 'D': case 'C': return '0123456789';
+      case 'A': return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ<';
+      case 'P': return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      case 'S': return 'MFX<';
+      case 'F': return '0123456789<';
+      default: return OCR_CH;
+    }
+  }
+
+  // Egy sor beolvasása: karakterenként a pontszámok (a szavazáshoz) és a legjobb megengedett karakter.
+  function ocrReadLine(ink, w, h, band, layout) {
+    var n = layout.length, grid = ocrGrid(ink, w, h, band, n); if (!grid) return null;
+    var txt = '', scores = [], minMargin = 1, sum = 0;
+    for (var i = 0; i < n; i++) {
+      var sc = ocrScores(ink, w, h, grid.x0 + i * grid.p, grid), al = ocrAllowed(layout[i]), b1 = -2, b2 = -2, bc = '<';
+      for (var k = 0; k < al.length; k++) { var v = sc[OCR_CH.indexOf(al[k])]; if (v > b1) { b2 = b1; b1 = v; bc = al[k]; } else if (v > b2) b2 = v; }
+      txt += bc; scores.push(sc); sum += b1; if (b1 - b2 < minMargin) minMargin = b1 - b2;
+    }
+    return { txt: txt, scores: scores, mean: sum / n, minMargin: minMargin, grid: grid };
+  }
+
+  // A teljes olvasás egy képen. Visszaad: formátum, sorok, karakterenkénti pontszámok, átlagos egyezés.
+  function ocrRead(gray, w, h) {
+    if (!OCR_T) return null;
+    var r = Math.max(6, Math.round(h / 7)), ink = ocrInk(gray, w, h, r);
+    var ang = ocrSkew(ink, w, h); ink = ocrRotate(ink, w, h, ang);
+    var bands = ocrBands(ink, w, h); if (bands.length < 2) return null;
+    var cands = [], i;
+    // két- vagy háromsoros csoportok: hasonló magasságú, egymást követő sávok
+    for (var nl = 2; nl <= 3; nl++) for (i = 0; i + nl <= bands.length; i++) {
+      var g = bands.slice(i, i + nl), hs = g.map(function (b) { return b.b - b.t + 1; }), mn = Math.min.apply(null, hs), mxh = Math.max.apply(null, hs);
+      if (mxh / mn > 1.6) continue;
+      var gaps = []; for (var k = 1; k < nl; k++) gaps.push(g[k].t - g[k - 1].b);
+      if (gaps.some(function (gp) { return gp > mxh * 1.6 || gp < 1; })) continue;
+      cands.push(g);
+    }
+    var best = null;
+    cands.forEach(function (g) {
+      var fmts;
+      if (g.length === 3) fmts = ['TD1'];
+      else {
+        // 44 vagy 36 karakter: a sor festékkiterjedéséből és a betűmagasságból
+        var H = g[0].b - g[0].t + 1, est = ocrExtent(ink, w, h, g[0]) / (OCR_T.ratio * H);
+        fmts = est > 40 ? ['TD3', 'TD2'] : ['TD2', 'TD3'];
+      }
+      fmts.forEach(function (fmt) {
+        var lays = OCR_LAYOUT[fmt], lines = [], ok = true;
+        for (var k = 0; k < g.length; k++) { var rl = ocrReadLine(ink, w, h, g[k], lays[k]); if (!rl) { ok = false; break; } lines.push(rl); }
+        if (!ok) return;
+        var mean = lines.reduce(function (a, l) { return a + l.mean; }, 0) / lines.length;
+        if (!best || mean > best.mean) best = { fmt: fmt, lines: lines, mean: mean, angle: ang };
+      });
+    });
+    if (best) ocrFixCodes(best.fmt, best.lines, function (l, i) { return best.lines[l].scores[i]; }, function (l, i, ch) { best.lines[l].txt = ocrSetAt(best.lines[l].txt, i, ch); });
+    return best;
+  }
+  function ocrMainExtent(col, w, mx, H) {
+    var thr = mx * 0.12, pe = H * (OCR_T ? OCR_T.ratio : 0.92), maxGap = Math.max(3, pe * 1.15), x, peak = 0;
+    for (x = 0; x < w; x++) if (col[x] > col[peak]) peak = x;
+    if (col[peak] <= thr) return null;
+    var xl = peak, xr = peak, gap = 0;
+    for (x = peak - 1; x >= 0; x--) { if (col[x] > thr) { xl = x; gap = 0; } else if (++gap > maxGap) break; }
+    gap = 0;
+    for (x = peak + 1; x < w; x++) { if (col[x] > thr) { xr = x; gap = 0; } else if (++gap > maxGap) break; }
+    return [xl, xr];
+  }
+  function ocrExtent(ink, w, h, band) {
+    var x, y, xl = -1, xr = -1, mx = 0, col = new Float32Array(w);
+    for (x = 0; x < w; x++) { var s = 0; for (y = band.t; y <= band.b; y++) s += ink[y * w + x]; col[x] = s; if (s > mx) mx = s; }
+    var e = ocrMainExtent(col, w, mx, band.b - band.t + 1);
+    return e ? e[1] - e[0] + 1 : 0;
+  }
+
+  // Több képkocka összesítése: azonos formátumú olvasások karakterenkénti pontszámait összeadja, és újra dönt.
+  function ocrVote(reads) {
+    if (!reads.length) return null;
+    var fmt = reads[reads.length - 1].fmt, same = reads.filter(function (r) { return r.fmt === fmt && r.lines.length === reads[reads.length - 1].lines.length; });
+    var lays = OCR_LAYOUT[fmt], out = [];
+    for (var li = 0; li < lays.length; li++) {
+      var lay = lays[li], txt = '';
+      for (var i = 0; i < lay.length; i++) {
+        var al = ocrAllowed(lay[i]), bc = '<', b1 = -1e9;
+        for (var k = 0; k < al.length; k++) {
+          var ci = OCR_CH.indexOf(al[k]), s = 0;
+          for (var r = 0; r < same.length; r++) s += same[r].lines[li].scores[i][ci];
+          if (s > b1) { b1 = s; bc = al[k]; }
+        }
+        txt += bc;
+      }
+      out.push(txt);
+    }
+    ocrFixCodes(fmt, out, function (l, i) { var s = new Float32Array(OCR_CH.length); for (var r = 0; r < same.length; r++) for (var c = 0; c < s.length; c++) s[c] += same[r].lines[l].scores[i][c]; return s; }, function (l, i, ch) { out[l] = ocrSetAt(out[l], i, ch); });
+    return { fmt: fmt, lines: out, n: same.length };
+  }
+  /* PURE-OCR-END */
+
+  /* ----- Saját gépisor-olvasó az app kamerájával ----- */
+  var MRZ_OCR_B64 = 'AAAAAANz2Pb21WsBAAAAAAAAAAa3////////ngAAAAAAAABw///OlZjT//9TAAAAAAAA2f+3AwAABLz/ygAAAAAAIv//PwAAAABH//8WAAAAAFH/+AYAAAAAC/3/QwAAAABv/9YAAAAAAADm/2AAAAAAgP/BAAAAAAAA0/9xAAAAAIr/tQAAAAAAAMr/egAAAACO/7AAAAAAAADG/38AAAAAjv+vAAAAAAAAxP+BAAAAAIv/sgAAAAAAAMX/gAAAAACB/7oAAAAAAADM/3kAAAAAa//VAAAAAAAA5P9jAAAAAEn/+gkAAAAAEf7/QQAAAAAX/v9KAAAAAFb//REAAAAAAMn/xQgAAAvN/7kAAAAAAABZ///era3i//49AAAAAAAAAZz///////+CAAAAAAAAAAAAXsbj48BSAAAAAAAAAAAAAAAAhOGRAAAAAAAAAAAAAAABj///+gAAAAAAAAAAAAAAkv////wAAAAAAAAAAAAEnf//2P/9AAAAAAAAAAAAlP//uzf//QAAAAAAAAAAAM3/tgov//4AAAAAAAAAAAA0cgYAL//+AAAAAAAAAAAAAAAAAC///gAAAAAAAAAAAAAAAAAv//4AAAAAAAAAAAAAAAAAL//+AAAAAAAAAAAAAAAAAC///gAAAAAAAAAAAAAAAAAv//4AAAAAAAAAAAAAAAAALv/+AAAAAAAAAAAAAAAAAC7//gAAAAAAAAAAAAAAAAAt//4AAAAAAAAAAAAAAAAALP/9AAAAAAAAAAAAAAAAACz//QAAAAAAAAAAAAAAAAAr//sAAAAAAAAAAAAAAAAAKP/1AAAAAAAAAAAAAAAAAAKkgAAAAAAAAAAAAAApldr27K0vAAAAAAAAAAGP/P//////+FgAAAAAAAAi///7vZen9f/3JAAAAAAABbKnIwAAACPk/5kAAAAAAAAAAAAAAAAAdf/aAAAAAAAAAAAAAAAAAFv/6gAAAAAAAAAAAAAAAACN/8wAAAAAAAAAAAAAAAAp8/96AAAAAAAAAAAAAAAr5P/mDQAAAAAAAAAAAABP8f/9SwAAAAAAAAAAAASa///1TAAAAAAAAAAAAAKo///gMgAAAAAAAAAAAACL//+xEgAAAAAAAAAAAAAw/v+sAgAAAAAAAAAAAAAAk//iDQAAAAAAAAAAAAAAAM//ggAAAAAAAAAAAAAAAADq/1wGBgYGBgQAAAAAAAAA8f//////////vgAAAAAAAOD///////////gGAAAAAAA7hYeHh4eHh4VIAAAAAAAPipmampqampqXJgAAAAAAbv///////////6wAAAAAADHj7/Hy8/P2//+0AAAAAAAAAAAAAAAEt//7SwAAAAAAAAAAAAAAjf//dAAAAAAAAAAAAAAAX/7/oQEAAAAAAAAAAAAANfj/yQcAAAAAAAAAAAAAGOL//UMAAAAAAAAAAAAAAHD////+pA0AAAAAAAAAAAAq2/v////EBgAAAAAAAAAAAAAAIpj//5AAAAAAAAAAAAAAAAAAk//0CQAAAAAAAAAAAAAAABz//zgAAAAAAAAAAAAAAAAA9/9MAAAAAAAAAAAAAAAAEf7/PAAAAAAAAAAAAAAAAG7/+Q0AAAAACmEmAAAAAln0/6AAAAAAAHn//9mur+H//+gWAAAAAABR/P///////9ktAAAAAAAAACV/vt/dt2cHAAAAAAAAAAAAAAAAW9EgAAAAAAAAAAAAAAAAA9//YQAAAAAAAAAAAAAAAEz//BoAAAAAAAAAAAAAAAC0/7AAAAAAAAAAAAAAAAAf/f9JAAAAAAAAAAAAAAAAhf/eAwAAAAAAAAAAAAAABef/egAAAAAAAAAAAAAAAF3/+RkAAAAAAAAAAAAAAADO/6sAAB0qAAAAAAAAAAA1//9JAADc9REAAAAAAAAAov/aAQAA/v8qAAAAAAAADvX/eQAAAv//LQAAAAAAAGb//DUcHB7//0QSAAAAAACN/////////////kgAAAAAd/////////////9pAAAAAAhjbm5ubm///4hhBgAAAAAAAAAAAAAC//8tAAAAAAAAAAAAAAAAAv//LAAAAAAAAAAAAAAAAAD7/ycAAAAAAAAAAAAAAAAAhKQCAAAAAAAAAAFwlpqbm5qXhAoAAAAAAAAz//////////9mAAAAAAAASP//9PPz8/LfKQAAAAAAAFb/7gAAAAAAAAAAAAAAAABj/+EAAAAAAAAAAAAAAAAAb//VAAAAAAAAAAAAAAAAAHz/4GJHEQAAAAAAAAAAAACG//////uvJgAAAAAAAAAAY////////+8pAAAAAAAAAAAtLC1Mnvz/vwAAAAAAAAAAAAAAAABI//8zAAAAAAAAAAAAAAAAANb/cQAAAAAAAAAAAAAA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ISkrLCwsLCoTAAAAAAAAXf//////////8xoAAAAAAIv///////////0oAAAAAACN/9FcXFxcXFs2AAAAAAAAjv+3AAAAAAAAAAAAAAAAAI//twAAAAAAAAAAAAAAAACP/7cAAAAAAAAAAAAAAAAAkP+3AAAAAAAAAAAAAAAAAJD/+u3t7e3rtAEAAAAAAACQ//////////4SAAAAAAAAkP/koKCgoJ5pAAAAAAAAAJD/twAAAAAAAAAAAAAAAACP/7cAAAAAAAAAAAAAAAAAj/+3AAAAAAAAAAAAAAAAAI7/twAAAAAAAAAAAAAAAACN/7kGBgYGBgQAAAAAAAAAjP//////////3RAAAAAAAH7///////////8xAAAAAAAPeoKEhoeHh4ZiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCotLi4sJgQAAAAAAAAAMvr///////+oAAAAAAAAAF3/////////vgAAAAAAAABd/+RcXFxcWBMAAAAAAAAAXv/UAAAAAAAAAAAAAAAAAF//1AAAAAAAAAAAAAAAAABg/9QAAAAAAAAAAAAAAAAAYP/UAAAAAAAAAAAAAAAAAGH//O3t7epsAAAAAAAAAABi////////vAAAAAAAAAAAYv/voKCgnTkAAAAAAAAAAGL/1AAAAAAAAAAAAAAAAABi/9QAAAAAAAAAAAAAAAAAYv/UAAAAAAAAAAAAAAAAAGL/1AAAAAAAAAAAAAAAAABh/9QAAAAAAAAAAAAAAAAAX//TAAAAAAAAAAAAAAAAAFn/zQAAAAAAAAAAAAAAAAATuWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD1Z2ZBoAAAAAAAAAAAAAWu/////5dAAAAAAAAAAAZ/3///////97AAAAAAAAJvr/2kQLM8r/4wAAAAAAAJb/6xoAAAAPoV8AAAAAAADl/4AAAAAAAAAAAAAAAAAb//81AAAAAAAAAAAAAAAAO///CgAAAAAAAAAAAAAAAE3/+AAAAAAAAAAAAAAAAABO//YAAGj+////zgQAAAAARf/8AQCf//////8aAAAAADL//xMAI4mNnv//HgAAAAAU//83AAAAACf//x4AAAAAAOX/bwAAAAAn//8eAAAAAACl/8YAAAAAJ///HgAAAAAATv//cwEAACv//x4AAAAAAAHE///W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AACO/7AA1P//xQDC/4MAAAAAjv+wAJT//4YAwv+DAAAAAI7/rwBQ//9CAMH/gwAAAACO/68ADvTvBgDB/4MAAAAAjv+vAAAwLAAAwP+CAAAAAI7/rwAAAAAAAL//ggAAAACN/68AAAAAAAC+/4IAAAAAi/+vAAAAAAAAvf+AAAAAAIb/rAAAAAAAALv/egAAAAAuxEAAAAAAAABQwSYAAAAAAAAAAAAAAAAAAAAAAAAAAABQbSQAAAAAAD5GAAAAAAAp///PAAAAAAn4/RsAAAAAPP///zsAAAAS//8tAAAAAD////+kAAAAE///LgAAAABA////9xYAABP//y4AAAAAQP//7/93AAAU//8vAAAAAED//4//3QMAFf//LwAAAABA//8p/f9KABb//y8AAAAAQP//CLr/rgAW//8vAAAAAED//wdN//0gFv//LwAAAABA//8GBOX/ghb//y8AAAAAQP//BQCB/+Yc//8vAAAAAED//wUAG/v/bf//LwAAAABA//8FAACs/9b//y8AAAAAQP//BQAAQv////8uAAAAAD///wUAAAHV////LgAAAAA+//8FAAAAbP///y0AAAAAOP/9BAAAAA7x//8nAAAAAAewggAAAAAAatCiAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVOamk4AAAAAAAAAAAAABKv/////oAIAAAAAAAAAAJj//+rs//97AAAAAAAAADn//6AFB6n/9xsAAAAAAACl/90IAAAM5f+JAAAAAAAE8v9xAAAAAH3/4wAAAAAAMv//JAAAAAAw//8kAAAAAFr/8AAAAAAAA/r/TgAAAABx/88AAAAAAADf/2UAAAAAev/FAAAAAAAA1v9uAAAAAHP/zQAAAAAAAN3/ZgAAAABb/+0BAAAAAAP3/08AAAAANP//IgAAAAAt//8nAAAAAAbz/2sAAAAAd//oAgAAAAAAq//TAgAABNz/kwAAAAAAAET//3wAAIf/+ycAAAAAAAAAsf//w8f//5QAAAAAAAAAABDM/////8MLAAAAAAAAAAAACobW1IAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACSgrLS81IAAAAAAAAAAAAL3////////MNQAAAAAAAADq//////////dGAAAAAAAA6/+VXFlTfO//5wgAAAAAAOz/WQAAAAAx/P9PAAAAAADs/1kAAAAAANH/egAAAAAA7P9ZAAAAAADM/3oAAAAAAOz/WQAAAAAf+v9YAAAAAADs/3cuMTdm3v/0EQAAAAAA7P/////////9WAAAAAAAAOz////////iUgAAAAAAAADs/5FWVU4vAwAAAAAAAAAA7P9ZAAAAAAAAAAAAAAAAAOz/WQAAAAAAAAAAAAAAAADr/1kAAAAAAAAAAAAAAAAA6/9ZAAAAAAAAAAAAAAAAAOn/WAAAAAAAAAAAAAAAAADj/1IAAAAAAAAAAAAAAAAAc7cRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAROe2sZAAAAAAAAAAAAAB/Q////9EsAAAAAAAAAABHd///////1KQAAAAAAAACI//5uBzXp/7EAAAAAAAAF6/+TAAAAUv/9IAAAAAAAOP//JwAAAAHh/3AAAAAAAGH/5gAAAAAAn/+pAAAAAABw/9IAAAAAAHX/zQAAAAAAcv/SAAAAAABl/98AAAAAAG3/1QABZzMAZP/iAAAAAABl/9sAO//lEW//1AAAAAAAVf/vABz0/6WS/7UAAAAAADf//x4Ab///7/+EAAAAAAAI9f93AALB////OwAAAAAAAKP/9DYAMP//5AEAAAAAAAAk8v/7zuv///9dAAAAAAAAAEDw/////+n/9B8AAAAAAAAAHoi2oEQi8v9zAAAAAAAAAAAAAAAAAFbAJQAAAAAAAAAAAAAAAAAAAAAAAAAAAAEjKy0sGgAAAAAAAAAAAAB+///////XYgEAAAAAAAAArP////////+yBwAAAAAAAK7/vFxdedn//4AAAAAAAACv/5YAAAAFov/RAAAAAAAAsP+WAAAAAGn/2QAAAAAAALD/lgAAAACF/8EAAAAAAACx/5YAAAABzP+RAAAAAAAAsf+pLjA8nf//PwAAAAAAALH/////////qAAAAAAAAACw////////qQsAAAAAAAAAsP+5Vo//9hkAAAAAAAAAALD/lgAH5v+OAAAAAAAAAACv/5YAAG7/9BgAAAAAAAAArv+WAAAI5v+NAAAAAAAAAKz/lgAAAHH/9RsAAAAAAACr/5UAAAAJ6f+ZAAAAAAAApf+PAAAAAHP/9QAAAAAAAETGMwAAAAAIsXwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABPnZ7TgYAAAAAAAAAAAATwP/////UHQAAAAAAAAAHzf///////80EAAAAAAAAY///gg4Ia/7/UgAAAAAAAKH/uAAAAACw/3IAAAAAAACi/6QAAAAAHnULAAAAAAAAeP/vJQAAAAAAAAAAAAAAABz3/+5hAQAAAAAAAAAAAAAAXPz//8IrAAAAAAAAAAAAAAA01////pQEAAAAAAAAAAAAAAd99v//lgAAAAAAAAAAAAAAAB+0//44AAAAAAAAAAAAAAAAAs3/kgAAAAAAAE6oGwAAAACO/7MAAAAAAADE/3oAAAAAnP+rAAAAAAAAnf/dEgAAKvD/cQAAAAAAADn+/+WZsPn/7xIAAAAAAAAAff7/////9E0AAAAAAAAAAABMxfTjnCMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjKissLS0tLSwgAAAAAABe/////////////08AAAAAc/////////////9kAAAAAAVTXFxw//9mXFxPAwAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w8AAAAAAAAAAAAAAAAf//8PAAAAAAAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w8AAAAAAAAAAAAAAAAf//8PAAAAAAAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w8AAAAAAAAAAAAAAAAf//8PAAAAAAAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w4AAAAAAAAAAAAAAAAf//8OAAAAAAAAAAAAAAAAHf//DAAAAAAAAAAAAAAAABf//gcAAAAAAAAAAAAAAAAAnI4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAyAAAAAAAAPkUAAAAAACr/7wIAAAAACvj9GgAAAAA9//8FAAAAABb//ywAAAAAP///BQAAAAAW//8uAAAAAED//wUAAAAAFv//LwAAAABA//8FAAAAABb//y8AAAAAQP//BQAAAAAW//8vAAAAAED//wUAAAAAFv//LwAAAABA//8GAAAAABb//y8AAAAAP///BwAAAAAW//8vAAAAAD7//wgAAAAAFv//LwAAAAA9//8JAAAAABb//y8AAAAAPP//CQAAAAAW//8vAAAAADr//woAAAAAFv//LQAAAAAt//8sAAAAADf//x4AAAAABOf/twsAAA7A/9gAAAAAAAB1///qs7Tt//9aAAAAAAAABKD///////+K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';
+  var mrzCamOn = false, mrzCamT = 0, mrzCamT0 = 0, mrzReads = [], mrzPrevOk = '', mrzPrevVote = '', mrzSrc = '', mrzCv = null;
+  function mrzCamMsg(t) { $('mrzCamMsg').textContent = t; }
+  async function mrzCamStart() {
+    if (!OCR_T) { try { ocrInitTemplates(16, 20, 0.91807208994709, MRZ_OCR_B64); ocrSetCodes(Object.keys(MRZ_C).concat(Object.keys(MRZ_ALIAS))); } catch (e) { toast('Az olvasó nem indult el ezen az eszközön.'); return; } }
+    $('mrzSheet').hidden = true; mrzWipe();
+    if (upOn && !upShotOn) { try { await exitUp(); } catch (e) {} }
+    if (isFrozen()) unfreeze();
+    if (!camOn) await camTurnOn();
+    if (camPaused) camResume();
+    mrzCamOn = true; mrzReads = []; mrzPrevOk = ''; mrzPrevVote = ''; mrzCamT0 = Date.now();
+    $('mrzCam').hidden = false; app.classList.add('mrz-reading'); $('mrzBand').classList.remove('hit');
+    $('mrzCamTorch').hidden = torchBtn.hidden; $('mrzCamTorch').classList.toggle('on', torchOn);
+    mrzCamMsg('Keresem a gépi sort…');
+    if (camMode !== 'fluid') setRes('uhd');      // olvasás alatt teljes felbontás: élesebbek a betűk
+    clearTimeout(mrzCamT); mrzCamT = setTimeout(mrzCamStep, 400);
+  }
+  function mrzCamStop() {
+    if (!mrzCamOn) return;
+    mrzCamOn = false; clearTimeout(mrzCamT);
+    $('mrzCam').hidden = true; app.classList.remove('mrz-reading');
+    if (torchOn) torchBtn.click();               // a lámpa ne maradjon égve
+    resWatch();
+  }
+  // A keret (#mrzBand) helye a kamera natív képén: a látott terület (glCrop) arányos része.
+  function mrzGrab() {
+    var c = glCrop(); if (!c) return null;
+    var vr = viewport.getBoundingClientRect(), br = $('mrzBand').getBoundingClientRect();
+    var fx0 = (br.left - vr.left) / vr.width, fx1 = (br.right - vr.left) / vr.width, fy0 = (br.top - vr.top) / vr.height, fy1 = (br.bottom - vr.top) / vr.height;
+    // kicsit nagyobb, mint a keret: a szélére csúszott sor se vesszen el
+    var mx = (fx1 - fx0) * 0.04, my = (fy1 - fy0) * 0.12;
+    fx0 = Math.max(0, fx0 - mx); fx1 = Math.min(1, fx1 + mx); fy0 = Math.max(0, fy0 - my); fy1 = Math.min(1, fy1 + my);
+    var sx = c.ox + fx0 * c.rw, sy = c.oy + fy0 * c.rh, sw = (fx1 - fx0) * c.rw, sh = (fy1 - fy0) * c.rh;
+    if (sw < 40 || sh < 10) return null;
+    var k = Math.min(1, 1100 / sw), w = Math.max(40, Math.round(sw * k)), h = Math.max(10, Math.round(sh * k));
+    if (!mrzCv) mrzCv = document.createElement('canvas');
+    if (mrzCv.width !== w || mrzCv.height !== h) { mrzCv.width = w; mrzCv.height = h; }
+    var x = mrzCv.getContext('2d', { willReadFrequently: true });
+    x.imageSmoothingEnabled = true; try { x.imageSmoothingQuality = 'high'; } catch (e) {}
+    x.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
+    var d = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h);
+    for (var i = 0, n = w * h; i < n; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+    return { g: g, w: w, h: h };
+  }
+  function mrzCamStep() {
+    if (!mrzCamOn) return;
+    markActive();
+    var t = Date.now(), done = false;
+    try {
+      var im = mrzGrab(), r = im ? ocrRead(im.g, im.w, im.h) : null;
+      if (window.__dnOnGrab) window.__dnOnGrab(mrzCv, r);   // csak az automata tesztek használják
+      if (r) {
+        var txt = r.lines.map(function (l) { return l.txt; }).join('\n'), p = mrzParse(txt);
+        mrzReads.push(r); if (mrzReads.length > 6) mrzReads.shift();
+        $('mrzBand').classList.add('hit');
+        if (mrzSure(p, r.fmt, r.lines.map(function (l) { return l.txt; }))) {
+          if (txt === mrzPrevOk) { mrzCamDone(txt, true); done = true; }
+          else { mrzPrevOk = txt; mrzCamMsg('Megvan, még egy megerősítő olvasás… tartsd mozdulatlanul'); }
+        } else mrzCamMsg(mrzReads.length > 4 ? 'Olvasom… tartsd egyenesebben, közelebb, vagy kapcsold be a lámpát' : 'Olvasom…');
+        if (!done && mrzReads.length >= 3) {
+          var v = ocrVote(mrzReads), vt = v && v.n >= 3 ? v.lines.join('\n') : '';
+          if (vt) { var pv = mrzParse(vt); if (mrzSure(pv, v.fmt, v.lines)) { if (vt === mrzPrevVote) { mrzCamDone(vt, true); done = true; } else mrzPrevVote = vt; } }
+        }
+      } else { $('mrzBand').classList.remove('hit'); if (t - mrzCamT0 > 3000) mrzCamMsg('Nem látok gépi sort: a << jeles sorokat tedd a keretbe, ne tükrözzön'); }
+    } catch (e) { if (window.__dnOcrErr) window.__dnOcrErr(e); }
+    if (done || !mrzCamOn) return;
+    if (Date.now() - mrzCamT0 > 25000) {        // nem sikerült megerősíteni: a legjobb közös olvasat, figyelmeztetéssel
+      var v2 = mrzReads.length ? ocrVote(mrzReads) : null;
+      if (v2) mrzCamDone(v2.lines.join('\n'), false);
+      else { mrzCamStop(); mrzOpen(); toast('Nem sikerült gépi sort találni. Próbáld újra, vagy használd a Scan gombot.', 4000); }
+      return;
+    }
+    var spent = Date.now() - t;
+    mrzCamT = setTimeout(mrzCamStep, Math.max(120, 320 - spent));
+  }
+  // Biztosnak csak akkor vesszük, ha minden ellenőrző szám stimmel, a kiállító és az állampolgárság valós kód, és a név sor hihető.
+  function mrzSure(p, fmt, lines) { return !!(p && p.allOk && !p.fixed && p.st && p.st.name && p.natSt && p.natSt.name && ocrNameOk(fmt, lines)); }
+  function mrzCamDone(txt, sure) {
+    mrzCamStop();
+    mrzSrc = sure ? 'cam' : 'cam-unsure';
+    mrzOpen(); $('mrzIn').value = txt; mrzRender();
+    setTimeout(function () { try { $('mrzIn').scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {} }, 60);   // az eredmény rögtön látsszon
+    if (window.__dnOnMrz) window.__dnOnMrz(txt, sure);   // csak az automata tesztek használják
+  }
+  $('mrzCamBtn').addEventListener('click', mrzCamStart);
+  $('mrzCamCancel').addEventListener('click', function () { mrzCamStop(); mrzOpen(); });
+  $('mrzCamTorch').addEventListener('click', function () { torchBtn.click(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) mrzCamStop(); });
+
+
   function mrzRender() {
     var box = $('mrzRes'), r = mrzParse($('mrzIn').value);
     box.innerHTML = '';
@@ -2265,6 +2654,8 @@
     if (r.padded && !r.padFail) c1.appendChild(el('p', 'mrz-msg', 'A beolvasás ' + r.padded + ' kitöltőjelet (<) kihagyott vagy többet vett fel; az app pótolta, és az ellenőrző számjegyek igazolták.'));
     if (r.padFail) c1.appendChild(el('p', 'mrz-msg bad', 'A beolvasott sorok hossza nem volt pontos (' + r.padded + ' kitöltőjel eltérés), és a pótlás után sem stimmelnek a számjegyek: valószínűleg beolvasási hiba, olvasd be újra.'));
     if (r.expired) c1.appendChild(el('p', 'mrz-msg bad', 'Az okmány a gépi sor szerint lejárt.'));
+    if (mrzSrc === 'cam') c1.appendChild(el('p', 'mrz-msg', 'Az app kamerájával olvasva, két egyező olvasással. A nevet nem védi ellenőrző számjegy: azt külön vesd össze a gépi sorral.'));
+    if (mrzSrc === 'cam-unsure') c1.appendChild(el('p', 'mrz-msg bad', 'Az app kamerájával olvasva, de az olvasást nem sikerült megerősíteni: ez a több kép alapján legvalószínűbb szöveg. Vesd össze a gépi sorral karakterenként, és javítsd a mezőben, vagy olvasd be újra.'));
     c1.appendChild(el('p', 'mrz-msg', 'Hasonlítsd össze ezeket az adatokat az okmányra nyomtatott adatokkal: ha eltérnek, az hamisításra utalhat.'));
     box.appendChild(c1);
     var c2 = el('div', 'mrz-card mrz-links');
@@ -2286,7 +2677,7 @@
     box.appendChild(c2);
   }
   function mrzOpen() { $('mrzSheet').hidden = false; }
-  function mrzWipe() { $('mrzIn').value = ''; $('mrzRes').innerHTML = ''; $('mrzHint').hidden = true; }
+  function mrzWipe() { mrzSrc = ''; $('mrzIn').value = ''; $('mrzRes').innerHTML = ''; $('mrzHint').hidden = true; }
   function mrzClose() { $('mrzSheet').hidden = true; mrzWipe(); try { $('mrzIn').blur(); } catch (e) {} }
   $('mrzBtn').addEventListener('click', mrzOpen);
   $('mrzClose').addEventListener('click', mrzClose);
@@ -2295,7 +2686,7 @@
   // Scan: weboldalból az iPhone Élő szöveg kamerája közvetlenül nem indítható (az Apple csak a felhasználó koppintására engedi, a mező
   // menüjéből). A gomb ezért a mezőbe teszi a kurzort, feldobja a billentyűzetet, és megmutatja, hova kell még koppintani.
   $('mrzScan').addEventListener('click', function () {
-    var f = $('mrzIn');
+    var f = $('mrzIn'); mrzSrc = '';
     f.value = ''; $('mrzRes').innerHTML = '';
     $('mrzHint').hidden = false;
     try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); }
