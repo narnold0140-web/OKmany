@@ -83,8 +83,10 @@ A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak 
 
 A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az okmány alján a << jeleket tartalmazó sorok) felismeri az okmányt, ellenőrzi, és a megfelelő PRADO-oldalra visz.
 
-1. Koppints a mezőbe, és a felugró menüben válaszd a **Szöveg beolvasása** lehetőséget (vagy a billentyűzet fölötti beolvasás ikont).
-2. Tartsd a kamerát a gépi sorra, és koppints a **Beszúrás** gombra. A gépi sort be is gépelheted.
+1. Koppints a mezőbe, majd még egyszer, hogy megjelenjen a menü. Válaszd az **Automatikus kitöltés → Szöveg beolvasása** lehetőséget (régebbi iOS-en közvetlenül a **Szöveg beolvasása** pontot, vagy a billentyűzet fölötti beolvasás ikont).
+2. Tartsd a kamerát a gépi sorra, és koppints a **Beszúrás** gombra. A gépi sort be is gépelheted, vagy a **Beillesztés** gombbal behozhatod, ha máshonnan (például a Kamera vagy a Fotók Élő szöveg funkciójával) kimásoltad.
+
+**Ha nincs Szöveg beolvasása a menüben:** az iPhone szövegfelismerője (Élő szöveg) csak bizonyos nyelveken működik, és magyar nyelvű telefonon valószínűleg nem jelenik meg. Beállítások → Általános → Nyelv és régió: add hozzá az **English** nyelvet a preferált nyelvekhez (a telefon nyelve maradhat magyar), majd ugyanott kapcsold be az **Élő szöveg** kapcsolót. iPhone XS vagy újabb és iOS 15 vagy újabb kell hozzá.
 3. Az app megmutatja:
    - a kiállító országot és az okmány típusát (útlevél, személyi igazolvány, tartózkodási engedély, vízum);
    - a gépi sor adatait (név, okmányszám, állampolgárság, születési dátum, nem, lejárat), hogy összevesd őket az okmányra nyomtatott adatokkal;
