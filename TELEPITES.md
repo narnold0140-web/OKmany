@@ -71,6 +71,11 @@ A szűrők sorában két kapcsoló van:
 
 ## Fogyasztás és melegedés
 
+- **Felbontás igény szerint:** élő képen a kamera Full HD-ban fut, mert a kijelző ennél többet úgysem mutat, a 4K pedig négyszer annyi adatot mozgat és melegíti a telefont. 2× nagyítás fölött és a rögzítés pillanatában az app magától teljes felbontásra vált, így a rögzített kép ugyanolyan részletes, mint eddig. Rögzítéskor ezért a kép egy pillanattal később áll meg.
+- A gombok és a panel háttere nem elmosott, hanem átlátszatlan: az elmosás a videó mögött minden képkockánál terhelte a grafikus processzort.
+
+- **Kamera ki/be:** a felső sáv első gombjával (kamera ikon) a kamerát teljesen leállíthatod, és ugyanott visszakapcsolhatod. Kikapcsolva a kamera nem fut, a kijelző tetején a kamerajelző pötty is eltűnik, és a telefon nem melegszik tőle. Közben a rögzített kép, a Mintaokmány-tár és az okmányfelismerés használható. Ha háttérbe teszed az appot, kikapcsolt kamerát a visszatérés nem kapcsol be. Bekapcsoláskor az iPhone ritkán újra engedélyt kérhet.
+
 A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak akkor dolgoztatja a kamerát, amikor kell:
 
 - **Rögzített képnél a kamera pihen.** Amíg a megállított képet vizsgálod, nagyítod vagy mented, a kamera nem dolgozik. Az Élő kép gombra azonnal folytatja.
@@ -96,6 +101,7 @@ A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az
 Tudnivalók:
 - A beolvasást az iPhone saját szövegfelismerője végzi (iOS 15-től, iPhone XS és újabb). Az app a gépi sort csak a memóriában tartja, nem menti és nem küldi el; bezáráskor és háttérbe váltáskor törli.
 - **Eltérés az ellenőrző számjegyekben:** lehet beolvasási hiba is. Hasonlítsd össze a mezőt a gépi sorral, főleg a könnyen összetéveszthető karaktereket (O és 0, I és 1, B és 8, S és 5, Z és 2). Ha a beolvasás biztosan pontos, az eltérés átírt adatra utalhat.
+- A szövegfelismerő a hosszú << sorokban gyakran kevesebb vagy több kitöltőjelet ad vissza, és egy sort néha két darabra tör. Az app ezt pótolja, illetve összeilleszti, és csak akkor fogadja el, ha az ellenőrző számjegyek igazolják; erről külön üzenetet ír. Ha egy sor nagyon hiányos, megmutatja soronként, hány karakter érkezett.
 - Az okmányszámban az app szándékosan nem javít semmit automatikusan, mert ott betű és szám is szabályos lehet, és egy átírt adatot is „rendbe tehetne”. A dátumokban, ahol betű nem állhat, a betűt számjegynek olvassa (például O → 0), de ezt narancssárgán jelzi.
 - Ha az ellenőrző számjegyek stimmelnek, az csak azt jelenti, hogy a gépi sor önmagában ellentmondásmentes. Egy jól elkészített hamisítványon is stimmelhetnek, ezért ez nem helyettesíti az okmány vizsgálatát.
 - A típus a dokumentumkódból becsült: kártyaformátumú okmányoknál (személyi igazolvány, tartózkodási engedély) nem mindig egyértelmű, ezért a többi kategória is elérhető. Ha a PRADO-ban a kiállítónak nincs ilyen kategóriája, hibaoldal jelenik meg: ilyenkor nyisd meg az összes okmányát.

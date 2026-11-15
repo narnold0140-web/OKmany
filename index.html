@@ -16,7 +16,7 @@
   :root {
     --accent: #40d9c4;
     --on-accent: #04221f;
-    --glass: rgba(20, 26, 27, 0.58);
+    --glass: rgba(16, 21, 22, 0.86);   /* átlátszatlanabb, mert elmosás nincs: az elmosott háttér képkockánként terhelte a telefont */
     --glass-strong: rgba(255, 255, 255, 0.14);
     --text: #f2f7f7;
     --muted: rgba(242, 247, 247, 0.68);
@@ -79,14 +79,14 @@
   }
   .pill {
     display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
-    background: var(--glass); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+    background: var(--glass);
   }
   .pill small { font-weight: 400; color: var(--muted); font-size: 13px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
   .is-frozen .dot { background: var(--warn); }
   .round {
     width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; pointer-events: auto;
-    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    background: var(--glass);
   }
   .round.on { background: var(--accent); color: var(--on-accent); }
   .round svg { width: 20px; height: 20px; }
@@ -135,13 +135,13 @@
   #ovWrap {
     position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--topH, 56px) + 6px); z-index: 4;
     display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-radius: 999px; font-size: 12px; color: var(--muted);
-    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    background: var(--glass);
   }
   #ovWrap input { width: 140px; }
   #listCard {
     position: absolute; left: calc(var(--sal) + 16px); top: calc(var(--topH, 56px) + 50px); z-index: 4; max-width: min(300px, 80%); max-height: 36%;
     overflow-y: auto; padding: 10px 14px; border-radius: 18px; font-size: 14px; touch-action: pan-y;
-    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    background: var(--glass);
   }
   #listCard b { display: block; font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
   #listCard label { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; line-height: 1.35; }
@@ -205,7 +205,7 @@
   #ptCard {
     position: absolute; left: calc(var(--sal) + 12px); top: calc(var(--topH, 56px) + 8px); z-index: 4; width: min(272px, 74%);
     max-height: calc(100% - var(--topH, 56px) - 24px); overflow-y: auto; padding: 10px 12px 12px; border-radius: 18px; touch-action: pan-y;
-    background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); font-size: 13px; line-height: 1.42;
+    background: var(--glass); font-size: 13px; line-height: 1.42;
   }
   #ptCard[hidden] { display: none; }
   #ptCard .pt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
@@ -280,7 +280,6 @@
     position: absolute; left: 0; right: 0; bottom: 0;
     padding: 4px calc(var(--sar) + 16px) calc(var(--sab) + 10px) calc(var(--sal) + 16px);
     border-radius: 26px 26px 0 0; background: var(--glass);
-    -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5);
     display: flex; flex-direction: column; gap: 8px;
   }
   .row { display: flex; align-items: center; gap: 8px; }
@@ -298,7 +297,7 @@
   /* Rögzítő gomb: fényképezőgép-írisz. Nyomásra a lamellák összezárnak, rögzítés közben forognak; Alnyomat-nézetben a közepén hullámvonal. */
   #shutter { width: 64px; height: 64px; border-radius: 50%; padding: 0; display: grid; place-items: center; background: none; border: 0; transition: transform .12s; }
   #shutter svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  #shutter .sh-ring { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 3 5.2; stroke-linecap: round; transform-origin: 32px 32px; animation: shSpin 14s linear infinite; }
+  #shutter .sh-ring { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 3 5.2; stroke-linecap: round; transform-origin: 32px 32px; }
   #shutter .sh-disc { fill: #fff; }
   #shutter .sh-iris { transform-origin: 32px 32px; transition: transform .22s ease; }
   #shutter .sh-iris line { stroke: #10201d; stroke-width: 1.6; stroke-linecap: round; }
@@ -313,7 +312,7 @@
   .up #shutter .sh-wave { display: block; }
   .up #shutter .sh-iris line { opacity: .35; }
   @keyframes shSpin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { #shutter .sh-ring, #shutter.busy .sh-iris { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { #shutter.busy .sh-iris { animation: none; } }
   #actions { display: none; gap: 12px; }
   .is-frozen #actions { display: flex; }
   .is-frozen #shutterWrap { display: none; }
@@ -363,6 +362,17 @@
   #idle { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center;
     background: rgba(0,0,0,.82); color: var(--text); cursor: pointer; }
   #idle[hidden] { display: none; }
+  #camOffView { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; background: #05090a; color: var(--text); }
+  #camOffView[hidden], .is-frozen #camOffView { display: none; }
+  #camOffView div { max-width: 320px; display: grid; gap: 10px; justify-items: center; }
+  #camOffView b { font-size: 20px; }
+  #camOffView span { font-size: 14px; line-height: 1.45; color: var(--muted); }
+  #camOffView .btn { margin-top: 6px; }
+  #camToggle .cam-off { display: none; }
+  .cam-stopped #camToggle .cam-on { display: none; }
+  .cam-stopped #camToggle .cam-off { display: block; }
+  .cam-stopped #shutterWrap { opacity: .35; pointer-events: none; }
+  .cam-stopped:not(.is-frozen) #guide { opacity: 0; }
   #idle div { max-width: 320px; display: grid; gap: 8px; }
   #idle b { font-size: 20px; }
   #idle span { font-size: 14px; line-height: 1.45; color: var(--muted); }
@@ -415,6 +425,7 @@
     <canvas id="upGl" aria-hidden="true"></canvas>
   </div>
 
+  <div id="camOffView" hidden><div><b>A kamera ki van kapcsolva</b><span>A kamera teljesen leállt: nem rögzít, nem melegíti a telefont. A rögzített képet, a Mintaokmány-tárat és az okmányfelismerést így is használhatod.</span><button class="btn primary" id="camOnBtn">Kamera bekapcsolása</button></div></div>
   <div id="specPane" hidden><div id="specStage"><img id="specImg" alt=""></div></div>
 
   <div id="guide" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
@@ -424,6 +435,10 @@
   <div id="top">
     <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small class="nosave">· nincs mentve</small></div>
     <div class="tools">
+      <button class="round on" id="camToggle" aria-label="Kamera kikapcsolása" aria-pressed="true">
+        <svg class="cam-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10.5 20.5 7v10L15 13.5"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>
+        <svg class="cam-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10.5 20.5 7v10L15 13.5"/><path d="M11 6h2a2 2 0 0 1 2 2v2m0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2"/><path d="M3 3l18 18"/></svg>
+      </button>
       <button class="round" id="frameBtn" aria-label="Keret váltása">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"/></svg>
       </button>
@@ -525,7 +540,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v39</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v42</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -638,6 +653,7 @@
     specStage.style.transform = stage.style.transform;
     slider.value = state.s;
     zoomLabel.textContent = state.s.toFixed(1) + '×';
+    resWatch();
     var chips = document.querySelectorAll('#presets .chip');
     for (var i = 0; i < chips.length; i++) {
       chips[i].classList.toggle('active', Math.abs(state.s - Number(chips[i].dataset.z)) < 0.25);
@@ -688,7 +704,7 @@
   var lupeTimer = null, lupeActive = false, lupePos = { x: 0, y: 0 };
 
   function isControl(el) {
-    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard, #idle, #mrzSheet'));
+    return !!(el && el.closest && el.closest('button, input, label, select, textarea, a, #shareView, #specLib, .screen, #bottom .row, #ptCard, #idle, #mrzSheet, #camOffView'));
   }
 
   function doubleTap(x, y) {
@@ -852,6 +868,33 @@
     else if (localStorage.getItem('dn_fluid') === '1') camMode = 'fluid';   // a korábbi 60 fps kapcsoló állása
   } catch (e) {}
 
+  /* Felbontás igény szerint: élő képen Full HD (a kijelző ennél többet úgysem mutat, a 4K négyszer annyi adatot mozgat és melegít),
+     2× nagyítás fölött és rögzítéskor teljes 4K, hogy a részlet ugyanaz maradjon, mint eddig. */
+  var camRes = 'hd', resBusy = false, resTimer = 0;
+  function resConstraints(r) {
+    return r === 'uhd' ? { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30, max: 30 } }
+                       : { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } };
+  }
+  async function setRes(r) {
+    if (r === camRes && !resBusy) return;
+    if (camMode === 'fluid' || !camOn || !track || resBusy) { if (!resBusy) camRes = r; return; }
+    resBusy = true; camRes = r;
+    try { await track.applyConstraints(resConstraints(r)); }               // a futó kamerán átállítja, újraindítás nélkül
+    catch (e) { try { await startCamera(currentDeviceId, true); } catch (e2) {} }   // ha a böngésző nem engedi: újraindítás
+    resBusy = false; stabReset();
+    if (window.__dnOnRes) window.__dnOnRes(r);                               // csak az automata tesztek használják
+  }
+  function waitRes(minW, ms) {
+    return new Promise(function (res) { var t0 = performance.now(); (function chk() { if (video.videoWidth >= minW || performance.now() - t0 > ms) res(); else setTimeout(chk, 50); })(); });
+  }
+  function resWatch() {
+    if (isFrozen() || !camOn || camMode === 'fluid') return;
+    var want = state.s >= 2 ? 'uhd' : state.s < 1.6 ? 'hd' : camRes;
+    clearTimeout(resTimer);
+    if (want === camRes) return;
+    resTimer = setTimeout(function () { setRes(want); }, want === 'uhd' ? 350 : 2000);   // fel gyorsan, vissza késleltetve
+  }
+
   async function startCamera(deviceId, silent) {
     var id = (typeof deviceId === 'string') ? deviceId : currentDeviceId;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -860,8 +903,7 @@
     }
     try {
       stopCamera();
-      var constraints = camMode === 'fluid' ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } }
-        : { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30, max: 30 } };
+      var constraints = camMode === 'fluid' ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } } : resConstraints(camRes);
       if (id) constraints.deviceId = { exact: id };
       else constraints.facingMode = { ideal: 'environment' };
       stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
@@ -935,6 +977,7 @@
   }
 
   async function switchLens(id) {
+    if (!camOn) { currentDeviceId = id; return; }   // kikapcsolt kameránál csak megjegyzi, bekapcsoláskor ezzel indul
     if (id === currentDeviceId) return;
     var prev = currentDeviceId;
     if (isFrozen()) unfreeze();
@@ -962,6 +1005,33 @@
   }
 
   video.addEventListener('playing', checkTorch);
+
+  // Kamera ki/be: kikapcsolva a kamera teljesen leáll (a sávja is), ezért a telefon kameraszolgáltatása sem fut.
+  var camOn = true;
+  function camOff() {
+    if (!camOn) return;
+    camOn = false;
+    if (upOn && !upShotOn) exitUp();
+    stopCamera();
+    try { video.srcObject = null; } catch (e) {}
+    stabReset(); sharpOff();
+    app.classList.add('cam-stopped');
+    $('camOffView').hidden = false;
+    var b = $('camToggle'); b.classList.remove('on'); b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Kamera bekapcsolása');
+    if (!isFrozen()) $('modeLabel').textContent = 'Kamera kikapcsolva';
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }   // a kijelző elalhat
+  }
+  async function camTurnOn() {
+    if (camOn) return;
+    camOn = true;
+    app.classList.remove('cam-stopped');
+    $('camOffView').hidden = true;
+    var b = $('camToggle'); b.classList.add('on'); b.setAttribute('aria-pressed', 'true'); b.setAttribute('aria-label', 'Kamera kikapcsolása');
+    if (isFrozen()) unfreeze();
+    $('modeLabel').textContent = 'Élő kép';
+    var ok = await startCamera(currentDeviceId, true);
+    if (!ok) { camOn = true; }
+  }
 
   function stopCamera() {
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
@@ -1059,7 +1129,7 @@
   $('idle').addEventListener('click', idleLeave);
   // Tétlenség: nincs érintés ÉS a kép sem változik (a telefon letéve). Kézben tartva a kép mindig mozog, ott nem szüneteltet.
   setInterval(function () {
-    if (idleOn || document.hidden || !track || !$('start').hidden || !$('denied').hidden) return;
+    if (idleOn || !camOn || document.hidden || !track || !$('start').hidden || !$('denied').hidden) return;
     if (!isFrozen() && video.videoWidth) {
       try {
         idleCv.width = 32; idleCv.height = 18; idleCtx.drawImage(video, 0, 0, 32, 18);
@@ -1987,17 +2057,50 @@
     return l.toUpperCase().replace(/«/g, '<<').replace(/[‹﹤＜〈❮]/g, '<').replace(/[\s ]/g, '').replace(/[^A-Z0-9<]/g, '');
   }
   function mrzFiller(l) { var p; do { p = l; l = l.replace(/<[KCL](?=<)/g, '<<'); } while (l !== p); return l; }
+  // A sorok és a formátum megállapítása. A szövegfelismerő a hosszú kitöltő sorokban gyakran kevesebb vagy több < jelet ad vissza,
+  // és egy sort néha több darabra tör: ezeket itt pótoljuk, illetve összeillesztjük. A pótlást később az ellenőrző számjegyek igazolják.
   function mrzSplit(raw) {
-    var lines = String(raw || '').split(/\r?\n/).map(mrzNormLine).filter(function (l) { return l.length >= 20; });
-    var joined = lines.join('');
-    var fmts = [[3, 30, 'TD1'], [2, 44, 'TD3'], [2, 36, 'TD2']], i;
-    var fix = function (ls, f) { return ls.map(function (l, k) { return (f === 'TD1' ? k < 2 : k === 1) ? mrzFiller(l) : l; }); };   // a névsorhoz nem nyúl
-    for (i = 0; i < fmts.length; i++) if (lines.length === fmts[i][0] && lines.every(function (l) { return l.length === fmts[i][1]; })) return { fmt: fmts[i][2], lines: fix(lines, fmts[i][2]) };
-    for (i = 0; i < fmts.length; i++) if (joined.length === fmts[i][0] * fmts[i][1]) {   // sortörés nélkül érkezett
-      var out = [], k; for (k = 0; k < fmts[i][0]; k++) out.push(joined.substr(k * fmts[i][1], fmts[i][1])); return { fmt: fmts[i][2], lines: fix(out, fmts[i][2]) };
+    var all = String(raw || '').split(/\r?\n/).map(mrzNormLine).filter(function (l) { return l.length > 0; });
+    var total = all.join('').length;
+    var lines = all.filter(function (l) { return l.length >= 20; });
+    if (!total) return { fmt: null, lines: [], len: 0 };
+    var t = (all[0] || '')[0], rows, width;
+    // formátum: útlevél (P) mindig 2 × 44; három sor kártya (3 × 30); a többi a hosszak alapján
+    if (t === 'P') { rows = 2; width = 44; }
+    else if (all.length >= 3 && Math.abs(total - 90) <= 14 && (t === 'I' || t === 'A' || t === 'C')) { rows = 3; width = 30; }
+    else if (t === 'V') { rows = 2; width = Math.abs(total - 88) < Math.abs(total - 72) ? 44 : 36; }
+    else if (t === 'I' || t === 'A' || t === 'C') { rows = Math.abs(total - 90) < Math.abs(total - 72) && all.length !== 2 ? 3 : 2; width = rows === 3 ? 30 : 36; }
+    else return { fmt: null, lines: all, len: total, lens: all.map(function (l) { return l.length; }) };
+    // a feldarabolt sorok összeillesztése: darabokat fűzünk, amíg egy sor körülbelül ki nem telik
+    var src = all.length === 1 && total === rows * width ? (function () { var o = [], k; for (k = 0; k < rows; k++) o.push(all[0].substr(k * width, width)); return o; })() : all;
+    var merged = [], cur = '';
+    src.forEach(function (piece) {
+      if (cur && cur.length >= width - 10) { merged.push(cur); cur = ''; }
+      cur += piece;
+    });
+    if (cur) merged.push(cur);
+    if (merged.length !== rows) return { fmt: null, lines: merged, len: total, lens: merged.map(function (l) { return l.length; }), want: [rows, width] };
+    if (merged.some(function (l) { return Math.abs(l.length - width) > 12; })) return { fmt: null, lines: merged, len: total, lens: merged.map(function (l) { return l.length; }), want: [rows, width] };
+    var fmt = rows === 3 ? 'TD1' : width === 44 ? 'TD3' : 'TD2';
+    var nameRow = rows === 3 ? 2 : 0;
+    merged = merged.map(function (l, k) { return k === nameRow ? l : mrzFiller(l); });
+    return { fmt: fmt, raw: merged, width: width, nameRow: nameRow };
+  }
+
+  // Egy sor kiegészítése vagy rövidítése a pontos hosszra: a hiányzó < jeleket egy kitöltő sorozatba tesszük. Több lehetséges hely esetén
+  // mindegyiket visszaadjuk (a hívó az ellenőrző számjegyekkel választ); a névsornál a végére pótolunk.
+  function mrzFit(l, n, isName) {
+    if (l.length === n) return [l];
+    var miss = n - l.length, runs = [], re = /<+/g, m;
+    while ((m = re.exec(l))) runs.push({ i: m.index, len: m[0].length });
+    if (miss > 0) {
+      if (isName) return [/<$/.test(l) ? l + '<'.repeat(miss) : l.replace(/(<<)(?!.*<<)/, '$1') + '<'.repeat(miss)];
+      var out = runs.map(function (r) { var e = r.i + r.len; return l.slice(0, e) + '<'.repeat(miss) + l.slice(e); });
+      return out.length ? out : [];
     }
-    var all = String(raw || '').split(/\r?\n/).map(mrzNormLine).join('');   // a rövid, még befejezetlen beolvasás is számít
-    return { fmt: null, lines: lines, len: all.length };
+    var extra = -miss;
+    if (isName) return /<{1,}$/.test(l) && l.match(/<+$/)[0].length >= extra ? [l.slice(0, n)] : [];
+    return runs.filter(function (r) { return r.len > extra; }).map(function (r) { var e = r.i + r.len; return l.slice(0, e - extra) + l.slice(e); });
   }
 
   var MRZ_TO_DIGIT = { O: '0', Q: '0', D: '0', I: '1', L: '1', Z: '2', B: '8', S: '5', G: '6', T: '7', '<': '0' };
@@ -2042,8 +2145,27 @@
   }
 
   function mrzParse(raw) {
-    var sp = mrzSplit(raw), L = sp.lines, r = { fmt: sp.fmt, checks: [], fixed: false };
-    if (!sp.fmt) { r.error = sp.len ? 'len' : 'empty'; r.len = sp.len; return r; }
+    var sp = mrzSplit(raw);
+    if (!sp.fmt) return { fmt: null, checks: [], fixed: false, error: sp.len ? 'len' : 'empty', len: sp.len, lens: sp.lens, want: sp.want };
+    var opts = sp.raw.map(function (l, k) { return mrzFit(l, sp.width, k === sp.nameRow); });
+    if (opts.some(function (o) { return !o.length; })) return { fmt: null, checks: [], fixed: false, error: 'len', len: sp.raw.join('').length, lens: sp.raw.map(function (l) { return l.length; }), want: [sp.raw.length, sp.width] };
+    var padded = sp.raw.reduce(function (acc, l) { return acc + Math.abs(l.length - sp.width); }, 0);
+    // minden kombináció kipróbálása (sorrendben a legvalószínűbbtől); az első, amelyben minden ellenőrző számjegy stimmel, nyer
+    var combos = [[]];
+    opts.forEach(function (o) { var nx = []; combos.forEach(function (c) { o.forEach(function (x) { nx.push(c.concat([x])); }); }); combos = nx; });
+    var best = null;
+    for (var ci = 0; ci < combos.length && ci < 64; ci++) {
+      var rr = mrzParseLines(combos[ci], sp.fmt);
+      if (!best) best = rr;
+      if (rr.allOk) { best = rr; break; }
+    }
+    best.padded = padded;
+    if (padded && !best.allOk) best.padFail = true;
+    return best;
+  }
+
+  function mrzParseLines(L, fmt) {
+    var sp = { fmt: fmt }, r = { fmt: fmt, checks: [], fixed: false };
     var visa = L[0][0] === 'V' || L[0][0] === 'v';
     var docnum, dob, exp, comp, opt, line2;
     if (sp.fmt === 'TD1') {
@@ -2104,7 +2226,8 @@
     if (r.error === 'empty') return;
     if (r.error === 'len') {
       var c0 = el('div', 'mrz-card'); c0.appendChild(el('div', 'mrz-head', 'A gépi sor még nem teljes'));
-      c0.appendChild(el('p', 'mrz-msg', r.len + ' karakter érkezett. Útlevélnél 2 × 44, személyi igazolványnál 3 × 30 vagy 2 × 36 karakter kell. Olvasd be újra az összes sort, a << jelekkel együtt.'));
+      var lensTxt = r.lens && r.lens.length ? ' Soronként: ' + r.lens.join(', ') + ' karakter' + (r.want ? ' (várt: ' + r.want[0] + ' × ' + r.want[1] + ')' : '') + '.' : '';
+      c0.appendChild(el('p', 'mrz-msg', r.len + ' karakter érkezett.' + lensTxt + ' Útlevélnél 2 × 44, személyi igazolványnál 3 × 30 vagy 2 × 36 karakter kell. Olvasd be újra az összes sort, a << jelekkel együtt; ha a beolvasás egy sort kihagyott vagy csak részben vett fel, tartsd a kamerát közelebb és egyenesebben.'));
       box.appendChild(c0); return;
     }
     var fmtName = { TD1: 'kártya (3 sor)', TD2: 'okmány (2 × 36)', TD3: 'útlevél (2 × 44)', 'MRV-A': 'vízum (2 × 44)', 'MRV-B': 'vízum (2 × 36)' }[r.fmt];
@@ -2130,6 +2253,8 @@
     c1.appendChild(rows);
     if (!r.allOk) c1.appendChild(el('p', 'mrz-msg bad', 'Lehet beolvasási hiba is: hasonlítsd össze a mezőt a gépi sorral, főleg a könnyen összetéveszthető karaktereket (O és 0, I és 1, B és 8, S és 5, Z és 2). Ha kell, javítsd a mezőben vagy olvasd be újra. Ha a beolvasás biztosan pontos, az eltérés átírt adatra utalhat.'));
     else if (r.fixed) c1.appendChild(el('p', 'mrz-msg bad', 'A gépi sor egy csak számjegyet tartalmazó mezőjében (dátum vagy ellenőrző számjegy) betű állt; az app ezt számjegynek olvasta (például O → 0). Nézd meg szemmel a gépi sort.'));
+    if (r.padded && !r.padFail) c1.appendChild(el('p', 'mrz-msg', 'A beolvasás ' + r.padded + ' kitöltőjelet (<) kihagyott vagy többet vett fel; az app pótolta, és az ellenőrző számjegyek igazolták.'));
+    if (r.padFail) c1.appendChild(el('p', 'mrz-msg bad', 'A beolvasott sorok hossza nem volt pontos (' + r.padded + ' kitöltőjel eltérés), és a pótlás után sem stimmelnek a számjegyek: valószínűleg beolvasási hiba, olvasd be újra.'));
     if (r.expired) c1.appendChild(el('p', 'mrz-msg bad', 'Az okmány a gépi sor szerint lejárt.'));
     c1.appendChild(el('p', 'mrz-msg', 'Hasonlítsd össze ezeket az adatokat az okmányra nyomtatott adatokkal: ha eltérnek, az hamisításra utalhat.'));
     box.appendChild(c1);
@@ -2195,15 +2320,18 @@
 
   async function freeze() {
     if (capturing || isFrozen()) return;
+    if (!camOn) { toast('A kamera ki van kapcsolva.'); return; }
     if (upOn) { upShot(); return; }
-    var w = video.videoWidth, h = video.videoHeight;
-    if (!w || !h) { toast('A kép még nem áll készen.'); return; }
+    if (!video.videoWidth || !video.videoHeight) { toast('A kép még nem áll készen.'); return; }
     capturing = true;
     var f = $('flash'); f.classList.add('on');
     setTimeout(function () { f.classList.remove('on'); }, 90);
     if (navigator.vibrate) navigator.vibrate(15);
     try {
       $('shutter').classList.add('busy');
+      // rögzítéshez teljes felbontás: átvált, és megvárja, amíg a kamera a nagy képet adja
+      if (camMode !== 'fluid' && camRes !== 'uhd') { clearTimeout(resTimer); await setRes('uhd'); await waitRes(2600, 1500); await new Promise(function (r) { setTimeout(r, 120); }); }
+      var w = video.videoWidth, h = video.videoHeight;
       await captureBest(6, w, h);
       processImage(frozenRaw, frozen);
       // A stabilizált élő kép a nyers képhez képest el volt tolva: a rögzített (nyers) képet ugyanoda tesszük, ahol az élőt láttad.
@@ -2224,9 +2352,9 @@
     frozen.width = 1; frozen.height = 1;          // felszabadítja a kép memóriáját
     frozenRaw.width = 1; frozenRaw.height = 1;
     app.classList.remove('is-frozen');
-    if (!idleOn) camResume();
+    if (!idleOn && camOn) camResume();
     markActive();
-    $('modeLabel').textContent = 'Élő kép';
+    $('modeLabel').textContent = camOn ? 'Élő kép' : 'Kamera kikapcsolva';
     closeShareView();
     stopLupe();
     resetView();
@@ -2239,6 +2367,8 @@
   }
 
   $('shutter').addEventListener('click', freeze);
+  $('camToggle').addEventListener('click', function () { if (camOn) { camOff(); toast('Kamera kikapcsolva'); } else camTurnOn(); });
+  $('camOnBtn').addEventListener('click', camTurnOn);
   $('live').addEventListener('click', unfreeze);
 
   /* ---------- Mentés (csak ha a felhasználó kéri) ---------- */
@@ -2275,6 +2405,7 @@
       if (isFrozen()) unfreeze();
       if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
     } else if ($('start').hidden && $('denied').hidden) {
+      if (!camOn) return;                         // kikapcsolt kamerát a visszatérés nem kapcsol vissza
       if (!track || track.readyState === 'ended') startCamera(); else requestWakeLock();
     }
   });
