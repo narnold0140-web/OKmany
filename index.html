@@ -264,6 +264,7 @@
   #mrzCamMsg { display: block; margin: 6px auto 0; max-width: 420px; font-size: 14.5px; color: #e8eeee; min-height: 2.9em; }
   #mrzCamBar { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 22px); display: flex; justify-content: center; gap: 12px; padding: 0 18px; }
   #mrzCamBar .btn { flex: 0 1 200px; justify-content: center; padding: 13px 16px; font-size: 16px; }
+  #mrzCamDbg { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab) + 84px); opacity: .85; }
   #mrzCamTorch.on { background: var(--accent); color: var(--on-accent); }
   #mrzCamTorch[hidden] { display: none; }
   #mrzHint { margin: 0 0 10px; padding: 10px 12px; border-radius: 14px; background: rgba(64,217,196,.14); border: 1px solid rgba(64,217,196,.45); font-size: 13.5px; line-height: 1.45; }
@@ -563,7 +564,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v44</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v45</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -612,6 +613,7 @@
       <button class="btn" id="mrzCamTorch" hidden aria-label="Zseblámpa">Lámpa</button>
       <button class="btn" id="mrzCamCancel">Mégse</button>
     </div>
+    <button class="mini" id="mrzCamDbg">Kép mentése hibakereséshez</button>
   </section>
 
   <section id="specLib" hidden>
@@ -2614,6 +2616,21 @@
   $('mrzCamBtn').addEventListener('click', mrzCamStart);
   $('mrzCamCancel').addEventListener('click', function () { mrzCamStop(); mrzOpen(); });
   $('mrzCamTorch').addEventListener('click', function () { torchBtn.click(); });
+  // Hibakeresés: elmenti pontosan azt a képrészletet, amit az olvasó lát (PNG, veszteségmentes).
+  $('mrzCamDbg').addEventListener('click', function () {
+    var im = null; try { im = mrzGrab(); } catch (e) {}
+    if (!im || !mrzCv) { toast('Még nincs kamerakép.'); return; }
+    var r = null; try { r = ocrRead(im.g, im.w, im.h); } catch (e) {}
+    var tag = r ? r.fmt : 'nincs';
+    mrzCv.toBlob(async function (blob) {
+      if (!blob) { toast('A mentés nem sikerült.'); return; }
+      var file = new File([blob], 'mrz-olvaso-' + tag + '-' + Date.now() + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file] }); return; } catch (err) { if (err && err.name === 'AbortError') return; }
+      }
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+    }, 'image/png');
+  });
   document.addEventListener('visibilitychange', function () { if (document.hidden) mrzCamStop(); });
 
 
