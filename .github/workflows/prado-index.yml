@@ -1,0 +1,89 @@
+# Hetente frissíti a prado-index.json fájlt: melyik országnak melyik okmánykategóriája van fent a PRADO-ban.
+# Az app ebből tudja, hogy csak létező PRADO-oldalra mutasson (hibaoldal helyett).
+name: PRADO-index
+on:
+  schedule:
+    - cron: '41 4 * * 2'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: PRADO-index készítése
+        run: |
+          cat > /tmp/prado_index.py <<'PYEOF'
+          #!/usr/bin/env python3
+          """PRADO-index: melyik országnál melyik okmánykategória létezik a PRADO-ban.
+          Kimenet: prado-index.json (a repó gyökerében), amelyet az app használ, hogy csak létező kategóriára mutasson."""
+          import json, re, sys, time, urllib.request, datetime
+
+          BASE = 'https://www.consilium.europa.eu/prado/en/'
+          UA = 'Mozilla/5.0 (DokuNezo PRADO-index; heti ellenorzes)'
+
+          def get(url, tries=4):
+              for i in range(tries):
+                  try:
+                      req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept-Language': 'en'})
+                      with urllib.request.urlopen(req, timeout=60) as r:
+                          return r.read().decode('utf-8', 'replace')
+                  except Exception as e:
+                      print('  hiba (%d/%d): %s %s' % (i + 1, tries, url, e), file=sys.stderr)
+                      time.sleep(3 + 4 * i)
+              return None
+
+          def parse_country(html, code):
+              cats = {}
+              pat = re.compile(r'prado-documents/' + code + r'/([A-Z])/docs-per-category\.html"[^>]*>(.*?)</a>', re.I | re.S)
+              for m in pat.finditer(html):
+                  letter = m.group(1).upper()
+                  txt = re.sub(r'<[^>]+>', ' ', m.group(2))
+                  n = re.search(r'\((\d+)\)', txt)
+                  cats[letter] = int(n.group(1)) if n else cats.get(letter, 1)
+              return cats
+
+          def main():
+              try:
+                  old = json.load(open('prado-index.json', encoding='utf-8'))
+              except Exception:
+                  old = {'countries': {}}
+              page = get(BASE + 'search-by-document-country.html')
+              if not page:
+                  print('A PRADO országlistája nem érhető el; a régi index marad.'); return 0
+              codes = sorted(set(re.findall(r'prado-documents/([A-Z]{3})/index\.html', page)))
+              print('országok:', len(codes))
+              out, failed = {}, []
+              for c in codes:
+                  html = get(BASE + 'prado-documents/%s/index.html' % c)
+                  time.sleep(1.0)
+                  cats = parse_country(html, c) if html else {}
+                  if cats: out[c] = cats
+                  else:
+                      failed.append(c)
+                      if c in old.get('countries', {}): out[c] = old['countries'][c]   # a régi adat marad, amíg nem sikerül frissíteni
+              res = {'updated': datetime.date.today().isoformat(), 'source': BASE, 'countries': out, 'failed': failed}
+              if len(out) < 0.5 * len(codes):
+                  print('Túl sok hiba (%d/%d), az index nem frissül.' % (len(failed), len(codes))); return 0
+              json.dump(res, open('prado-index.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=0, sort_keys=True)
+              print('kész: %d ország, %d sikertelen: %s' % (len(out), len(failed), ' '.join(failed)))
+              return 0
+
+          if __name__ == '__main__':
+              sys.exit(main())
+
+          PYEOF
+          python3 /tmp/prado_index.py
+      - name: Mentés a repóba, ha változott
+        run: |
+          if [ -n "$(git status --porcelain prado-index.json)" ]; then
+            git config user.name "prado-index"
+            git config user.email "actions@users.noreply.github.com"
+            git add prado-index.json
+            git commit -m "PRADO-index frissítése ($(date +%F))"
+            git push
+          else
+            echo "Nincs változás."
+          fi
