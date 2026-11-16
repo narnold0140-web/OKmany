@@ -46,17 +46,19 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 
 A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti vizsgálathoz való (alnyomat, mikroszöveg, guilloche).
 
-- Bekapcsoláskor az app átvált az ultraszéles (0,5×) objektívre, ahol van, kilépéskor visszaáll az előzőre. Közelről ez csak a Pro modelleken élesít.
-- **Éles:** erős részletkiemelés. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik.
+- Bekapcsoláskor az app automatikusan átvált az ultraszéles (0,5×) objektívre, ahol van (a felirat ilyenkor: „Alnyomat-vizsgáló · 0,5× objektív”), kilépéskor visszaáll az előzőre. Közelről (kb. 2 cm-ről) ez csak a Pro modelleken élesít.
+- A nézetben a kamera mindig 4K-ban fut, ezért nagyításkor (2×, 4×, 8×) is a kamera valódi képpontjai látszanak, nem felnagyított homály. Kilépéskor visszaáll a szokásos felbontás.
+- A bal felső felirat ilyenkor zöld alapon „Alnyomat”, így első ránézésre látszik, hogy nem a sima kamerakép megy.
+- **Kiemelt** (alapmód): a finom vonalak élesítése mellett a környezetéhez méri a kontrasztot és erősíti a színeket, így a halvány alnyomat, a szivárványnyomat és a mikroírás világos papíron és egyenetlen fényben is kiugrik. A nagy sötét felületek (szöveg, fotó) ettől szürkébbek, ez szándékos. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik.
 - A nézet a látott területet a kamera valódi felbontásán dolgozza fel, ezért nagyításkor is valódi részletet mutat.
 - A **Stabil** kapcsoló itt is érvényes: nagyításnál a kéz remegését az Alnyomat-nézetben is ellensúlyozza. A kapcsolót a nézetből kilépve, a szűrők sorában találod.
 - Az élő képet a telefon grafikus processzora számolja, ezért folyamatos, nem szaggat. Bekapcsoláskor egy rövid „Alnyomat-vizsgáló” felirat jelzi, hogy ebben a nézetben vagy.
 - **Felvétel az Alnyomat-nézetben:** a rögzítő gomb itt képernyőfotót készít: pontosan az a feldolgozott kép áll meg, amit a kijelzőn látsz (a választott móddal, Erősséggel, Finomsággal és Inverzzel). A megállított képet tovább nagyíthatod, és két gomb közül választhatsz: **Élő kép** (vissza ugyanoda, ahol voltál) vagy **Mentés**. A felvétel közben a nézet beállításai nem látszanak, mert a megállított képen már nem változtatnak.
-- **Inverz:** megfordítja a világos és a sötét részeket. A világos alapon lévő halvány, világos vonalak sötét alapon gyakran jobban kivehetők. Az Éles és a Vonal móddal is működik, a rögzített képre és a mentésre is érvényes.
+- **Inverz:** megfordítja a világos és a sötét részeket. A világos alapon lévő halvány, világos vonalak sötét alapon gyakran jobban kivehetők. A Kiemelt és a Vonal móddal is működik, a rögzített képre és a mentésre is érvényes.
 - **Erősség:** mennyire emelje ki a mintát. Halvány, fakó alnyomatnál told feljebb. Ha a kép szemcsés, zajos, vagy a vonalak körül világos udvar jelenik meg, vedd lejjebb.
 - **Finomság:** a csúszka bal szélén a hajszálvékony vonalakra és a mikroszövegre érzékeny, jobbra tolva a vastagabb vonalakra és a nagyobb mintákra. Ha közelről, élesen látsz, hagyd balra. Ha távolabbról nézed, vagy a minta durvább, told jobbra.
 - Az **Alap** gomb visszaállítja a kiinduló értékeket. A beállítást a telefon megjegyzi, a rögzített képre és a mentésre is érvényes.
-- **Tábla (nyomtatási technika segédtábla):** kilenc lapon mutatja, hogyan néz ki erős nagyításban az okmánygyártásban használt nyomtatás, és hogyan az irodai nyomtató vagy a másolat. A kamerában látott képet a rajzhoz hasonlítod, az Előző és a Tovább gombbal lapozol.
+- **Segédlet (nyomtatási technikák):** álló helyzetben középen, a felső sáv alatt jelenik meg, és nem lóg rá az alsó vezérlőkre; fekve a bal oldali szabad részen. Ugyanaz a gomb vagy a Bezár zárja. kilenc lapon mutatja, hogyan néz ki erős nagyításban az okmánygyártásban használt nyomtatás, és hogyan az irodai nyomtató vagy a másolat. A kamerában látott képet a rajzhoz hasonlítod, az Előző és a Tovább gombbal lapozol.
   - Zöld címke (Biztonsági nyomat): ofszet, írisznyomat, metszetmélynyomás, magasnyomás. Az alnyomatban és a díszítő mintákban ezt várod.
   - Fehér címke (Megszemélyesítés): lézergravírozás, hőszublimációs nyomat. A fotónál és az adatoknál fordul elő.
   - Narancs címke (Alnyomatban gyanús): tintasugaras nyomtató, lézernyomtató, raszteres másolat. Ha az alnyomat vagy a díszítő minta ilyen, az hamisítványra utal. A fotónál és az adatoknál viszont eredeti okmányon is előfordulhat, mert sok ország így személyesít meg.
@@ -107,6 +109,18 @@ Tudnivalók:
 - Az okmányszámban az app szándékosan nem javít semmit automatikusan, mert ott betű és szám is szabályos lehet, és egy átírt adatot is „rendbe tehetne”. A dátumokban, ahol betű nem állhat, a betűt számjegynek olvassa (például O → 0), de ezt narancssárgán jelzi.
 - Ha az ellenőrző számjegyek stimmelnek, az csak azt jelenti, hogy a gépi sor önmagában ellentmondásmentes. Egy jól elkészített hamisítványon is stimmelhetnek, ezért ez nem helyettesíti az okmány vizsgálatát.
 - A típus a dokumentumkódból becsült: kártyaformátumú okmányoknál (személyi igazolvány, tartózkodási engedély) nem mindig egyértelmű, ezért a többi kategória is elérhető. Ha a PRADO-ban a kiállítónak nincs ilyen kategóriája, hibaoldal jelenik meg: ilyenkor nyisd meg az összes okmányát.
+
+## Chip olvasás (ReadID Me)
+
+A Chip olvasás gomb a ReadID Me appot nyitja meg egy Parancsok-parancson át (az iPhone a weboldalaknak nem engedi a chip közvetlen olvasását). Egyszer kell beállítani; a lépések az appban is megvannak: Okmány felismerése → **Segédlet: összekötés a Parancsokkal**.
+
+1. Parancsok app → jobb fent **+** (vagy az appban az **Új parancs** gomb).
+2. **Művelet hozzáadása** → keresés: **App megnyitása** (angolul *Open App*).
+3. A műveletben a halványkék **App** szóra koppintva válaszd a **ReadID Me**-t.
+4. Fent a parancs nevére koppintva **Átnevezés**: például **ReadID**, majd **Kész**.
+5. Az appban ugyanezt a nevet írd a mezőbe, és koppints a **Kipróbálom** gombra. Az első alkalommal az iPhone rákérdez, hogy megnyithatja-e a Parancsokat: **Megnyitás**.
+
+Ha „Parancs nem található” jelenik meg, a két név nem egyezik betűre pontosan (kis- és nagybetű, szóköz a végén). Ha a Parancsok nyílik meg, de a ReadID Me nem, a műveletben üresen maradt az App mező.
 
 ## Belépési feltételek (v51-től)
 
