@@ -53,6 +53,11 @@
   .is-frozen #sharpView, .up #sharpView, .is-frozen #stabView { display: none; }
   #frozen { display: none; }
   .is-frozen #video { display: none; }
+  /* Mód- és objektívváltáskor az utolsó kép marad kint, és lágyan úszik át az új kamerakép: nincs fekete villanás */
+  #swapCv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; opacity: 1; transition: opacity .22s ease; }
+  #swapCv.fade { opacity: 0; }
+  #swapCv[hidden] { display: none; }
+  .is-frozen #swapCv { display: none; }
   .is-frozen #frozen { display: block; }
 
   /* Okmánykeret */
@@ -475,6 +480,7 @@
   <div id="viewport">
     <div id="stage">
       <video id="video" playsinline muted autoplay></video>
+      <canvas id="swapCv" aria-hidden="true" hidden></canvas>
       <canvas id="stabView" aria-hidden="true"></canvas>
       <canvas id="sharpView" aria-hidden="true"></canvas>
       <canvas id="frozen"></canvas>
@@ -599,7 +605,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v66</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v67</span></p>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -961,7 +967,7 @@
 
   // deviceId: adott objektív; nélküle az utoljára használt, vagy első indításkor a fő hátlapi kamera.
   // silent: hiba esetén nem mutat hibaképernyőt, csak false-t ad vissza (objektívváltáshoz).
-  // Kameramód: 'detail' = legnagyobb felbontás, legfeljebb 30 képkocka; 'fluid' = kisebb felbontás 60 képkockával (60 fps kapcsoló).
+  // Kameramód: 'detail' = legnagyobb felbontás, legfeljebb 30 képkocka; 'fluid' = 4K 60 képkockával (60 fps kapcsoló), Scan alatt Full HD 60.
   var camMode = 'detail';
   try {
     var cmSaved = localStorage.getItem('dn_cam');
@@ -981,7 +987,7 @@
     if (camMode === 'fluid' || !camOn || !track || resBusy) { if (!resBusy) camRes = r; return; }
     resBusy = true; camRes = r;
     try { await track.applyConstraints(resConstraints(r)); }               // a futó kamerán átállítja, újraindítás nélkül
-    catch (e) { try { await startCamera(currentDeviceId, true); } catch (e2) {} }   // ha a böngésző nem engedi: újraindítás
+    catch (e) { swapHold(); try { await startCamera(currentDeviceId, true); } catch (e2) {} swapRelease(); }   // ha a böngésző nem engedi: újraindítás, átúsztatással
     resBusy = false; stabReset();
     if (window.__dnOnRes) window.__dnOnRes(r);                               // csak az automata tesztek használják
   }
@@ -997,6 +1003,12 @@
   }
 
   var camGen = 0;
+  // 60 fps mód: 4K 60 képkockával. Okmányolvasás (Scan) alatt Full HD 60: azon van bemérve az olvasó, és gyorsabb.
+  var fluidLite = false;
+  function fluidC() {
+    return fluidLite ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } }
+      : { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 60, min: 50 } };
+  }
   async function startCamera(deviceId, silent) {
     var id = (typeof deviceId === 'string') ? deviceId : currentDeviceId;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1007,10 +1019,15 @@
     try {
       stopCamera();
       // alnyomat-nézetben mindig 4K: nagyításnál a kamera valódi képpontjai látszanak, nem felnagyított homály
-      var constraints = upOn ? resConstraints('uhd') : camMode === 'fluid' ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } } : resConstraints(camRes);
-      if (id) constraints.deviceId = { exact: id };
-      else constraints.facingMode = { ideal: 'environment' };
-      var ns = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
+      var constraints = upOn ? resConstraints('uhd') : camMode === 'fluid' ? fluidC() : resConstraints(camRes);
+      var devC = function (c) { if (id) c.deviceId = { exact: id }; else c.facingMode = { ideal: 'environment' }; return c; };
+      var ns;
+      try { ns = await navigator.mediaDevices.getUserMedia({ audio: false, video: devC(constraints) }); }
+      catch (e0) {
+        // ha a kamera 60 képkockát egyáltalán nem tud, a 60 fps mód a legjobb elérhetővel indul (ne maradjon kép nélkül)
+        if (camMode !== 'fluid' || upOn || !e0 || e0.name !== 'OverconstrainedError') throw e0;
+        ns = await navigator.mediaDevices.getUserMedia({ audio: false, video: devC({ width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 60 } }) });
+      }
       // Ha közben újabb indítás vagy kikapcsolás történt (gyors egymás utáni koppintások), ezt a kamerát azonnal elengedjük.
       if (gen !== camGen || !camOn) { ns.getTracks().forEach(function (t) { t.stop(); }); return false; }
       stream = ns;
@@ -1083,17 +1100,46 @@
     });
   }
 
+  // Átúsztatás: váltás előtt az utolsó képkocka kint marad, és csak az új kamera első képkockája után tűnik el lágyan.
+  var swapCv = $('swapCv'), swapT = 0, swapGen = 0;
+  function swapHold() {
+    try {
+      if (!video.videoWidth || isFrozen()) return false;
+      var k = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
+      var w = Math.round(video.videoWidth * k), h = Math.round(video.videoHeight * k);
+      if (swapCv.width !== w || swapCv.height !== h) { swapCv.width = w; swapCv.height = h; }
+      swapCv.getContext('2d').drawImage(video, 0, 0, w, h);
+      swapCv.style.filter = video.style.filter || '';
+      swapCv.classList.remove('fade'); swapCv.hidden = false;
+      swapGen++; clearTimeout(swapT); swapT = setTimeout(swapRelease, 3000);   // biztosíték: soha ne ragadjon kint
+      return true;
+    } catch (e) { swapCv.hidden = true; return false; }
+  }
+  function swapRelease() {
+    if (swapCv.hidden) return;
+    var g = swapGen, done = false;
+    var go = function () {
+      if (done || g !== swapGen) return; done = true;
+      swapCv.classList.add('fade'); clearTimeout(swapT);
+      swapT = setTimeout(function () { if (g === swapGen) { swapCv.hidden = true; swapCv.classList.remove('fade'); } }, 240);
+    };
+    if (video.requestVideoFrameCallback) { try { video.requestVideoFrameCallback(function () { setTimeout(go, 30); }); } catch (e) {} setTimeout(go, 800); }
+    else setTimeout(go, 160);
+  }
+
   async function switchLens(id) {
     if (!camOn) { currentDeviceId = id; return; }   // kikapcsolt kameránál csak megjegyzi, bekapcsoláskor ezzel indul
     if (id === currentDeviceId) return;
     var prev = currentDeviceId;
     if (isFrozen()) unfreeze();
     resetView();
+    swapHold();
     var ok = await startCamera(id, true);
     if (!ok) {
       toast('Ez az objektív nem indítható.');
       await startCamera(prev);
     }
+    swapRelease();
   }
 
   lensBox.addEventListener('click', function (e) {
@@ -2051,10 +2097,21 @@
     camMode = camMode === 'fluid' ? 'detail' : 'fluid'; camChipShow();
     try { localStorage.setItem('dn_cam', camMode); } catch (e) {}
     stabReset();
-    await startCamera(currentDeviceId, true);
+    if (camOn && !upOn) {
+      swapHold();
+      // először újraindítás nélkül próbál váltani (nincs kiesés); ha a kamera így nem adja a kért módot, akkor indul újra
+      var ok = false;
+      if (track) {
+        try { await track.applyConstraints(camMode === 'fluid' ? fluidC() : resConstraints(camRes)); ok = true; } catch (e) {}
+        var s0 = {}; try { s0 = track.getSettings() || {}; } catch (e) {}
+        if (ok && camMode === 'fluid' && (s0.frameRate || 0) < 50) ok = false;
+      }
+      if (!ok) await startCamera(currentDeviceId, true);
+      swapRelease();
+    }
     var st = (track && track.getSettings) ? track.getSettings() : {};
     var info = (st.width && st.height ? st.width + '×' + st.height : '') + (st.frameRate ? ', ' + Math.round(st.frameRate) + ' kép/mp' : '');
-    toast((camMode === 'fluid' ? 'Folyékony mód' : 'Részletes mód') + (info ? ': ' + info : ''));
+    toast((camMode === 'fluid' ? '60 fps mód' : 'Részletes mód') + (info ? ': ' + info : ''));
   });
   $('stabChip').addEventListener('click', function () {
     stabOn = !stabOn; this.setAttribute('aria-pressed', String(stabOn)); stabReset();
@@ -3016,8 +3073,9 @@
     if (isFrozen()) unfreeze();
     mrzM = { t0: performance.now(), cam: 0, first: 0, n: 0, grab: 0, ocr: 0, ok: 0 };
     // Olvasás alatt mindig a 60 fps-es (folyékony) mód: rövidebb záridő, kevesebb bemozdulás, gyorsabb egymás utáni képek.
-    mrzPrevMode = camMode;
+    mrzPrevMode = camMode; fluidLite = true;
     if (camMode !== 'fluid') { camMode = 'fluid'; if (camOn) { try { await startCamera(currentDeviceId, true); } catch (e) {} } }
+    else if (camOn) await fluidApply();             // 4K 60-ról Full HD 60-ra, újraindítás nélkül
     if (!camOn) await camTurnOn();
     if (camPaused) camResume();
     mrzCamOn = true; mrzReads = []; mrzPrevOk = ''; mrzOkCount = {}; mrzPrevVote = ''; mrzCamT0 = Date.now();
@@ -3032,8 +3090,22 @@
     $('mrzCam').hidden = true; app.classList.remove('mrz-reading');
     if (torchOn) torchBtn.click();               // a lámpa ne maradjon égve
     var restore = mrzPrevMode && mrzPrevMode !== camMode; if (mrzPrevMode) camMode = mrzPrevMode; mrzPrevMode = null;
+    fluidLite = false;
     if (mrzInSession) { camOff(); setRes('hd'); }   // a lapon a kamera újra áll; a következő indulás a megszokott módban
-    else { if (restore && camOn) startCamera(currentDeviceId, true); resWatch(); }
+    else if (restore && camOn) { startCamera(currentDeviceId, true); resWatch(); }
+    else if (camMode === 'fluid' && camOn) fluidApply();   // vissza 4K 60-ra
+    else resWatch();
+  }
+  // A futó kamerát a 60 fps mód aktuális felbontására állítja (Scan alatt Full HD, egyébként 4K).
+  async function fluidApply() {
+    if (!camOn || !track || camMode !== 'fluid' || upOn) return;
+    var st = {}; try { st = track.getSettings() || {}; } catch (e) {}
+    var big = Math.max(st.width || 0, st.height || 0) > 2500;
+    if (big === !fluidLite) return;                 // már jó felbontáson fut
+    swapHold();
+    try { await track.applyConstraints(fluidC()); }
+    catch (e) { try { await startCamera(currentDeviceId, true); } catch (e2) {} }
+    swapRelease(); stabReset();
   }
   // A keret (#mrzBand) helye a kamera natív képén: a látott terület (glCrop) arányos része.
   function mrzGrab() {

@@ -69,7 +69,8 @@ A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti v
 A szűrők sorában két kapcsoló van:
 
 - **Stabil** (alapból be): nagyításnál a kéz remegését digitálisan ellensúlyozza az élő képen. A stabilizált képet az app maga rajzolja ki, így a mozgás sima, nem rángat. A lassú, szándékos mozgást követi, a gyors remegést kiveszi. 1× nagyításnál nem dolgozik, mert ott nincs tartalék a kép szélén. A rögzített képet és a mentést nem érinti. Egyszínű felületen, ahol nincs mihez igazítani, lágyan elengedi a korrekciót.
-- **60 fps:** a kamera kisebb felbontáson, de másodpercenként kétszer annyi képkockával megy, ezért a mozgás folyékonyabb. Az ára, hogy erős nagyításnál és a rögzített képen kevesebb a részlet, és többet fogyaszt. Bekapcsoláskor az app kiírja, milyen felbontást és képkockaszámot adott a telefon. A beállítást megjegyzi.
+- **60 fps:** a kamera 4K felbontáson, másodpercenként 60 képkockával megy, és kitölti a képernyőt; ha a telefon 4K-ban nem tud 60-at, a legnagyobb olyan felbontást kéri, amelyen még megvan a 60. Az app indításakor is így indul, ha legutóbb ez volt bekapcsolva. Bekapcsoláskor az app kiírja, milyen felbontást és képkockaszámot adott a telefon. Többet fogyaszt és jobban melegít, mint a Részletes mód. Az okmányolvasás (Scan) alatt Full HD 60-on megy, mert azon van bemérve az olvasó, utána visszaáll 4K-ra.
+- **Váltás a módok és az objektívek között:** az utolsó kép kint marad, és lágyan úszik át az új kamera képébe, nincs fekete villanás. Ahol a telefon engedi, a váltás a kamera újraindítása nélkül történik.
 
 ## Fogyasztás és melegedés
 
