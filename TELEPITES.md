@@ -74,6 +74,8 @@ A szűrők sorában két kapcsoló van:
 
 ## Fogyasztás és melegedés
 
+- **Sötét kép miatti kikapcsolás (v68-tól):** a kamera csak akkor kapcsol ki, ha két független módon (2D-s és WebGL-es képolvasással) is sötétnek látszik a kép. Egyes iPhone-okon (pl. 17 Pro, 4K 60 képnél) a 2D-s olvasás tévesen fekete képet ad, ez korábban 15 mp után indokolatlanul kikapcsolta a kamerát vizsgálat közben.
+
 - **Sötét kép (v54-től):** ha a kamera 15 másodpercig csak feketét lát (letakart lencse, zseb, arccal lefelé letett telefon), magától kikapcsol, és ezt egy felirat jelzi. A felső kamera gombbal kapcsolható vissza.
 - **Okmány felismerése lap (v54-től):** amíg a lap nyitva van, a kamera áll; csak a **Scan** idejére kapcsol be, utána újra leáll. A lap bezárásakor visszaáll az előző állapot (ha előtte ki volt kapcsolva, kikapcsolva marad).
 
@@ -110,6 +112,16 @@ Tudnivalók:
 - Az okmányszámban az app szándékosan nem javít semmit automatikusan, mert ott betű és szám is szabályos lehet, és egy átírt adatot is „rendbe tehetne”. A dátumokban, ahol betű nem állhat, a betűt számjegynek olvassa (például O → 0), de ezt narancssárgán jelzi.
 - Ha az ellenőrző számjegyek stimmelnek, az csak azt jelenti, hogy a gépi sor önmagában ellentmondásmentes. Egy jól elkészített hamisítványon is stimmelhetnek, ezért ez nem helyettesíti az okmány vizsgálatát.
 - A típus a dokumentumkódból becsült: kártyaformátumú okmányoknál (személyi igazolvány, tartózkodási engedély) nem mindig egyértelmű, ezért a többi kategória is elérhető. Ha a PRADO-ban a kiállítónak nincs ilyen kategóriája, hibaoldal jelenik meg: ilyenkor nyisd meg az összes okmányát.
+
+## Telefonok és objektívek (v69-től)
+
+Támogatott: iPhone 13-tól az iPhone 18 Pro Maxig minden típus: az alapváltozatok (13, 14, 15, 16, 17, 18), valamint a mini, Plus, Pro, Pro Max, e és Air. Az alap iPhone 18 még nem jelent meg (várhatóan 2027 tavaszán): a 17-tel azonos méretre számítunk, megjelenésekor ellenőrizni kell.
+
+- **Telefontípus felismerése:** a Safari a pontos típust nem árulja el, ezért az app a képernyő méretéből, az iOS verziójából és a hátlapi objektívekből következtet. A kezdőképernyőn kiírja: „Felismert telefon: …”. Ha több egyforma méretű típus is szóba jön (pl. 16 Pro / 17 Pro / 18 Pro), alatta gombokkal egyszer kiválaszthatod, az app megjegyzi.
+- **Objektívek:** az app felismeri, melyik hátlapi objektív van a telefonon (0,5× ultraszéles, 1× fő, tele), és csak azokat kínálja. A virtuális (kettős, hármas) kamerákat és az előlapi kamerát kihagyja. A tele gombon a valódi nagyítás áll (13–15 Pro: 3×, 15 Pro Max és 16 Pro: 5×, 17 és 18 Pro: 4×), ha a típus egyértelmű; különben „Tele”. Az első indításkor és ha változik, egy felirat összefoglalja a telefont és az objektíveit.
+- **Nem induló objektív:** ha egy objektív kétszer egymás után nem indul el, az app kiveszi a választékból.
+- **Gyorsabb váltás:** objektív- vagy módváltáskor a régi kamera addig adja a képet, amíg az új el nem indul, és az átmenet lágyan úszik át; a sikertelen 60 fps-es kérést az app megjegyzi, és legközelebb nem veszít vele időt.
+- **Képkivétel (fotó, Scan, élességmérés, stabilizálás):** ha a telefonon a kamerakép közvetlen kiolvasása fekete vagy üres képet ad (ezt a 17 Pro-n tapasztaltuk), az app ezt induláskor észreveszi, és minden képkivétel egy másik úton (WebGL-en át) történik.
 
 ## Chip olvasás (ReadID Me)
 

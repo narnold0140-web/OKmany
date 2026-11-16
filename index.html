@@ -409,6 +409,10 @@
   .screen p.welcome { color: var(--text); font-size: 16px; }
   .screen p.privacy { font-size: 13px; }
   .screen p.credit { font-size: 12px; letter-spacing: .04em; opacity: .75; }
+  #devInfo { margin-top: 6px; font-size: 12px; opacity: .85; text-align: center; }
+  #devInfo[hidden], #devPick[hidden] { display: none; }
+  #devPick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 6px; }
+  #devPick .chip { font-size: 12px; padding: 5px 10px; }
   .screen p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 340px; }
   .screen .btn { flex: none; width: 100%; max-width: 340px; }
   .logo { width: 84px; height: 84px; border-radius: 22px; }
@@ -605,7 +609,8 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v67</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v70</span></p>
+    <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
 
@@ -1004,7 +1009,8 @@
 
   var camGen = 0;
   // 60 fps mód: 4K 60 képkockával. Okmányolvasás (Scan) alatt Full HD 60: azon van bemérve az olvasó, és gyorsabb.
-  var fluidLite = false;
+  var fluidLite = false, fluidNo60 = {};
+  function fluidSoft() { return fluidLite ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } } : { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 60 } }; }
   function fluidC() {
     return fluidLite ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } }
       : { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 60, min: 50 } };
@@ -1016,22 +1022,30 @@
       return false;
     }
     var gen = ++camGen;
+    // Gyors váltás: a régi kamerát nem állítjuk le előre, az új indításáig az adja a képet (a Safari átkapcsol),
+    // és csak az új sáv megérkezése után engedjük el. Így nincs külön leállítás + hidegindítás.
+    var old = stream;
     try {
-      stopCamera();
       // alnyomat-nézetben mindig 4K: nagyításnál a kamera valódi képpontjai látszanak, nem felnagyított homály
-      var constraints = upOn ? resConstraints('uhd') : camMode === 'fluid' ? fluidC() : resConstraints(camRes);
+      var fl = camMode === 'fluid' && !upOn, flKey = (id || 'alap') + (fluidLite ? ':lite' : '');
+      var constraints = upOn ? resConstraints('uhd') : fl ? (fluidNo60[flKey] ? fluidSoft() : fluidC()) : resConstraints(camRes);
       var devC = function (c) { if (id) c.deviceId = { exact: id }; else c.facingMode = { ideal: 'environment' }; return c; };
       var ns;
       try { ns = await navigator.mediaDevices.getUserMedia({ audio: false, video: devC(constraints) }); }
       catch (e0) {
-        // ha a kamera 60 képkockát egyáltalán nem tud, a 60 fps mód a legjobb elérhetővel indul (ne maradjon kép nélkül)
-        if (camMode !== 'fluid' || upOn || !e0 || e0.name !== 'OverconstrainedError') throw e0;
-        ns = await navigator.mediaDevices.getUserMedia({ audio: false, video: devC({ width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 60 } }) });
+        // ha a kamera 60 képkockát egyáltalán nem tud, a 60 fps mód a legjobb elérhetővel indul (ne maradjon kép nélkül);
+        // megjegyezzük, hogy legközelebb ne veszítsünk időt a sikertelen kéréssel
+        if (!fl || fluidNo60[flKey] || !e0 || e0.name !== 'OverconstrainedError') throw e0;
+        fluidNo60[flKey] = true;
+        ns = await navigator.mediaDevices.getUserMedia({ audio: false, video: devC(fluidSoft()) });
       }
       // Ha közben újabb indítás vagy kikapcsolás történt (gyors egymás utáni koppintások), ezt a kamerát azonnal elengedjük.
       if (gen !== camGen || !camOn) { ns.getTracks().forEach(function (t) { t.stop(); }); return false; }
-      stream = ns;
+      if (old && old !== ns) { old.getTracks().forEach(function (t) { t.stop(); }); }
+      stream = ns; track = null;
+      torchOn = false; torchBtn.classList.remove('on'); try { $('mrzCamTorch').classList.remove('on'); } catch (e) {}   // a lámpa a régi kamerához tartozott
     } catch (err) {
+      if (old && stream === old) stopCamera();       // az új nem indult: a régit is elengedjük, a hibakezelés dönt a folytatásról
       if (silent) return false;
       if (id && err && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
         currentDeviceId = null; // az eszközazonosító már nem érvényes, vissza az alapértelmezett kamerához
@@ -1071,22 +1085,116 @@
       var found = {};
       devs.forEach(function (d) {
         if (d.kind !== 'videoinput' || !d.label) return;
-        var l = d.label.toLowerCase();
-        if (!/back|rear|environment|hátsó|hátlapi/.test(l)) return;
-        if (/dual|triple/.test(l)) return; // összevont (virtuális) kamera, nem önálló objektív
+        var l = d.label.toLowerCase(), face = '';
+        try { var cp = d.getCapabilities ? d.getCapabilities() : null; face = cp && cp.facingMode && cp.facingMode[0] || ''; } catch (e) {}
+        // hátlapi kamera: a név (angol vagy magyar iOS) vagy a kamera saját iránya alapján
+        if (!/back|rear|environment|hátsó|hátlapi|hátoldali/.test(l) && face !== 'environment') return;
+        if (/front|elülső|előlapi/.test(l) && face !== 'environment') return;
+        // összevont (virtuális) kamera, nem önálló objektív: angol és magyar nevekkel (iPhone 17 Pro-n is ilyen több van)
+        if (/dual|triple|kettős|hármas|dupla|tripla|virtu|lidar|depth|mélység|truedepth/.test(l)) return;
         var kind = /ultra/.test(l) ? 'ultra' : (/tele/.test(l) ? 'tele' : 'main');
-        if (!found[kind]) found[kind] = d.deviceId;
+        if ((lensBadGet()[l] || 0) >= 2) return;     // kétszer sem indult el ezen a telefonon: nem kínáljuk fel
+        if (!found[kind]) found[kind] = { id: d.deviceId, label: l };
       });
       lensList = [];
-      if (found.ultra) lensList.push({ id: found.ultra, text: '0,5×' });
-      if (found.main) lensList.push({ id: found.main, text: '1×' });
-      if (found.tele) lensList.push({ id: found.tele, text: 'Tele' });
+      if (found.ultra) lensList.push({ id: found.ultra.id, label: found.ultra.label, text: '0,5×', name: 'ultraszéles' });
+      if (found.main) lensList.push({ id: found.main.id, label: found.main.label, text: '1×', name: 'fő' });
+      if (found.tele) lensList.push({ id: found.tele.id, label: found.tele.label, text: 'Tele', name: 'teleobjektív' });
       renderLenses();
+      showPhone();                                    // a típus az objektívekkel együtt pontosabb
+      // Az első felismeréskor (és ha változik) kiírjuk, milyen objektívek használhatók ezen a telefonon.
+      var sig = (phoneGuess ? phoneGuess.name + ': ' : '') + lensList.map(function (x) { return x.text; }).join(' · ');
+      var prevSig = null; try { prevSig = localStorage.getItem('dn-lenses'); } catch (e) {}
+      if (sig && sig !== prevSig) {
+        try { localStorage.setItem('dn-lenses', sig); } catch (e) {}
+        var who = phoneGuess ? phoneGuess.name + ' · ' : '';
+        if (lensList.length > 1) toast(who + 'objektívek: ' + lensList.map(function (x) { return x.text + ' ' + x.name; }).join(', '), 4500);
+        else toast(who + 'egy hátlapi objektív érhető el.', 3500);
+      }
     } catch (e) {
       lensRow.hidden = true;
     }
   }
 
+  /* ---------- Telefontípus felismerése ----------
+     A Safari a pontos típust nem árulja el. A képernyő mérete, a pixelsűrűség, az iOS verziója és a hátlapi objektívek
+     (ultraszéles, tele) együtt viszont szűk jelöltlistát adnak. Ebből jön a tele objektív nagyítása (pl. 4× vagy 5×). */
+  var PHONES = [
+    // [név, rövid oldal, hosszú oldal (pont), pixelsűrűség, van-e ultraszéles, tele optikai nagyítása (0 = nincs), legkorábbi iOS]
+    // iPhone 13-tól az iPhone 18 Pro Maxig (az SE csak a teljesség kedvéért). Forrás: Apple műszaki adatok.
+    ['iPhone SE', 375, 667, 2, 0, 0, 13],
+    ['iPhone 13 mini', 375, 812, 3, 1, 0, 15],
+    ['iPhone 13', 390, 844, 3, 1, 0, 15], ['iPhone 14', 390, 844, 3, 1, 0, 16], ['iPhone 13 Pro', 390, 844, 3, 1, 3, 15],
+    ['iPhone 16e', 390, 844, 3, 0, 0, 18], ['iPhone 17e', 390, 844, 3, 0, 0, 26],
+    ['iPhone 14 Plus', 428, 926, 3, 1, 0, 16], ['iPhone 13 Pro Max', 428, 926, 3, 1, 3, 15],
+    ['iPhone 15', 393, 852, 3, 1, 0, 17], ['iPhone 16', 393, 852, 3, 1, 0, 18], ['iPhone 14 Pro', 393, 852, 3, 1, 3, 16], ['iPhone 15 Pro', 393, 852, 3, 1, 3, 17],
+    ['iPhone 15 Plus', 430, 932, 3, 1, 0, 17], ['iPhone 16 Plus', 430, 932, 3, 1, 0, 18], ['iPhone 14 Pro Max', 430, 932, 3, 1, 3, 16], ['iPhone 15 Pro Max', 430, 932, 3, 1, 5, 17],
+    ['iPhone 17', 402, 874, 3, 1, 0, 26],
+    ['iPhone 18', 402, 874, 3, 1, 0, 27],             // még nem jelent meg (várhatóan 2027 tavasz): a 17-tel azonos méretre számítunk, megjelenéskor ellenőrizni
+    ['iPhone 16 Pro', 402, 874, 3, 1, 5, 18], ['iPhone 17 Pro', 402, 874, 3, 1, 4, 26], ['iPhone 18 Pro', 402, 874, 3, 1, 4, 27],
+    ['iPhone 16 Pro Max', 440, 956, 3, 1, 5, 18], ['iPhone 17 Pro Max', 440, 956, 3, 1, 4, 26], ['iPhone 18 Pro Max', 440, 956, 3, 1, 4, 27],
+    ['iPhone Air', 420, 912, 3, 0, 0, 26]
+  ];
+  var phoneGuess = null;
+  // iOS főverzió. Az iOS 26-tól a Safari a böngészőazonosítóban befagyasztva „18_6”-ot mutat, ezért ilyenkor a Safari saját
+  // verziószáma (Version/26…) a mérvadó; ha az nincs (kezdőképernyős app), a verzió ismeretlen, csak annyi biztos, hogy legalább 18.
+  function iosMajor() {
+    var ua = navigator.userAgent || '', v = /Version\/(\d+)/.exec(ua), m = /OS (\d+)_(\d+)/.exec(ua);
+    if (v && +v[1] >= 13) return +v[1];
+    if (!m) return 0;
+    if (+m[1] === 18 && +m[2] >= 6) return 99;
+    return +m[1];
+  }
+  function detectPhone() {
+    var w = Math.min(screen.width, screen.height), h = Math.max(screen.width, screen.height), dpr = Math.round(window.devicePixelRatio || 1);
+    var ios = iosMajor();
+    if (!/iPhone/.test(navigator.userAgent || '')) return null;
+    var c = PHONES.filter(function (p) { return p[1] === w && p[2] === h && p[3] === dpr && (!ios || ios >= p[6]); });
+    // a felismert objektívek tovább szűkítik (induláskor a legutóbb látott objektívek alapján, mert a kamera még nem fut)
+    var lk = null;
+    if (lensList.length) {
+      lk = { u: lensList.some(function (x) { return x.name === 'ultraszéles'; }), t: lensList.some(function (x) { return x.name === 'teleobjektív'; }) };
+      try { localStorage.setItem('dn-lens-kind', JSON.stringify(lk)); } catch (e) {}
+    } else { try { lk = JSON.parse(localStorage.getItem('dn-lens-kind') || 'null'); } catch (e) {} }
+    if (lk) { var c2 = c.filter(function (p) { return !!p[4] === !!lk.u && !!p[5] === !!lk.t; }); if (c2.length) c = c2; }
+    if (!c.length) return { name: 'iPhone (' + w + '×' + h + ')', tele: 0, cands: [] };
+    // ha több típus is szóba jön (pl. 16 Pro és 17 Pro ugyanakkora), a felhasználó egyszer kiválaszthatja
+    var pick = null; try { pick = localStorage.getItem('dn-phone-pick'); } catch (e) {}
+    var cands = c.map(function (p) { return p[0]; });
+    if (pick && cands.indexOf(pick) >= 0) c = c.filter(function (p) { return p[0] === pick; });
+    var teles = c.map(function (p) { return p[5]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+    var names = c.map(function (p) { return p[0]; });
+    return { name: names.join(' vagy '), tele: teles.length === 1 ? teles[0] : 0, cands: cands, sure: names.length === 1 };
+  }
+  function showPhone(announce) {
+    phoneGuess = detectPhone();
+    var el = $('devInfo');
+    if (!phoneGuess) { el.hidden = true; return; }
+    $('devName').textContent = 'Felismert telefon: ' + phoneGuess.name; el.hidden = false;
+    var pk = $('devPick');
+    if (phoneGuess.cands.length > 1 && phoneGuess.cands.length <= 4) {
+      pk.innerHTML = '';
+      phoneGuess.cands.forEach(function (n) {
+        var b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.textContent = n;
+        b.setAttribute('aria-pressed', String(phoneGuess.sure && phoneGuess.name === n));
+        b.addEventListener('click', function () { try { localStorage.setItem('dn-phone-pick', n); } catch (e) {} showPhone(); });
+        pk.appendChild(b);
+      });
+      pk.hidden = false;
+    } else pk.hidden = true;
+    // a tele gomb a valódi nagyítást mutatja, ha a típusból egyértelmű (pl. 17 Pro: 4×, 16 Pro: 5×)
+    var ch = false;
+    lensList.forEach(function (x) { if (x.name === 'teleobjektív') { var t = phoneGuess.tele ? String(phoneGuess.tele).replace('.', ',') + '×' : 'Tele'; if (x.text !== t) { x.text = t; ch = true; } } });
+    if (ch) renderLenses();
+  }
+  window.__dnPhone = function () { return detectPhone(); };   // tesztekhez
+  showPhone();
+
+  // A nem induló objektívek listája (a kamera neve szerint, mert az iPhone-on ez állandó).
+  function lensBadGet() { try { return JSON.parse(localStorage.getItem('dn-lens-bad') || '{}') || {}; } catch (e) { return {}; } }
+  function lensBadAdd(label) { if (!label) return 0; var b = lensBadGet(); b[label] = (b[label] || 0) + 1; try { localStorage.setItem('dn-lens-bad', JSON.stringify(b)); } catch (e) {} return b[label]; }
+  function lensBadClear(label) { var b = lensBadGet(); if (!b[label]) return; delete b[label]; try { localStorage.setItem('dn-lens-bad', JSON.stringify(b)); } catch (e) {} }
+  window.__dnLenses = function () { return lensList.map(function (x) { return x.text + '=' + x.id; }).join(' '); };   // tesztekhez
   function renderLenses() {
     lensRow.hidden = lensList.length < 2;
     lensBox.innerHTML = '';
@@ -1108,7 +1216,7 @@
       var k = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
       var w = Math.round(video.videoWidth * k), h = Math.round(video.videoHeight * k);
       if (swapCv.width !== w || swapCv.height !== h) { swapCv.width = w; swapCv.height = h; }
-      swapCv.getContext('2d').drawImage(video, 0, 0, w, h);
+      drawVid(swapCv.getContext('2d'), 0, 0, video.videoWidth, video.videoHeight, 0, 0, w, h);
       swapCv.style.filter = video.style.filter || '';
       swapCv.classList.remove('fade'); swapCv.hidden = false;
       swapGen++; clearTimeout(swapT); swapT = setTimeout(swapRelease, 3000);   // biztosíték: soha ne ragadjon kint
@@ -1135,10 +1243,14 @@
     resetView();
     swapHold();
     var ok = await startCamera(id, true);
-    if (!ok) {
-      toast('Ez az objektív nem indítható.');
+    if (!ok && camOn) {
+      // ezen a telefonon ez az objektív nem használható: kivesszük a választékból, hogy ne kínáljuk fel újra
+      var bad = null; for (var i = 0; i < lensList.length; i++) if (lensList[i].id === id) bad = lensList[i];
+      var n = bad ? lensBadAdd(bad.label) : 0;
+      if (n >= 2) { lensList = lensList.filter(function (x) { return x !== bad; }); renderLenses(); toast('Ez az objektív ezen a telefonon nem indítható, kivettem a választékból.', 3500); }
+      else toast('Ez az objektív most nem indult el. Próbáld újra.', 3000);
       await startCamera(prev);
-    }
+    } else if (ok) { for (var k = 0; k < lensList.length; k++) if (lensList[k].id === id) lensBadClear(lensList[k].label); }
     swapRelease();
   }
 
@@ -1242,7 +1354,7 @@
     var sx = Math.max(0, Math.min(w - cw, Math.round(p.x - cw / 2)));
     var sy = Math.max(0, Math.min(h - ch, Math.round(p.y - ch / 2)));
     if (sCv.width !== cw || sCv.height !== ch) { sCv.width = cw; sCv.height = ch; }
-    sCtx.drawImage(video, sx, sy, cw, ch, 0, 0, cw, ch);
+    drawVid(sCtx, sx, sy, cw, ch, 0, 0, cw, ch);
     var d = sCtx.getImageData(0, 0, cw, ch).data;
     var g = new Float32Array(cw * ch);
     for (var i = 0, j = 0; i < d.length; i += 4, j++) g[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
@@ -1281,21 +1393,124 @@
   function markActive() { lastActive = Date.now(); }
   ['touchstart', 'pointerdown', 'mousedown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, markActive, { capture: true, passive: true }); });
   $('idle').addEventListener('click', idleLeave);
+  // Kis mintakép a kamera képéből a sötét- és a mozdulatlanság-figyeléshez. Két független úton olvasható:
+  // 2D vásznon (alap) és WebGL-lel. Egyes iPhone-okon (pl. 4K 60 / HDR képnél) a 2D-s olvasás fekete vagy üres képet ad,
+  // miközben a kamera rendesen lát: ilyenkor a WebGL-es olvasás dönt, és az app nem kapcsolja ki tévesen a kamerát.
+  var rd2dBad = false, prb = null;
+  function probeStat(d) {
+    var cur = new Uint8Array(576), lit = 0, ok = true, sum = 0;
+    for (var i = 0, j = 0; i < d.length; i += 4, j++) { if (d[i + 3] < 250) ok = false; cur[j] = (d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10; sum += cur[j]; if (cur[j] > 22) lit++; }
+    return { cur: cur, lit: lit, ok: ok, mean: sum / 576 };
+  }
+  // Induláskor és objektív-/módváltás után összeveti a két olvasást: ha a 2D-s kép üres vagy jóval sötétebb a WebGL-esnél,
+  // ezen a telefonon minden képkivétel (fotó, Scan, élességmérés, stabilizálás) WebGL-en keresztül megy.
+  function vidCheck() {
+    if (rd2dBad || !camOn || !video.videoWidth || isFrozen()) return;
+    var r = probe2d(), g = probeGL();
+    if (g && g.ok && g.mean > 12 && (!r || !r.ok || r.mean < g.mean * 0.5)) rd2dBad = true;
+  }
+  video.addEventListener('playing', function () { setTimeout(vidCheck, 600); setTimeout(vidCheck, 2500); });
+
+  /* Videóképkocka kirajzolása 2D vászonra. Ha ezen a telefonon a közvetlen 2D-s rajzolás fekete/üres képet ad (rd2dBad),
+     a képkocka WebGL-en át megy: textúraként feltöltjük, a kért kivágást egy rejtett WebGL-vászonra rajzoljuk, és azt másoljuk át. */
+  var vgl = null;
+  function vidGL(sx, sy, sw, sh, gw, gh) {
+    try {
+      var vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh || vgl === false) return null;
+      if (!vgl) {
+        var c = document.createElement('canvas');
+        var g = c.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false, antialias: false });
+        if (!g) { vgl = false; return null; }
+        var sh_ = function (t, src) { var o = g.createShader(t); g.shaderSource(o, src); g.compileShader(o); return o; };
+        var pg = g.createProgram();
+        g.attachShader(pg, sh_(g.VERTEX_SHADER, 'attribute vec2 p;uniform vec4 r;varying vec2 u;void main(){u=r.xy+vec2(p.x*.5+.5,.5-p.y*.5)*r.zw;gl_Position=vec4(p,0.,1.);}'));
+        g.attachShader(pg, sh_(g.FRAGMENT_SHADER, 'precision mediump float;varying vec2 u;uniform sampler2D t;void main(){gl_FragColor=vec4(texture2D(t,u).rgb,1.0);}'));
+        g.linkProgram(pg); if (!g.getProgramParameter(pg, g.LINK_STATUS)) { vgl = false; return null; }
+        g.useProgram(pg);
+        var bf = g.createBuffer(); g.bindBuffer(g.ARRAY_BUFFER, bf); g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), g.STATIC_DRAW);
+        var loc = g.getAttribLocation(pg, 'p'); g.enableVertexAttribArray(loc); g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+        var tx = g.createTexture(); g.bindTexture(g.TEXTURE_2D, tx);
+        [g.TEXTURE_WRAP_S, g.TEXTURE_WRAP_T].forEach(function (k) { g.texParameteri(g.TEXTURE_2D, k, g.CLAMP_TO_EDGE); });
+        g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+        vgl = { c: c, g: g, rl: g.getUniformLocation(pg, 'r') };
+      }
+      var C = vgl.c, G = vgl.g;
+      if (C.width !== gw || C.height !== gh) { C.width = gw; C.height = gh; }
+      G.viewport(0, 0, gw, gh);
+      G.texImage2D(G.TEXTURE_2D, 0, G.RGBA, G.RGBA, G.UNSIGNED_BYTE, video);
+      G.uniform4f(vgl.rl, sx / vw, sy / vh, sw / vw, sh / vh);
+      G.drawArrays(G.TRIANGLE_STRIP, 0, 4);
+      return C;
+    } catch (e) { return null; }
+  }
+  function drawVid(ctx, sx, sy, sw, sh, dx, dy, dw, dh) {
+    if (rd2dBad) {
+      // a WebGL legfeljebb a cél kétszeresén rajzol, a végső kicsinyítést a 2D vászon simítva végzi
+      var gw = Math.max(1, Math.round(Math.min(sw, dw * 2, 4096))), gh = Math.max(1, Math.round(Math.min(sh, dh * 2, 4096)));
+      var c = vidGL(sx, sy, sw, sh, gw, gh);
+      if (c) { ctx.drawImage(c, 0, 0, gw, gh, dx, dy, dw, dh); return; }
+    }
+    ctx.drawImage(video, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+  function probe2d() {
+    try { idleCv.width = 32; idleCv.height = 18; idleCtx.drawImage(video, 0, 0, 32, 18); return probeStat(idleCtx.getImageData(0, 0, 32, 18).data); }
+    catch (e) { return null; }
+  }
+  function probeGL() {
+    try {
+      if (prb === false) return null;
+      if (!prb) {
+        var c = document.createElement('canvas'); c.width = 32; c.height = 18;
+        var g = c.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false, antialias: false });
+        if (!g) { prb = false; return null; }
+        var sh = function (t, src) { var o = g.createShader(t); g.shaderSource(o, src); g.compileShader(o); return o; };
+        var pg = g.createProgram();
+        g.attachShader(pg, sh(g.VERTEX_SHADER, 'attribute vec2 p;varying vec2 u;void main(){u=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}'));
+        g.attachShader(pg, sh(g.FRAGMENT_SHADER, 'precision mediump float;varying vec2 u;uniform sampler2D t;void main(){gl_FragColor=vec4(texture2D(t,u).rgb,1.0);}'));
+        g.linkProgram(pg); if (!g.getProgramParameter(pg, g.LINK_STATUS)) { prb = false; return null; }
+        g.useProgram(pg);
+        var bf = g.createBuffer(); g.bindBuffer(g.ARRAY_BUFFER, bf); g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), g.STATIC_DRAW);
+        var loc = g.getAttribLocation(pg, 'p'); g.enableVertexAttribArray(loc); g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+        var tx = g.createTexture(); g.bindTexture(g.TEXTURE_2D, tx);
+        [g.TEXTURE_WRAP_S, g.TEXTURE_WRAP_T].forEach(function (k) { g.texParameteri(g.TEXTURE_2D, k, g.CLAMP_TO_EDGE); });
+        g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+        g.viewport(0, 0, 32, 18);
+        prb = { g: g, out: new Uint8Array(32 * 18 * 4) };
+      }
+      var G = prb.g;
+      G.texImage2D(G.TEXTURE_2D, 0, G.RGBA, G.RGBA, G.UNSIGNED_BYTE, video);
+      G.drawArrays(G.TRIANGLE_STRIP, 0, 4);
+      G.readPixels(0, 0, 32, 18, G.RGBA, G.UNSIGNED_BYTE, prb.out);
+      return probeStat(prb.out);
+    } catch (e) { return null; }
+  }
+  function probeFrame() {
+    if (rd2dBad) { var q = probeGL(); return q && q.ok ? q : probe2d(); }
+    var r = probe2d();
+    if (!r || !r.ok || r.lit <= 6) {
+      // sötétnek vagy olvashatatlannak tűnik: a WebGL-es olvasás erősíti meg
+      var gq = probeGL();
+      if (gq && gq.ok && gq.lit > 6) { rd2dBad = true; return gq; }   // a 2D-s olvasás ezen a telefonon nem megbízható
+      if (!r || !r.ok) return gq;
+    }
+    return r;
+  }
+  window.__dnProbe = function () { return { rd2dBad: rd2dBad, gl: prb ? 'van' : prb === false ? 'nincs' : 'még nem kellett' }; };   // tesztekhez
   // Tétlenség: nincs érintés ÉS a kép sem változik (a telefon letéve). Kézben tartva a kép mindig mozog, ott nem szüneteltet.
   setInterval(function () {
     if (idleOn || !camOn || document.hidden || !track || !$('start').hidden || !$('denied').hidden) return;
     if (!isFrozen() && video.videoWidth) {
-      try {
-        idleCv.width = 32; idleCv.height = 18; idleCtx.drawImage(video, 0, 0, 32, 18);
-        var d = idleCtx.getImageData(0, 0, 32, 18).data, cur = new Uint8Array(576), i, j, ch = 0;
-        for (i = 0, j = 0; i < d.length; i += 4, j++) cur[j] = (d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10;
+      var pr = probeFrame();
+      if (!pr || !pr.ok) { darkSince = 0; idlePrev = null; markActive(); }   // nincs megbízható kép: se sötétnek, se mozdulatlannak nem vesszük
+      else {
+        var cur = pr.cur, j, ch = 0;
         if (idlePrev) { for (j = 0; j < 576; j++) if (Math.abs(cur[j] - idlePrev[j]) > 14) ch++; if (ch > 17) markActive(); }   // a kép 3%-a változott
         idlePrev = cur;
         // Csak fekete kép (lencse letakarva, zsebben, arccal lefelé letéve): 15 mp után a kamera kikapcsol, hogy ne melegedjen.
-        var lit = 0; for (j = 0; j < 576; j++) if (cur[j] > 22) lit++;
-        if (lit <= 6 && !mrzCamOn) { if (!darkSince) darkSince = Date.now(); else if (Date.now() - darkSince >= DARK_MS) { darkSince = 0; camOff(); toast('A kamera kikapcsolt, mert 15 másodpercig csak sötétet látott. A kamera gombbal kapcsolhatod vissza.', 4500); return; } }
+        if (pr.lit <= 6 && !mrzCamOn) { if (!darkSince) darkSince = Date.now(); else if (Date.now() - darkSince >= DARK_MS) { darkSince = 0; camOff(); toast('A kamera kikapcsolt, mert 15 másodpercig csak sötétet látott. A kamera gombbal kapcsolhatod vissza.', 4500); return; } }
         else darkSince = 0;
-      } catch (e) {}
+      }
     }
     var idle = Date.now() - lastActive > IDLE_MS;
     if (isFrozen()) {
@@ -1317,7 +1532,7 @@
       if (stabDriving()) { try { stabTick(); } catch (e) {} }
       var sc = sharpness(w, h);
       if (sc > best) {                                                   // csak a eddigi legélesebbet tartja meg
-        best = sc; rctx.drawImage(video, 0, 0, w, h);
+        best = sc; drawVid(rctx, 0, 0, video.videoWidth, video.videoHeight, 0, 0, w, h);
         // a megtartott képkockához tartozó stabilizáló eltolás: rögzítéskor ezzel igazítjuk a nézetet, hogy a kép ne ugorjon
         capC = stabDriving() ? { x: stabC.x, y: stabC.y } : { x: 0, y: 0 };
       }
@@ -1987,7 +2202,7 @@
     var f = rw / r.width;                                                   // képernyő képpontja -> forráskép képpontja
     var sx = Math.max(0, Math.min(sw - rw, a.x - stabC.x * f)), sy = Math.max(0, Math.min(sh - rh, a.y - stabC.y * f));
     if (stabView.style.filter !== (video.style.filter || '')) stabView.style.filter = video.style.filter || '';
-    try { stabViewCtx.drawImage(video, sx, sy, rw, rh, 0, 0, W, H); } catch (e) {}
+    try { drawVid(stabViewCtx, sx, sy, rw, rh, 0, 0, W, H); } catch (e) {}
     if (!app.classList.contains('stab-live')) app.classList.add('stab-live');
   }
   function stabApply(cx, cy) { stabC.x = cx; stabC.y = cy; stabDraw(); }
@@ -2054,7 +2269,7 @@
     if (stabCv.width !== w || stabCv.height !== h) { stabCv.width = w; stabCv.height = h; }
     var mw = w * 4, mh = h * 4;
     if (stabMid.width !== mw || stabMid.height !== mh) { stabMid.width = mw; stabMid.height = mh; }
-    try { stabMidCtx.drawImage(video, a.x, a.y, rw, rh, 0, 0, mw, mh); stabCtx.drawImage(stabMid, 0, 0, mw, mh, 0, 0, w, h); } catch (e) { return; }
+    try { drawVid(stabMidCtx, a.x, a.y, rw, rh, 0, 0, mw, mh); stabCtx.drawImage(stabMid, 0, 0, mw, mh, 0, 0, w, h); } catch (e) { return; }
     var d = stabCtx.getImageData(0, 0, w, h).data, cur = { d: new Float32Array(w * h), w: w, h: h }, i, j;
     for (i = 0, j = 0; i < d.length; i += 4, j++) cur.d[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
     cur.half = stabHalf(cur.d, w, h);
@@ -3122,7 +3337,7 @@
     if (mrzCv.width !== w || mrzCv.height !== h) { mrzCv.width = w; mrzCv.height = h; }
     var x = mrzCv.getContext('2d', { willReadFrequently: true });
     x.imageSmoothingEnabled = true; try { x.imageSmoothingQuality = 'high'; } catch (e) {}
-    x.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
+    drawVid(x, sx, sy, sw, sh, 0, 0, w, h);
     var d = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h);
     for (var i = 0, n = w * h; i < n; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
     return { g: g, w: w, h: h };
