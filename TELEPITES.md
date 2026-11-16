@@ -47,7 +47,7 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti vizsgálathoz való (alnyomat, mikroszöveg, guilloche).
 
 - Bekapcsoláskor az app automatikusan átvált az ultraszéles (0,5×) objektívre, ahol van (a felirat ilyenkor: „Alnyomat-vizsgáló · 0,5× objektív”), kilépéskor visszaáll az előzőre. Közelről (kb. 2 cm-ről) ez csak a Pro modelleken élesít.
-- A nézetben a kamera mindig 4K-ban fut, ezért nagyításkor (2×, 4×, 8×) is a kamera valódi képpontjai látszanak, nem felnagyított homály. Kilépéskor visszaáll a szokásos felbontás.
+- A nézet ugyanazon a felbontáson fut, mint az élő kép: 60 fps módban 4K (erős nagyításnál is a kamera valódi képpontjai látszanak), Részletes módban Full HD.
 - A bal felső felirat ilyenkor zöld alapon „Alnyomat”, így első ránézésre látszik, hogy nem a sima kamerakép megy.
 - **Kiemelt** (alapmód): a finom vonalak élesítése mellett a környezetéhez méri a kontrasztot és erősíti a színeket, így a halvány alnyomat, a szivárványnyomat és a mikroírás világos papíron és egyenetlen fényben is kiugrik. A nagy sötét felületek (szöveg, fotó) ettől szürkébbek, ez szándékos. **Vonal:** csak a finom vonalak látszanak szürkén, az alapszín eltűnik.
 - A nézet a látott területet a kamera valódi felbontásán dolgozza fel, ezért nagyításkor is valódi részletet mutat.
@@ -79,7 +79,7 @@ A szűrők sorában két kapcsoló van:
 - **Sötét kép (v54-től):** ha a kamera 15 másodpercig csak feketét lát (letakart lencse, zseb, arccal lefelé letett telefon), magától kikapcsol, és ezt egy felirat jelzi. A felső kamera gombbal kapcsolható vissza.
 - **Okmány felismerése lap (v54-től):** amíg a lap nyitva van, a kamera áll; csak a **Scan** idejére kapcsol be, utána újra leáll. A lap bezárásakor visszaáll az előző állapot (ha előtte ki volt kapcsolva, kikapcsolva marad).
 
-- **Felbontás igény szerint:** élő képen a kamera Full HD-ban fut, mert a kijelző ennél többet úgysem mutat, a 4K pedig négyszer annyi adatot mozgat és melegíti a telefont. 2× nagyítás fölött és a rögzítés pillanatában az app magától teljes felbontásra vált, így a rögzített kép ugyanolyan részletes, mint eddig. Rögzítéskor ezért a kép egy pillanattal később áll meg.
+- **Felbontás (v71-től):** 4K csak a 60 fps módban fut. Részletes módban az élő kép, a pillanatkép és az alnyomat-nézet is Full HD, 30 képkockával, nagyítástól függetlenül: így hűvösebb marad a telefon, és az exponálás azonnali. Ennek ára, hogy erős nagyításnál (4× fölött) a kép kevésbé éles; ha a legapróbb részlet kell, kapcsold be a 60 fps-t.
 - A gombok és a panel háttere nem elmosott, hanem átlátszatlan: az elmosás a videó mögött minden képkockánál terhelte a grafikus processzort.
 
 - **Kamera ki/be:** a felső sáv első gombjával (kamera ikon) a kamerát teljesen leállíthatod, és ugyanott visszakapcsolhatod. Kikapcsolva a kamera nem fut, a kijelző tetején a kamerajelző pötty is eltűnik, és a telefon nem melegszik tőle. Közben a rögzített kép, a Mintaokmány-tár és az okmányfelismerés használható. Ha háttérbe teszed az appot, kikapcsolt kamerát a visszatérés nem kapcsol be. Bekapcsoláskor az iPhone ritkán újra engedélyt kérhet.
