@@ -221,6 +221,27 @@
     display: grid; grid-template-columns: minmax(104px, 36%) 1fr; column-gap: 10px; align-items: start;
   }
   #ptCard[hidden] { display: none; }
+  /* Súrlófény-útmutató: ugyanott és úgy jelenik meg, mint a nyomtatási segédlet */
+  #rlCard {
+    position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--topH, 56px) + 8px); z-index: 11;
+    width: min(440px, calc(100% - var(--sal) - var(--sar) - 24px));
+    max-height: calc(100% - var(--topH, 56px) - var(--botH, 300px) - 20px); overflow-y: auto; padding: 10px 12px 12px; border-radius: 18px; touch-action: pan-y;
+    background: var(--glass); font-size: 13px; line-height: 1.42;
+  }
+  #rlCard[hidden], #rlRow[hidden] { display: none; }
+  #rlCard .pt-kicker { display: block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+  #rlCard .pt-head b { font-size: 15px; }
+  #rlCard .pt-nav { display: flex; gap: 6px; margin-top: 8px; }
+  #rlCard .pt-nav .mini { flex: 1; }
+  #rlFig { display: block; width: 100%; height: auto; margin: 6px 0 4px; border-radius: 12px; background: rgba(0,0,0,.28); }
+  .rl-steps { margin: 4px 0 0; padding-left: 20px; }
+  .rl-steps li { margin: 3px 0; }
+  .rl-note { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
+  .rl-note:empty { display: none; }
+  #rlRow { justify-content: center; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+  .rl-lbl { font-size: 12px; color: var(--muted); }
+  #rlTorch { display: flex; gap: 6px; flex-wrap: nowrap; }
+  .up-shot #rlRow, .up-shot #rlCard { display: none; }
   #ptCard .pt-head, #ptCard .pt-nav, #ptNote { grid-column: 1 / -1; }
   #ptCard .pt-body { min-width: 0; }
   #ptCard .pt-kicker { display: block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
@@ -239,6 +260,7 @@
   @media (orientation: landscape) and (max-height: 500px) {
     /* fekvő helyzetben a vezérlősáv jobb oldalon van: a segédlet a bal oldali szabad részen marad */
     #ptCard { left: calc(var(--sal) + 12px); transform: none; width: min(380px, 46%); max-height: calc(100% - var(--topH, 56px) - 20px); grid-template-columns: 132px 1fr; }
+    #rlCard { left: calc(var(--sal) + 12px); transform: none; width: min(380px, 46%); max-height: calc(100% - var(--topH, 56px) - 20px); }
   }
 
   /* Okmányfelismerés a gépi sorból */
@@ -536,12 +558,41 @@
     <div class="pt-nav"><button class="mini" id="ptPrev" aria-label="Előző technika">‹ Előző</button><button class="mini" id="ptNext" aria-label="Következő technika">Tovább ›</button><button class="mini" id="ptClose">Bezár</button></div>
   </div>
 
+  <div id="rlCard" hidden>
+    <div class="pt-head"><div><span class="pt-kicker">Segédlet · súrlófény</span><b>Így tartsd az okmányt</b></div></div>
+    <svg id="rlFig" viewBox="0 0 300 150" role="img" aria-label="Ábra: a fény oldalról, laposan éri az okmányt, a telefon felülről néz rá">
+      <defs><marker id="rlArr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#ffd36b"/></marker></defs>
+      <rect x="0" y="122" width="300" height="28" rx="6" fill="rgba(255,255,255,.07)"/>
+      <path d="M96 118 L246 118 L232 128 L82 128 Z" fill="#e9e3d4" stroke="#8a8270" stroke-width="1"/>
+      <path d="M150 116 q6 -5 12 0 M176 116 q6 -5 12 0 M202 116 q6 -5 12 0" stroke="#6b6352" stroke-width="2" fill="none"/>
+      <path d="M150 117 l7 4 M176 117 l7 4 M202 117 l7 4" stroke="rgba(0,0,0,.35)" stroke-width="3"/>
+      <g fill="#ffd36b"><circle cx="26" cy="104" r="11"/><rect x="21" y="113" width="10" height="9" rx="2" fill="#bba76a"/></g>
+      <g stroke="#ffd36b" stroke-width="2" fill="none" marker-end="url(#rlArr)" opacity=".9">
+        <path d="M40 106 L140 115"/><path d="M40 111 L170 117"/><path d="M40 101 L120 112"/></g>
+      <text x="8" y="88" fill="#ffd36b" font-size="11" font-family="system-ui,sans-serif">lámpa / ablak</text>
+      <text x="8" y="140" fill="#9aa" font-size="10" font-family="system-ui,sans-serif">alacsonyan, oldalt</text>
+      <rect x="140" y="8" width="56" height="30" rx="7" fill="#1d2b2b" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="152" cy="23" r="5" fill="var(--accent)"/>
+      <path d="M168 40 L168 108" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#rlArr)"/>
+      <text x="204" y="28" fill="var(--accent)" font-size="11" font-family="system-ui,sans-serif">telefon felülről</text>
+      <text x="294" y="104" text-anchor="end" fill="#ddd" font-size="10" font-family="system-ui,sans-serif">dombornyomás árnyéka</text>
+    </svg>
+    <ol class="rl-steps">
+      <li>Fordítsd az okmányt a lámpa vagy az ablak felé úgy, hogy a fény <b>oldalról, laposan</b> érje (a fényforrás alig magasabban legyen, mint az okmány).</li>
+      <li>A telefonnal <b>felülről, merőlegesen</b> nézz rá, és lassan forgasd az okmányt: más-más irányból más kiemelkedések vetnek árnyékot.</li>
+      <li>A telefon lámpája szemből világít, ezért magában nem ad súrlófényt: <b>csak sötétben</b>, kiegészítésnek használd, gyenge fokozaton.</li>
+    </ol>
+    <p id="rlNote" class="rl-note"></p>
+    <div class="pt-nav"><button class="mini primary" id="rlOk">Értem</button></div>
+  </div>
+
   <div id="bottom">
     <button class="handle" id="panelToggle" aria-label="Vezérlők elrejtése vagy megjelenítése" aria-expanded="true"><span></span></button>
     <div class="row" id="upRow" hidden>
       <div id="upModes">
         <button class="chip" data-u="sharp" aria-pressed="true">Kiemelt</button>
         <button class="chip" data-u="line" aria-pressed="false">Vonal</button>
+        <button class="chip" data-u="relief" aria-pressed="false">Domborzat</button>
       </div>
       <button class="chip" id="upInv" aria-pressed="false">Inverz</button>
       <button class="chip" id="ptBtn" aria-pressed="false" aria-label="Segédlet: nyomtatási technikák">Segédlet</button>
@@ -551,6 +602,11 @@
       <label class="upset"><span>Erősség</span><input type="range" id="upGain" min="30" max="300" value="100" aria-label="A kiemelés erőssége"></label>
       <label class="upset"><span>Finomság</span><input type="range" id="upRad" min="10" max="40" value="10" aria-label="A kiemelt vonalak vastagsága"></label>
       <button class="mini" id="upSetReset">Alap</button>
+    </div>
+    <div class="row" id="rlRow" hidden>
+      <span class="rl-lbl">Lámpa</span>
+      <div id="rlTorch" role="group" aria-label="A telefon lámpája"></div>
+      <button class="chip" id="rlHelp" aria-pressed="false">Útmutató</button>
     </div>
     <div class="row" id="cmpRow" hidden>
       <div id="cmpMode">
@@ -609,7 +665,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v73</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v74</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -1906,7 +1962,20 @@
     var n = w * h, i, j, l;
     if (!uL || uL.length !== n) { uL = new Float32Array(n); uT = new Float32Array(n); uB = new Float32Array(n); uM = new Float32Array(n); uQ = new Float32Array(n); }
     for (i = 0, j = 0; i < d.length; i += 4, j++) uL[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-    if (mode === 'line') {
+    if (mode === 'relief') {
+      /* Domborzat: a súrlófényben keletkező fény–árnyék átmeneteket erősíti. Szürke kép (a nyomat színe ne zavarjon),
+         közepes léptékű kiemelés (a dombornyomás szélesebb a nyomtatott vonalnál) és helyi kontraszt-kiegyenlítés. */
+      var R1 = Math.max(2, Math.round(4 * upRad)), R2 = Math.max(4, Math.round(12 * upRad));
+      boxBlur(uL, uB, uT, w, h, R1);
+      boxBlur(uL, uM, uT, w, h, R2);
+      for (j = 0; j < n; j++) uQ[j] = uL[j] * uL[j];
+      boxBlur(uQ, uQ, uT, w, h, R2);
+      for (i = 0, j = 0; i < d.length; i += 4, j++) {
+        l = uL[j]; var m2 = uM[j], sd2 = Math.sqrt(Math.max(0, uQ[j] - m2 * m2));
+        var rv = 128 + 56.1 * (l - m2) / (sd2 + 7.65) + 3 * upGain * (l - uB[j]);
+        d[i] = rv; d[i + 1] = rv; d[i + 2] = rv;
+      }
+    } else if (mode === 'line') {
       boxBlur(uL, uB, uT, w, h, Math.max(1, Math.round(2 * upRad)));
       for (i = 0, j = 0; i < d.length; i += 4, j++) { var v = 128 + 5 * upGain * (uL[j] - uB[j]); d[i] = v; d[i + 1] = v; d[i + 2] = v; }
     } else {
@@ -1930,11 +1999,67 @@
 
 
   function setUpMode(m) {
+    var was = upMode;
     upMode = m; upKey = '';
     var ch = $('upModes').children;
     for (var i = 0; i < ch.length; i++) ch[i].setAttribute('aria-pressed', String(ch[i].dataset.u === m));
+    $('rlRow').hidden = m !== 'relief';
+    if (m === 'relief' && was !== 'relief') {
+      rlTorchRender(); botHSet();
+      var seen = false; try { seen = localStorage.getItem('dn-relief-guide') === '1'; } catch (e) {}
+      if (!seen) rlGuide(true);                       // első alkalommal magától megmutatja, hogyan kell tartani
+    }
+    if (m !== 'relief' && was === 'relief') { rlGuide(false); rlTorchSet(0); }
     renderUp(true);
   }
+
+  /* ----- Súrlófény: útmutató és a lámpa fokozatai -----
+     A böngészőből a lámpa csak ki-be kapcsolható; a fényerőt nem lehet állítani. Ahol a kamera engedi, a „Gyenge / Közepes”
+     fokozat a kamera expozícióját veszi vissza (a kép ugyanúgy nem ég ki); ahol nem, ott csak Ki / Be választható. */
+  var rlLvl = 0;
+  function rlCaps() {
+    var c = {}; try { c = (track && track.getCapabilities) ? (track.getCapabilities() || {}) : {}; } catch (e) {}
+    var st = {}; try { st = (track && track.getSettings) ? (track.getSettings() || {}) : {}; } catch (e) {}
+    var ec = c.exposureCompensation && typeof c.exposureCompensation.min === 'number' ? c.exposureCompensation : null;
+    return { torch: !!(track && (c.torch || 'torch' in st)), ec: ec };
+  }
+  function rlTorchRender() {
+    var cp = rlCaps(), box = $('rlTorch'), opts;
+    if (!cp.torch) opts = [];
+    else if (cp.ec) opts = [[0, 'Ki'], [1, 'Gyenge'], [2, 'Közepes'], [3, 'Erős']];
+    else opts = [[0, 'Ki'], [3, 'Be']];
+    box.innerHTML = '';
+    opts.forEach(function (o) {
+      var b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.textContent = o[1];
+      b.setAttribute('aria-pressed', String(rlLvl === o[0])); b.dataset.l = o[0]; box.appendChild(b);
+    });
+    $('rlRow').querySelector('.rl-lbl').hidden = !opts.length;
+    $('rlNote').textContent = !cp.torch ? 'Ennél az objektívnél a böngésző nem kapcsolhatja a lámpát; válts 1×-re, vagy használj külső lámpát.'
+      : !cp.ec ? 'Ezen a telefonon a lámpa fényereje a böngészőből nem állítható. Ha a kép kiég, emeld távolabb a telefont.' : '';
+  }
+  async function rlTorchSet(lv) {
+    var cp = rlCaps();
+    if (!cp.torch) { rlLvl = 0; return; }
+    if (lv === rlLvl && lv !== 0) return;
+    try {
+      var adv = { torch: lv > 0 };
+      if (cp.ec) adv.exposureCompensation = lv === 1 ? Math.max(cp.ec.min, -2) : lv === 2 ? Math.max(cp.ec.min, -1) : 0;
+      await track.applyConstraints({ advanced: [adv] });
+      rlLvl = lv; torchOn = lv > 0;
+      torchBtn.classList.toggle('on', torchOn); try { $('mrzCamTorch').classList.toggle('on', torchOn); } catch (e) {}
+    } catch (e) { if (lv > 0) toast('A lámpa nem kapcsolható be.'); rlLvl = 0; }
+    rlTorchRender();
+  }
+  function rlGuide(on) {
+    if (on) { ptToggle(false); botHSet(); try { localStorage.setItem('dn-relief-guide', '1'); } catch (e) {} }
+    $('rlCard').hidden = !on; $('rlHelp').setAttribute('aria-pressed', String(on));
+  }
+  $('rlTorch').addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('button'); if (b) rlTorchSet(+b.dataset.l); });
+  $('rlHelp').addEventListener('click', function () { rlGuide($('rlCard').hidden); });
+  $('rlOk').addEventListener('click', function () { rlGuide(false); });
+  // objektívváltás után új kamera jön: a lámpa ott kikapcsolt állapotban indul, és más lehet, mit tud
+  video.addEventListener('playing', function () { if (upOn && upMode === 'relief') { rlLvl = 0; rlTorchRender(); } });
+  window.__dnRelief = function () { return { lvl: rlLvl, caps: rlCaps(), card: !$('rlCard').hidden, row: !$('rlRow').hidden }; };   // tesztekhez
 
   // A látott területet natív felbontáson dolgozza fel (nagyítva a valódi részletet mutatja, nem kinagyított pixeleket).
   /* Az élő képet a grafikus processzor dolgozza fel (WebGL): ugyanaz a számítás, mint a processzoros változatban, de képkockánként
@@ -1990,6 +2115,11 @@
         '  m/=25.0; float sd=sqrt(max(q/25.0-m*m,0.0)); float a=min(1.0,0.75*gain);',
         '  float nl=l+a*(0.5+0.17*(l-m)/(sd+0.04)-l)+2.2*gain*(l-s/9.0);',
         '  gl_FragColor=vec4(clamp(nl+(c-l),0.0,1.0),1.0);',   // a színek eredetiek maradnak (nincs színerősítés)
+        ' }else if(mode==2){',
+        '  for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){s+=L(uv+vec2(float(i),float(j))*px*rad*1.6);}}',
+        '  float m=0.0,q=0.0; for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){float v=L(uv+vec2(float(i),float(j))*px*rad*5.0);m+=v;q+=v*v;}}',
+        '  m/=25.0; float sd=sqrt(max(q/25.0-m*m,0.0));',
+        '  float v=clamp(0.5+0.22*(l-m)/(sd+0.03)+3.0*gain*(l-s/25.0),0.0,1.0); gl_FragColor=vec4(v,v,v,1.0);',
         ' }else{',
         '  for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){s+=L(uv+vec2(float(i),float(j))*px*rad);}}',
         '  float v=clamp(0.5+5.0*gain*(l-s/25.0),0.0,1.0); gl_FragColor=vec4(v,v,v,1.0);',
@@ -2019,7 +2149,7 @@
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
       gl.uniform2f(glU.org, k.ox / k.sw, k.oy / k.sh); gl.uniform2f(glU.siz, k.rw / k.sw, k.rh / k.sh);
       gl.uniform2f(glU.px, (k.rw / k.sw) / k.ow, (k.rh / k.sh) / k.oh);
-      gl.uniform1i(glU.mode, upMode === 'line' ? 1 : 0); gl.uniform1f(glU.gain, upGain); gl.uniform1f(glU.rad, upRad); gl.uniform1f(glU.inv, upInv ? 1 : 0);
+      gl.uniform1i(glU.mode, upMode === 'line' ? 1 : upMode === 'relief' ? 2 : 0); gl.uniform1f(glU.gain, upGain); gl.uniform1f(glU.rad, upRad); gl.uniform1f(glU.inv, upInv ? 1 : 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       if (!glChecked) { glChecked = true; if (!glOk(gl)) throw new Error('webgl hiba'); }
       if (window.__dnAfterUp) window.__dnAfterUp(upGl);   // csak az automata tesztek használják: a frissen kirajzolt kép mérése
@@ -2118,6 +2248,7 @@
     app.classList.add('up');
     if (!isFrozen() && camOn) $('modeLabel').textContent = 'Alnyomat';
     $('upRow').hidden = false; $('upSetRow').hidden = false; $('upBtn').classList.add('on'); $('upBtn').setAttribute('aria-pressed', 'true');
+    $('rlRow').hidden = upMode !== 'relief'; if (upMode === 'relief') { rlLvl = 0; rlTorchRender(); }
     if (!upRaf) upRaf = requestAnimationFrame(upLoop);
     // makróhoz az ultraszéles objektív (ahol van), a Pro modellek közelről (kb. 2 cm-ről) is élesítenek vele
     if (!lensList.length) await loadLenses();          // a kamerák listája még nem töltődött be: most kérjük le
@@ -2140,6 +2271,7 @@
     $('upRow').hidden = true; $('upSetRow').hidden = true;
     $('upBtn').classList.remove('on'); $('upBtn').setAttribute('aria-pressed', 'false');
     upKey = ''; ptToggle(false);
+    if (upMode === 'relief') { rlGuide(false); $('rlRow').hidden = true; rlTorchSet(0); }
     upCtx.clearRect(0, 0, upCv.width, upCv.height);
     if (upPrevLens) { var id = upPrevLens; upPrevLens = null; upResWas = null; await switchLens(id); }
     else upResApply();
@@ -2441,7 +2573,7 @@
     $('ptText').textContent = it.d;
     ptDraw(it.id);
   }
-  function ptToggle(on) { if (on) botHSet(); $('ptCard').hidden = !on; $('ptBtn').setAttribute('aria-pressed', String(on)); if (on) ptShow(ptIdx); }
+  function ptToggle(on) { if (on) { botHSet(); try { rlGuide(false); } catch (e) {} } $('ptCard').hidden = !on; $('ptBtn').setAttribute('aria-pressed', String(on)); if (on) ptShow(ptIdx); }
   $('ptBtn').addEventListener('click', function () { ptToggle($('ptCard').hidden); });
   $('ptClose').addEventListener('click', function () { ptToggle(false); });
   $('ptPrev').addEventListener('click', function () { ptShow(ptIdx - 1); });
