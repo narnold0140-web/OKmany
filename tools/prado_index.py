@@ -30,8 +30,16 @@ CTRY_RE = re.compile(r'prado-documents/([A-Z]{3})/index\.html', re.I)
 RECHECK_DAYS = 30          # ennyi nap után az érvényesnek tárolt mintát újra megnézi
 DELAY = 0.3                # kis szünet kérésenként (szálanként)
 SLOCK = threading.Lock()
-THREADS = 6                # ennyi adatlapot kér le egyszerre (gyorsítás; a PRADO ezt még elviseli)
+THREADS = 3                # ennyi adatlapot kér le egyszerre (kíméletes tempó: a PRADO a sok gépi kérést elutasítja)
 WAIT_K = float(os.environ.get('PRADO_WAIT_K', '1'))   # újrapróbálási várakozás szorzója (teszthez)
+
+
+# Csak azokat a kategóriákat nézzük, amelyeket az app gombként megjelenít: így jóval kevesebb adatlapot kell megnyitni.
+# Uniós és schengeni kiállító: útlevél (A), személyi (B), vízum (C), tartózkodási (H), úti okmány külföldinek (J).
+# Harmadik ország: útlevél (A) és vezetői engedély (F).
+EU_SCH = set('AUT BEL BGR HRV CYP CZE DNK EST FIN FRA D DEU GRC HUN IRL ITA LVA LTU LUX MLT NLD POL PRT ROU SVK SVN ESP SWE ISL LIE NOR CHE'.split())
+def wanted(country):
+    return set('ABCHJ') if country in EU_SCH else set('AF')
 
 
 def log(*a):
@@ -204,6 +212,7 @@ def main():
             failed.append(c)
             if c in (old.get('countries') or {}): out[c] = old['countries'][c]
             log('[%d/%d] %s: nem elérhető' % (i, len(codes), c)); continue
+        docs = [d for d in docs if d[4] in wanted(c)]       # csak az appban megjelenő kategóriák
         cats = {}
         done = [0]; lock = threading.Lock()
         def one(d):
