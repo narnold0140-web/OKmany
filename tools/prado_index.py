@@ -16,7 +16,8 @@ Futtatás:  python3 prado_index.py            (minden ország, feltöltéssel)
 Feltöltéshez egy GitHub-token kell a script melletti github-token.txt fájlban
 (vagy az OKMANY_TOKEN környezeti változóban). Csak a Python alapkönyvtárát használja.
 """
-import argparse, base64, datetime, html, json, os, re, sys, time, urllib.error, urllib.request
+import argparse, base64, datetime, html, json, os, re, sys, threading, time, urllib.error, urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 BASE = os.environ.get('PRADO_BASE', 'https://www.consilium.europa.eu/prado/en/')   # tesztelésnél felülírható
 REPO = 'narnold0140-web/OKmany'
@@ -26,7 +27,9 @@ UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTM
 DOC_RE = re.compile(r'/prado/en/([A-Z]{3}-[A-Z]{2}-\d{3,6})/index\.html', re.I)
 CTRY_RE = re.compile(r'/prado/en/prado-documents/([A-Z]{3})/index\.html', re.I)
 RECHECK_DAYS = 30          # ennyi nap után az érvényesnek tárolt mintát újra megnézi
-DELAY = 0.6                # kíméletes tempó a PRADO felé (másodperc két kérés között)
+DELAY = 0.3                # kis szünet kérésenként (szálanként)
+SLOCK = threading.Lock()
+THREADS = 6                # ennyi adatlapot kér le egyszerre (gyorsítás; a PRADO ezt még elviseli)
 WAIT_K = float(os.environ.get('PRADO_WAIT_K', '1'))   # újrapróbálási várakozás szorzója (teszthez)
 
 
@@ -46,9 +49,9 @@ def get(url, tries=5):
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 return None
-            wait = 3 * (i + 1) ** 2 * WAIT_K
+            wait = (1.5 + 2 * i * i) * WAIT_K
         except Exception:
-            wait = 3 * (i + 1) ** 2 * WAIT_K
+            wait = (1.5 + 2 * i * i) * WAIT_K
         time.sleep(wait)
     return None
 
@@ -93,16 +96,16 @@ def doc_valid(code, cache, stats):
             return True
     page = get(BASE + code + '/index.html')
     if page is None:
-        stats['hiba'] += 1
+        with SLOCK: stats['hiba'] += 1
         return c.get('v') != 'no' if c else True                # nem elérhető: a korábbi állapot (vagy érvényes) marad
     v, until = parse_validity(page)
     if until and expired(until):
         v = 'no'                                                 # a lejárati dátum elmúlt: nem érvényes, bármit mutat a jelölés
     if v is None:
-        stats['ismeretlen'] += 1
+        with SLOCK: stats['ismeretlen'] += 1
         v = 'yes'                                                # ha nincs jelölés, a mintát nem vesszük el
     cache[code] = {'v': v, 'until': until, 't': today.isoformat()}
-    stats['letoltve'] += 1
+    with SLOCK: stats['letoltve'] += 1
     return v == 'yes'
 
 
@@ -179,15 +182,25 @@ def main():
             if c in (old.get('countries') or {}): out[c] = old['countries'][c]
             log('[%d/%d] %s: nem elérhető' % (i, len(codes), c)); continue
         cats = {}
-        for d in docs:
+        done = [0]; lock = threading.Lock()
+        def one(d):
+            v = doc_valid(d, cache, stats)
+            with lock:
+                done[0] += 1
+                if done[0] % 10 == 0 or done[0] == len(docs):
+                    print('\r   %s: %d/%d adatlap' % (c, done[0], len(docs)), end='', flush=True)
+            return d, v
+        with ThreadPoolExecutor(THREADS) as ex:
+            res = list(ex.map(one, docs))
+        print('\r', end='')
+        for d, v in res:
             k = d[4]                                             # pl. HUN-AO-02001 -> A (útlevél)
             e = cats.setdefault(k, {'v': 0, 'n': 0})
             e['n'] += 1
-            if doc_valid(d, cache, stats): e['v'] += 1
+            if v: e['v'] += 1
         out[c] = cats
         log('[%d/%d] %s: %d minta, ebből érvényes %d  (%.0f perc)' % (i, len(codes), c, len(docs), sum(x['v'] for x in cats.values()), (time.time() - t0) / 60))
-        if i % 10 == 0:
-            with open(CACHE, 'w', encoding='utf-8') as f: json.dump(cache, f)
+        with open(CACHE, 'w', encoding='utf-8') as f: json.dump(dict(cache), f)   # minden ország után mentjük: megszakítás után innen folytatja
     with open(CACHE, 'w', encoding='utf-8') as f: json.dump(cache, f)
 
     if not a.orszag and len(failed) > max(5, len(codes) * 0.3):
