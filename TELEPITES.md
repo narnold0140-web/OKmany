@@ -130,6 +130,16 @@ Támogatott: iPhone 13-tól az iPhone 18 Pro Maxig minden típus: az alapváltoz
 - **Gyorsabb váltás:** objektív- vagy módváltáskor a régi kamera addig adja a képet, amíg az új el nem indul, és az átmenet lágyan úszik át; a sikertelen 60 fps-es kérést az app megjegyzi, és legközelebb nem veszít vele időt.
 - **Képkivétel (fotó, Scan, élességmérés, stabilizálás):** ha a telefonon a kamerakép közvetlen kiolvasása fekete vagy üres képet ad (ezt a 17 Pro-n tapasztaltuk), az app ezt induláskor észreveszi, és minden képkivétel egy másik úton (WebGL-en át) történik.
 
+## Android (v83-tól, extra)
+
+Ugyanaz a webapp Androidon is fut (Chrome), külön app nélkül; telepítés: Chrome menü → „Hozzáadás a kezdőképernyőhöz” / „Alkalmazás telepítése”. Androidon a kamera-engedély megmarad.
+
+- **Telefontípus:** a Chrome megadja a pontos típuskódot; a Samsung Galaxy S24, S25 és S26 család (alap, +, Edge, Ultra) név szerint jelenik meg, más telefonnál a típuskód.
+- **Objektívek:** Androidon a kamerák neve nem árulja el az objektívet, ezért az app a kamera natív nagyítási képességéből dolgozik: ha a fő kamera 1 alá is tud nagyítani, az az ultraszéles (Samsungon 0,6×), a tele gombok a típus gyári értékei szerint (S26: 3×, S26 Ultra: 3× és 5×), ezeket a telefon maga váltja. Ha a kamera nem kínál nagyítást, a hátlapi kamerák sorszámmal jelennek meg (Fő, 2. kamera…).
+- **Chip olvasás:** a gomb egyből a ReadID Me-t nyitja meg; ha nincs telepítve, a Play Áruházat. Parancsok-beállítás nem kell.
+- **PRADO-linkek:** a Chrome-ban nyílnak meg, a Safari-trükk csak iPhone-on fut.
+- Valódi Samsungon még nem volt kipróbálva; a fenti viselkedés szimulált Galaxy S26 / S26 Ultra kamerán ellenőrizve.
+
 ## Chip olvasás (ReadID Me)
 
 A Chip olvasás gomb a ReadID Me appot nyitja meg egy Parancsok-parancson át (az iPhone a weboldalaknak nem engedi a chip közvetlen olvasását). Egyszer kell beállítani; a lépések az appban is megvannak: Okmány felismerése → **Segédlet: összekötés a Parancsokkal**.
