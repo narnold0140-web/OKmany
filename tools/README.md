@@ -26,3 +26,8 @@ megjegyzi (`prado-cache.json`), így a heti futás néhány perc.
     python3 prado_index.py --orszag HUN,SRB --nincs-feltoltes   # próba, feltöltés nélkül
 
 Ha a PRADO túl sok országnál nem elérhető, a program nem tölt fel semmit, a régi index marad.
+
+## Windows: heti automatikus futtatás
+A `futtatas.bat` a program mellett lefuttatja a gyűjtőt, és a kimenetet a `naplo.txt`-be írja.
+A Feladatütemező ezt indítja hetente (kedden 19:00-kor; ha a gép akkor ki volt kapcsolva,
+a következő bekapcsoláskor pótolja). A beállítás lépései a csevegésben vannak.
