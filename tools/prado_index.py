@@ -141,6 +141,10 @@ def read_token():
 
 def main():
     global DELAY
+    try:   # Windows-konzolon és naplófájlba írva is maradjanak meg az ékezetek
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace'); sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
     ap = argparse.ArgumentParser(description='PRADO-index készítő (Okmányvizsgáló)')
     ap.add_argument('--orszag', help='csak ezek az országok, vesszővel (pl. HUN,SRB)')
     ap.add_argument('--nincs-feltoltes', action='store_true', help='csak helyben menti, nem tölti fel')
