@@ -668,7 +668,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v82</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v83</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -1147,9 +1147,44 @@
   /* ---------- Objektívváltó (0,5× / 1× / Tele) ---------- */
 
   // A kameraengedély megadása után a Safari már megadja a kamerák nevét.
+  /* ---------- Android (Chrome) ----------
+     Androidon a kamerák neve nem mondja meg, melyik objektív melyik („camera2 0, facing back”). Ezért a kamera saját
+     nagyítási képességéből dolgozunk: a Samsung és a legtöbb Android a fő kamerán át, natív nagyítással maga vált
+     objektívet (1 alatti nagyítás = ultraszéles, 3× / 5× = tele). Ha a kamera ilyet nem kínál, a hátlapi kamerák sorszámmal jelennek meg. */
+  var IS_ANDROID = /Android/i.test(navigator.userAgent || '');
+  var curZoom = 1;                                     // Androidon a natív nagyítás aktuális foka (objektívgombok)
+  function lensKey() { return IS_ANDROID && lensList.some(function (x) { return x.zoom != null; }) ? 'zoom:' + curZoom : currentDeviceId; }
+  async function applyZoom(z) {
+    if (!track) return false;
+    try { await track.applyConstraints({ advanced: [{ zoom: z }] }); curZoom = z; renderLenses(); return true; } catch (e) { return false; }
+  }
+  function fmtZ(z) { return (Math.round(z * 10) / 10).toString().replace('.', ',') + '×'; }
+  async function androidLenses(devs) {
+    var caps = {}; try { caps = (track && track.getCapabilities) ? (track.getCapabilities() || {}) : {}; } catch (e) {}
+    lensList = [];
+    if (caps.zoom && caps.zoom.max >= 1.5) {
+      var zmin = caps.zoom.min || 1, zmax = caps.zoom.max, pres = [];
+      if (zmin < 0.95) pres.push([zmin, 'ultraszéles']);
+      pres.push([1, 'fő']);
+      var teles = (phoneGuess && phoneGuess.teles && phoneGuess.teles.length) ? phoneGuess.teles : [2];
+      teles.forEach(function (t) { if (t <= zmax + 0.01) pres.push([t, t === 2 && !(phoneGuess && phoneGuess.teles && phoneGuess.teles.length) ? 'nagyítás' : 'teleobjektív']); });
+      lensList = pres.map(function (p) { return { id: 'zoom:' + p[0], zoom: p[0], text: fmtZ(p[0]), name: p[1], label: 'zoom' }; });
+      if (curZoom !== 1 && curZoom >= zmin && curZoom <= zmax) await applyZoom(curZoom);   // új kamerasáv: a választott fok újra
+    } else {
+      var backs = devs.filter(function (d) {
+        if (d.kind !== 'videoinput') return false;
+        var face = ''; try { var cp = d.getCapabilities ? d.getCapabilities() : null; face = cp && cp.facingMode && cp.facingMode[0] || ''; } catch (e) {}
+        return face === 'environment' || /back|rear|environment/i.test(d.label || '');
+      });
+      backs.forEach(function (d, i) { lensList.push({ id: d.deviceId, text: i === 0 ? 'Fő' : (i + 1) + '. kamera', name: i === 0 ? 'fő' : 'további kamera', label: (d.label || '').toLowerCase() }); });
+    }
+    renderLenses();
+  }
+
   async function loadLenses() {
     try {
       var devs = await navigator.mediaDevices.enumerateDevices();
+      if (IS_ANDROID) { await androidLenses(devs); showPhone(); return; }
       var found = {};
       devs.forEach(function (d) {
         if (d.kind !== 'videoinput' || !d.label) return;
@@ -1213,7 +1248,24 @@
     if (+m[1] === 18 && +m[2] >= 6) return 99;
     return +m[1];
   }
+  // Samsung Galaxy: a Chrome a pontos típuskódot is megadja (pl. SM-S948B). Tele-nagyítások a gyári adatok szerint.
+  var ANDROID_PHONES = [
+    ['SM-S921', 'Galaxy S24', [3]], ['SM-S926', 'Galaxy S24+', [3]], ['SM-S928', 'Galaxy S24 Ultra', [3, 5]],
+    ['SM-S931', 'Galaxy S25', [3]], ['SM-S936', 'Galaxy S25+', [3]], ['SM-S937', 'Galaxy S25 Edge', []], ['SM-S938', 'Galaxy S25 Ultra', [3, 5]],
+    ['SM-S942', 'Galaxy S26', [3]], ['SM-S947', 'Galaxy S26+', [3]], ['SM-S948', 'Galaxy S26 Ultra', [3, 5]]
+  ];
+  var androidModel = '';
+  if (IS_ANDROID && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+    navigator.userAgentData.getHighEntropyValues(['model']).then(function (v) { androidModel = (v && v.model) || ''; showPhone(); if (camOn) loadLenses(); }).catch(function () {});
+  }
+  function detectAndroid() {
+    var m = androidModel || ((/;\s*(SM-[A-Z0-9]+)/.exec(navigator.userAgent || '') || [])[1] || '');
+    var hit = null; ANDROID_PHONES.forEach(function (p) { if (m.toUpperCase().indexOf(p[0]) === 0) hit = p; });
+    if (hit) return { name: hit[1], tele: hit[2].length === 1 ? hit[2][0] : 0, teles: hit[2], cands: [], sure: true };
+    return { name: m ? 'Android telefon (' + m + ')' : 'Android telefon', tele: 0, teles: [], cands: [], sure: false };
+  }
   function detectPhone() {
+    if (IS_ANDROID) return detectAndroid();
     var w = Math.min(screen.width, screen.height), h = Math.max(screen.width, screen.height), dpr = Math.round(window.devicePixelRatio || 1);
     var ios = iosMajor();
     if (!/iPhone/.test(navigator.userAgent || '')) return null;
@@ -1252,7 +1304,7 @@
     } else pk.hidden = true;
     // a tele gomb a valódi nagyítást mutatja, ha a típusból egyértelmű (pl. 17 Pro: 4×, 16 Pro: 5×)
     var ch = false;
-    lensList.forEach(function (x) { if (x.name === 'teleobjektív') { var t = phoneGuess.tele ? String(phoneGuess.tele).replace('.', ',') + '×' : 'Tele'; if (x.text !== t) { x.text = t; ch = true; } } });
+    lensList.forEach(function (x) { if (x.name === 'teleobjektív' && x.zoom == null) { var t = phoneGuess.tele ? String(phoneGuess.tele).replace('.', ',') + '×' : 'Tele'; if (x.text !== t) { x.text = t; ch = true; } } });
     if (ch) renderLenses();
   }
   window.__dnPhone = function () { return detectPhone(); };   // tesztekhez
@@ -1268,7 +1320,7 @@
     lensBox.innerHTML = '';
     lensList.forEach(function (l) {
       var b = document.createElement('button');
-      b.className = 'chip' + (l.id === currentDeviceId ? ' active' : '');
+      b.className = 'chip' + ((l.zoom != null ? l.zoom === curZoom : l.id === currentDeviceId) ? ' active' : '');
       b.textContent = l.text;
       b.setAttribute('aria-label', 'Objektív ' + l.text);
       b.dataset.id = l.id;
@@ -1312,6 +1364,14 @@
   }
 
   async function switchLens(id) {
+    if (typeof id === 'string' && id.indexOf('zoom:') === 0) {   // Android: natív nagyítás, a kamera maga vált objektívet
+      var z = parseFloat(id.slice(5)); if (!camOn) { curZoom = z; return; }
+      if (z === curZoom) return;
+      if (isFrozen()) unfreeze();
+      resetView();
+      if (!(await applyZoom(z))) toast('Ez a nagyítás ezen a telefonon nem állítható.');
+      return;
+    }
     if (!camOn) { currentDeviceId = id; return; }   // kikapcsolt kameránál csak megjegyzi, bekapcsoláskor ezzel indul
     if (id === currentDeviceId) return;
     var prev = currentDeviceId;
@@ -2282,9 +2342,9 @@
     if (!lensList.length) await loadLenses();          // a kamerák listája még nem töltődött be: most kérjük le
     if (!upOn) return;
     var ul = null;
-    for (var i = 0; i < lensList.length; i++) { if (lensList[i].text === '0,5×') ul = lensList[i]; }
-    toast(ul ? 'Alnyomat-vizsgáló · 0,5× objektív' : 'Alnyomat-vizsgáló');
-    if (ul && currentDeviceId !== ul.id) { upPrevLens = currentDeviceId; await switchLens(ul.id); }
+    for (var i = 0; i < lensList.length; i++) { if (lensList[i].name === 'ultraszéles') ul = lensList[i]; }
+    toast(ul ? 'Alnyomat-vizsgáló · ' + ul.text + ' objektív' : 'Alnyomat-vizsgáló');
+    if (ul && lensKey() !== ul.id) { upPrevLens = lensKey(); await switchLens(ul.id); }
     else upResApply();
   }
   // Az alnyomat-nézet ugyanazon a felbontáson fut, mint az élő kép (60 fps módban 4K, Részletes módban Full HD): nincs külön váltás.
@@ -3456,6 +3516,10 @@
     mrzPrevView = { s: state.s, x: state.x, y: state.y }; resetView();
     mrzPrevLens = null;
     var main1 = null; for (var li = 0; li < lensList.length; li++) if (lensList[li].name === 'fő') main1 = lensList[li];
+    if (main1 && main1.zoom != null) {               // Android: a fő objektív = 1× natív nagyítás, újraindítás nélkül
+      if (curZoom !== 1) { mrzPrevLens = lensKey(); if (camOn) await applyZoom(1); else curZoom = 1; }
+      main1 = null;
+    }
     var needLens = !!(main1 && currentDeviceId !== main1.id);
     if (needLens) { mrzPrevLens = currentDeviceId; currentDeviceId = main1.id; }
     // egyetlen újraindítás elég: objektív és mód egyszerre áll be
@@ -3482,7 +3546,11 @@
     var restore = mrzPrevMode && mrzPrevMode !== camMode; if (mrzPrevMode) camMode = mrzPrevMode; mrzPrevMode = null;
     fluidLite = false;
     if (mrzPrevView) { state.s = mrzPrevView.s; state.x = mrzPrevView.x; state.y = mrzPrevView.y; mrzPrevView = null; render(); }
-    if (mrzPrevLens) { var pl = mrzPrevLens; mrzPrevLens = null; if (mrzInSession || !camOn) currentDeviceId = pl; else { switchLens(pl); return; } }
+    if (mrzPrevLens) {
+      var pl = mrzPrevLens; mrzPrevLens = null;
+      if (pl.indexOf('zoom:') === 0) { if (camOn && !mrzInSession) switchLens(pl); else curZoom = parseFloat(pl.slice(5)); }
+      else if (mrzInSession || !camOn) currentDeviceId = pl; else { switchLens(pl); return; }
+    }
     if (mrzInSession) { camOff(); setRes('hd'); }   // a lapon a kamera újra áll; a következő indulás a megszokott módban
     else if (restore && camOn) { startCamera(currentDeviceId, true); resWatch(); }
     else if (camMode === 'fluid' && camOn) fluidApply();   // vissza 4K 60-ra
@@ -3582,6 +3650,12 @@
   function chipState() { try { return localStorage.getItem('dn-readid'); } catch (e) { return null; } }
   function chipSet(v) { try { if (v == null) localStorage.removeItem('dn-readid'); else localStorage.setItem('dn-readid', v); } catch (e) {} chipUi(); }
   function chipUi() {
+    if (IS_ANDROID) {
+      $('chipLbl').textContent = 'Chip olvasás';
+      $('chipBtn').setAttribute('aria-label', 'Chip olvasás a ReadID Me alkalmazással (ha nincs telepítve, a Play Áruház nyílik meg)');
+      $('chipFix').hidden = true; $('chipAlt').hidden = true; $('chipAsk').hidden = true; $('chipSetup').hidden = true;
+      return;
+    }
     try { $('chipName').value = chipName(); $('chipNameShow').textContent = chipName(); } catch (e) {}
     var s = chipState();
     $('chipLbl').textContent = s === 'no' ? 'ReadID telepítése' : 'Chip olvasás';
@@ -3590,9 +3664,15 @@
     $('chipFix').hidden = s === 'no';   // a segédlet mindig elérhető, kivéve ha még telepíteni kell
     $('chipAlt').hidden = !s;
   }
-  function chipOpenStore() { window.location.href = READID_STORE; }
-  function chipRun() { window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(chipName()); }
+  // Androidon a ReadID Me közvetlenül megnyitható; ha nincs fent, a Chrome magától a Play Áruházba visz.
+  var READID_PKG = 'nl.innovalor.nfciddocshowcase', READID_PLAY = 'https://play.google.com/store/apps/details?id=' + READID_PKG;
+  function chipOpenStore() { window.location.href = IS_ANDROID ? READID_PLAY : READID_STORE; }
+  function chipRun() {
+    if (IS_ANDROID) { window.location.href = 'intent://#Intent;package=' + READID_PKG + ';S.browser_fallback_url=' + encodeURIComponent(READID_PLAY) + ';end'; return; }
+    window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(chipName());
+  }
   $('chipBtn').addEventListener('click', function () {
+    if (IS_ANDROID) { chipRun(); return; }          // Androidon nincs Parancsok-beállítás és kérdés: egyből indul
     var s = chipState();
     $('chipSetup').hidden = true;
     if (s === 'yes') { try { if (localStorage.getItem('dn-readid-setup') !== '1') { $('chipSetup').hidden = false; return; } } catch (e) {} chipRun(); }
@@ -3734,7 +3814,7 @@
      Ezért a teljes Safariban nyitjuk meg (x-safari-https, iOS 17-től); ha ez nem indul el, a szokásos módon nyílik. */
   function openExternal(url) {
     var standalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-    if (!standalone || !/^https:\/\//.test(url)) { window.open(url, '_blank', 'noopener'); return; }
+    if (!standalone || !/^https:\/\//.test(url) || IS_ANDROID) { window.open(url, '_blank', 'noopener'); return; }
     var left = false, onHide = function () { if (document.hidden) left = true; };
     document.addEventListener('visibilitychange', onHide);
     try { window.location.href = 'x-safari-' + url; } catch (e) {}
