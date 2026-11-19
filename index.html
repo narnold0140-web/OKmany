@@ -665,7 +665,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v74</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v75</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -1079,9 +1079,11 @@
       return false;
     }
     var gen = ++camGen;
-    // Gyors váltás: a régi kamerát nem állítjuk le előre, az új indításáig az adja a képet (a Safari átkapcsol),
-    // és csak az új sáv megérkezése után engedjük el. Így nincs külön leállítás + hidegindítás.
+    // Objektívváltásnál a régi kamera az új indulásáig adja a képet, és csak utána engedjük el (gyorsabb).
+    // Ugyanannak a kamerának az újraindításánál viszont előbb leállítjuk: két egyidejű kérés ugyanarra a kamerára
+    // az iPhone-on összeakad (akadozás, rövid kép-összevisszaság).
     var old = stream;
+    if (old && !(id && currentDeviceId && id !== currentDeviceId)) { stopCamera(); old = null; }
     try {
       // 4K csak a 60 fps módban (az alnyomat-nézetben is); Részletes módban Full HD 30
       var fl = camMode === 'fluid', flKey = (id || 'alap') + (fluidLite ? ':lite' : '');
@@ -1311,9 +1313,18 @@
     swapRelease();
   }
 
+  // Objektívváltás egyszerre csak egy fut; gyors egymás utáni koppintásnál a legutolsó választott objektív áll be.
+  var lensBusy = false, lensNext = null;
+  async function lensRequest(id) {
+    lensNext = id;
+    if (lensBusy) return;
+    lensBusy = true;
+    try { while (lensNext) { var want = lensNext; lensNext = null; if (camBusy) await new Promise(function (r) { setTimeout(r, 150); }); await switchLens(want); } }
+    finally { lensBusy = false; }
+  }
   lensBox.addEventListener('click', function (e) {
     var id = e.target && e.target.dataset && e.target.dataset.id;
-    if (id) switchLens(id);
+    if (id) lensRequest(id);
   });
 
   function checkTorch() {
@@ -2425,26 +2436,41 @@
 
   function camChipShow() { $('camChip').setAttribute('aria-pressed', String(camMode === 'fluid')); }
   camChipShow();
-  $('camChip').addEventListener('click', async function () {
-    if (isFrozen()) { toast('Előbb térj vissza az élő képre.'); return; }
-    camMode = camMode === 'fluid' ? 'detail' : 'fluid'; camChipShow();
-    try { localStorage.setItem('dn_cam', camMode); } catch (e) {}
-    stabReset();
-    if (camOn && !upOn) {
-      swapHold();
-      // először újraindítás nélkül próbál váltani (nincs kiesés); ha a kamera így nem adja a kért módot, akkor indul újra
-      var ok = false;
-      if (track) {
-        try { await track.applyConstraints(camMode === 'fluid' ? fluidC() : resConstraints('hd')); ok = true; } catch (e) {}
-        var s0 = {}; try { s0 = track.getSettings() || {}; } catch (e) {}
-        if (ok && camMode === 'fluid' && (s0.frameRate || 0) < 50) ok = false;
-      }
-      if (!ok) await startCamera(currentDeviceId, true);
-      swapRelease();
-    }
+  // Módváltás egyszerre csak egy fut: ha közben újra koppintasz, a végén a legutolsó kért mód áll be (nincs egymásba futó újraindítás).
+  var camBusy = false;
+  window.__dnCamBusy = function () { return camBusy; };   // tesztekhez
+  async function camModeApply() {
+    if (camBusy) return;
+    camBusy = true;
+    try {
+      var target;
+      do {
+        target = camMode;
+        stabReset();
+        if (!camOn || upOn || !track) break;
+        swapHold();
+        // először újraindítás nélkül vált (nincs kiesés); ha a kamera így nem adja a kért módot, csak akkor indul újra
+        var ok = false;
+        try { await track.applyConstraints(target === 'fluid' ? fluidC() : resConstraints('hd')); ok = true; } catch (e) {}
+        if (ok && target === 'fluid') {
+          // a képkockaszám beállása időbe telik: legfeljebb 0,8 mp-ig várunk rá, mielőtt újraindítás mellett döntenénk
+          var t0 = Date.now(), fr = 0;
+          while (Date.now() - t0 < 800) { try { fr = (track.getSettings() || {}).frameRate || 0; } catch (e) {} if (fr >= 50) break; await new Promise(function (r) { setTimeout(r, 100); }); }
+          if (fr < 50) ok = false;
+        }
+        if (!ok && target === camMode) await startCamera(currentDeviceId, true);
+        swapRelease();
+      } while (target !== camMode);
+    } finally { camBusy = false; }
     var st = (track && track.getSettings) ? track.getSettings() : {};
     var info = (st.width && st.height ? st.width + '×' + st.height : '') + (st.frameRate ? ', ' + Math.round(st.frameRate) + ' kép/mp' : '');
     toast((camMode === 'fluid' ? '60 fps mód' : 'Részletes mód') + (info ? ': ' + info : ''));
+  }
+  $('camChip').addEventListener('click', function () {
+    if (isFrozen()) { toast('Előbb térj vissza az élő képre.'); return; }
+    camMode = camMode === 'fluid' ? 'detail' : 'fluid'; camChipShow();
+    try { localStorage.setItem('dn_cam', camMode); } catch (e) {}
+    camModeApply();
   });
   $('stabChip').addEventListener('click', function () {
     stabOn = !stabOn; this.setAttribute('aria-pressed', String(stabOn)); stabReset();
