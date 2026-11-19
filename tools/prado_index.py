@@ -24,8 +24,9 @@ REPO = 'narnold0140-web/OKmany'
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, 'prado-cache.json')
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
-DOC_RE = re.compile(r'/prado/en/([A-Z]{3}-[A-Z]{2}-\d{3,6})/index\.html', re.I)
-CTRY_RE = re.compile(r'/prado/en/prado-documents/([A-Z]{3})/index\.html', re.I)
+# minta-adatlap hivatkozása: abszolút (…/prado/en/HUN-PB-04001/index.html) vagy relatív (../../HUN-PB-04001/index.html) is lehet
+DOC_RE = re.compile(r'(?<![A-Z0-9-])([A-Z]{3}-[A-Z]{2}-\d{3,6})/index\.html', re.I)
+CTRY_RE = re.compile(r'prado-documents/([A-Z]{3})/index\.html', re.I)
 RECHECK_DAYS = 30          # ennyi nap után az érvényesnek tárolt mintát újra megnézi
 DELAY = 0.3                # kis szünet kérésenként (szálanként)
 SLOCK = threading.Lock()
@@ -115,11 +116,33 @@ def country_codes():
     return codes
 
 
+def doc_codes(page, code):
+    return set(c.upper() for c in DOC_RE.findall(page or '') if c.upper().startswith(code + '-'))
+
+
 def country_docs(code):
+    """Az ország összes mintájának kódja. Előbb az „összes okmány” listát nézi; ha az üres vagy nem elérhető,
+    akkor az ország kategóriáit egyenként (és a kategórián belüli típuslistákat is)."""
     page = get(BASE + 'prado-documents/%s/all/docs-all.html' % code)
-    if page is None:
+    docs = doc_codes(page, code)
+    if docs:
+        return sorted(docs)
+    idx = get(BASE + 'prado-documents/%s/index.html' % code)
+    if idx is None:
         return None
-    return sorted(set(c.upper() for c in DOC_RE.findall(page) if c.upper().startswith(code + '-')))
+    cats = sorted(set(k.upper() for k in re.findall(r'prado-documents/%s/([A-Z])/docs-per-category\.html' % code, idx, re.I)))
+    ok = 0
+    for k in cats:
+        cp = get(BASE + 'prado-documents/%s/%s/docs-per-category.html' % (code, k))
+        if cp is None:
+            continue
+        ok += 1
+        docs |= doc_codes(cp, code)
+        for t in sorted(set(x.upper() for x in re.findall(r'prado-documents/%s/%s/([A-Z])/docs-per-type\.html' % (code, k), cp, re.I))):
+            docs |= doc_codes(get(BASE + 'prado-documents/%s/%s/%s/docs-per-type.html' % (code, k, t)), code)
+    if cats and not ok:
+        return None                                              # egyik kategória sem volt elérhető: sikertelennek számít
+    return sorted(docs)
 
 
 def gh(method, path, token, body=None):
@@ -177,7 +200,7 @@ def main():
     t0 = time.time()
     for i, c in enumerate(codes, 1):
         docs = country_docs(c)
-        if docs is None:
+        if not docs:
             failed.append(c)
             if c in (old.get('countries') or {}): out[c] = old['countries'][c]
             log('[%d/%d] %s: nem elérhető' % (i, len(codes), c)); continue
