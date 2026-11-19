@@ -54,7 +54,8 @@
   #frozen { display: none; }
   .is-frozen #video { display: none; }
   /* Mód- és objektívváltáskor az utolsó kép marad kint, és lágyan úszik át az új kamerakép: nincs fekete villanás */
-  #swapCv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; opacity: 1; transition: opacity .22s ease; }
+  /* a méretét a kód számolja ki (kitöltés, mint a videónál): a Safari a vászonra nem mindig alkalmazza az object-fit-et */
+  #swapCv { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 1; transition: opacity .22s ease; }
   #swapCv.fade { opacity: 0; }
   #swapCv[hidden] { display: none; }
   .is-frozen #swapCv { display: none; }
@@ -665,7 +666,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v75</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v76</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -1079,11 +1080,10 @@
       return false;
     }
     var gen = ++camGen;
-    // Objektívváltásnál a régi kamera az új indulásáig adja a képet, és csak utána engedjük el (gyorsabb).
-    // Ugyanannak a kamerának az újraindításánál viszont előbb leállítjuk: két egyidejű kérés ugyanarra a kamerára
-    // az iPhone-on összeakad (akadozás, rövid kép-összevisszaság).
+    // A régi kamerát mindig az új kérése előtt engedjük el: az iPhone-on egy második, egyidejű kamerakérés összezavarja
+    // az első kép megjelenítését (WebKit-hiba), ami váltáskor ugráló, összezsugorodó képet okozott. A kiesést az átúsztatás takarja.
     var old = stream;
-    if (old && !(id && currentDeviceId && id !== currentDeviceId)) { stopCamera(); old = null; }
+    if (old) { stopCamera(); old = null; }
     try {
       // 4K csak a 60 fps módban (az alnyomat-nézetben is); Részletes módban Full HD 30
       var fl = camMode === 'fluid', flKey = (id || 'alap') + (fluidLite ? ':lite' : '');
@@ -1119,8 +1119,15 @@
       }
       return false;
     }
+    // az első pár képkockát az iPhone rossz méretben rajzolhatja ki: addig a videó láthatatlan (alatta az átúsztatás vagy fekete)
+    video.style.opacity = '0';
     video.srcObject = stream;
     try { await video.play(); } catch (e) { /* a muted autoplay általában elindul */ }
+    (function () {
+      var n = 0, shown = false, show = function () { if (!shown && video.srcObject === stream) { shown = true; video.style.opacity = ''; } };
+      if (video.requestVideoFrameCallback) { var st = function () { if (++n >= 3) show(); else try { video.requestVideoFrameCallback(st); } catch (e) { show(); } }; try { video.requestVideoFrameCallback(st); } catch (e) { show(); } }
+      setTimeout(show, video.requestVideoFrameCallback ? 700 : 250);
+    })();
     track = stream.getVideoTracks()[0];
     var settings = (track && track.getSettings) ? track.getSettings() : {};
     currentDeviceId = id || settings.deviceId || null;
@@ -1275,6 +1282,9 @@
       var k = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
       var w = Math.round(video.videoWidth * k), h = Math.round(video.videoHeight * k);
       if (swapCv.width !== w || swapCv.height !== h) { swapCv.width = w; swapCv.height = h; }
+      var W = stage.clientWidth || viewport.clientWidth, H = stage.clientHeight || viewport.clientHeight, sc = Math.max(W / w, H / h);
+      swapCv.style.width = (w * sc) + 'px'; swapCv.style.height = (h * sc) + 'px';
+      swapCv.style.left = ((W - w * sc) / 2) + 'px'; swapCv.style.top = ((H - h * sc) / 2) + 'px';
       drawVid(swapCv.getContext('2d'), 0, 0, video.videoWidth, video.videoHeight, 0, 0, w, h);
       swapCv.style.filter = video.style.filter || '';
       swapCv.classList.remove('fade'); swapCv.hidden = false;
@@ -1290,8 +1300,13 @@
       swapCv.classList.add('fade'); clearTimeout(swapT);
       swapT = setTimeout(function () { if (g === swapGen) { swapCv.hidden = true; swapCv.classList.remove('fade'); } }, 240);
     };
-    if (video.requestVideoFrameCallback) { try { video.requestVideoFrameCallback(function () { setTimeout(go, 30); }); } catch (e) {} setTimeout(go, 800); }
-    else setTimeout(go, 160);
+    // Az iPhone az új kamera első képkockáit néha rossz méretben (összezsugorítva) rajzolja ki, és csak pár képkocka után
+    // igazítja ki (WebKit-hiba). Ezért az átúsztatás csak a 4. megjelenített képkocka után kezdődik.
+    if (video.requestVideoFrameCallback) {
+      var n = 0, step = function () { if (++n >= 4) setTimeout(go, 30); else try { video.requestVideoFrameCallback(step); } catch (e) { go(); } };
+      try { video.requestVideoFrameCallback(step); } catch (e) {}
+      setTimeout(go, 1500);
+    } else setTimeout(go, 300);
   }
 
   async function switchLens(id) {
