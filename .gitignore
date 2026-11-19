@@ -1,0 +1,4 @@
+# a PRADO-gyűjtő helyi fájljai: a token titkos, a többi csak helyi munkafájl
+tools/github-token.txt
+tools/prado-cache.json
+tools/prado-index.json

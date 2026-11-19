@@ -666,7 +666,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v76</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v77</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -3672,7 +3672,11 @@
       // Harmadik országnál csak az útlevél és a vezetői engedély (ha a PRADO-index szerint van), valamint az összes okmány.
       var euSch = ENTRY_EU.indexOf(r.st.code) >= 0 || ENTRY_SCHENGEN.indexOf(r.st.code) >= 0;
       var ci = PRADO_IDX && PRADO_IDX.countries ? PRADO_IDX.countries[r.st.code] : null;
-      var has = function (k) { return !ci || !!ci[k]; }, cnt = function (k) { return ci && ci[k] ? ' (' + ci[k] + ')' : ''; };
+      // A PRADO-index kategóriánként megadja a minták számát; az új formátumban { v: érvényes, n: összes } áll benne.
+      // A gombon az érvényes (vissza nem vont) minták száma látszik; a régi formátumú indexnél a puszta szám.
+      var has = function (k) { return !ci || !!ci[k]; };
+      var cnt = function (k) { var e = ci && ci[k]; if (!e) return ''; return typeof e === 'object' ? ' (' + (e.v || 0) + ')' : ' (' + e + ')'; };
+      var withValid = !!(ci && Object.keys(ci).some(function (k) { return ci[k] && typeof ci[k] === 'object'; }));
       var catBtn = function (cls, k) { var a = el('a', cls), lb = el('span', null, MRZ_CAT[k] + cnt(k) + ' '); lb.appendChild(el('i', 'arr', '↗')); a.appendChild(lb); a.href = pradoUrl(r.st.code, k); a.target = '_blank'; a.rel = 'noopener'; return a; };
       var keys = (euSch ? ['A', 'B', 'H', 'J', 'C'] : ['A', 'F']).filter(has);   // a PRADO-index szerint csak a létező kategóriák
       var main = r.cat.cat && keys.indexOf(r.cat.cat) >= 0 ? r.cat.cat : null;
@@ -3686,6 +3690,7 @@
         var hk = el('div', 'mrz-cats'); hk.appendChild(link('chip', 'Hongkong – útlevél ↗', pradoUrl('HKG', 'A'))); hk.appendChild(link('chip', 'Makaó – útlevél ↗', pradoUrl('MAC', 'A'))); c2.appendChild(hk);
       }
       if (!euSch) c2.appendChild(el('p', 'mrz-msg', 'Harmadik ország: a PRADO-ban általában csak az útlevél és a vezetői engedély mintái vannak fent; minden mást az „összes okmány” alatt találsz.'));
+      if (withValid) c2.appendChild(el('p', 'mrz-msg', 'Zárójelben: az érvényes (vissza nem vont) okmányminták száma a PRADO-ban' + (PRADO_IDX.updated ? ' (' + PRADO_IDX.updated.replace(/-/g, '. ') + '. állapot)' : '') + '.'));
     } else {
       c2.appendChild(el('p', 'mrz-msg', 'Ez a kiállító kód (' + r.st.code + ') nincs a PRADO kiállítói között.'));
       c2.appendChild(link('btn', 'PRADO keresés ország szerint ↗', pradoUrl(null)));
