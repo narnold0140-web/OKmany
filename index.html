@@ -304,9 +304,9 @@
   .mrz-reading #top, .mrz-reading #bottom, .mrz-reading #guide, .mrz-reading #lupe, .mrz-reading #ptCard, .mrz-reading #ovWrap { visibility: hidden; }
   #mrzCamTop { text-shadow: 0 1px 6px rgba(0,0,0,.8); }
   #mrzBand {
-    /* nem a teljes szélesség: így a telefont kb. 20 cm-re kell tartani, ahol a fő kamera már élesít (közelebbről a Pro iPhone-ok
+    /* nem a teljes szélesség: így a telefont kb. 15–17 cm-re kell tartani, ahol a fő kamera már élesít (közelebbről a Pro iPhone-ok
        fő kamerája nem tud élesre állni, és a gépi sor homályos marad) */
-    position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: min(68%, 110vh); aspect-ratio: 3.6 / 1;
+    position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: min(80%, 130vh); aspect-ratio: 3.6 / 1;
     border: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 200vmax rgba(0,0,0,.55);
   }
   #mrzBand.hit { border-color: #fff; }
@@ -668,7 +668,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v81</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v82</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -735,7 +735,7 @@
 
   <section id="mrzCam" hidden aria-label="Gépi sor olvasása">
     <div id="mrzBand"><i style="top:36%"></i><i style="top:68%"></i></div>
-    <div id="mrzCamTop"><b>Igazítsd a gépi sort a keretbe</b><span id="mrzCamMsg" aria-live="polite">Tartsd kb. 20 cm-re, hogy éles legyen</span><small id="mrzMeter"></small></div>
+    <div id="mrzCamTop"><b>Igazítsd a gépi sort a keretbe</b><span id="mrzCamMsg" aria-live="polite">Tartsd kb. 15 cm-re, hogy éles legyen</span><small id="mrzMeter"></small></div>
     <div id="mrzCamBar">
       <button class="btn" id="mrzCamTorch" hidden aria-label="Zseblámpa">Lámpa</button>
       <button class="btn" id="mrzCamCancel">Mégse</button>
@@ -3471,7 +3471,7 @@
     var st4 = {}; try { st4 = track.getSettings() || {}; } catch (e) {}
     var big4 = Math.max(st4.width || 0, st4.height || 0) >= 3000;
     $('mrzBand').style.width = big4 ? '' : 'min(92%, 150vh)';
-    mrzCamMsg(big4 ? 'Tartsd kb. 20 cm-re, hogy éles legyen' : 'Keresem a gépi sort…');
+    mrzCamMsg(big4 ? 'Tartsd kb. 15 cm-re, hogy éles legyen' : 'Keresem a gépi sort…');
     clearTimeout(mrzCamT); mrzCamT = setTimeout(mrzCamStep, 150);
   }
   function mrzCamStop() {

@@ -97,7 +97,7 @@ A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak 
 
 ## Okmány felismerése a gépi sorból
 
-**Scan kamera (v81-től):** olvasás közben az app mindig a fő (1×) objektívet használja 4K-ban, 1×-es nézettel (a korábbi nagyítás és objektív a Scan után visszaáll). A keret keskenyebb, ezért a telefont kb. 20 cm-re kell tartani: közelebbről a Pro iPhone-ok fő kamerája nem tud élesre állni, és a gépi sor homályos maradt. Ha a telefon nem ad 4K képet, a régi, széles keret marad.
+**Scan kamera (v81-től):** olvasás közben az app mindig a fő (1×) objektívet használja 4K-ban, 1×-es nézettel (a korábbi nagyítás és objektív a Scan után visszaáll). A keret valamivel keskenyebb a régi teljes szélességnél (80%), ezért a telefont kb. 15 cm-re kell tartani (v82: 20 cm helyett): közelebbről a Pro iPhone-ok fő kamerája nem tud élesre állni, és a gépi sor homályos maradt. Ha a telefon nem ad 4K képet, a régi, széles keret marad.
 
 A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az okmány alján a << jeleket tartalmazó sorok) felismeri az okmányt, ellenőrzi, és a megfelelő PRADO-oldalra visz.
 
