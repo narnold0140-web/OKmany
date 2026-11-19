@@ -93,7 +93,7 @@ def load_json(path, default):
 
 
 def doc_valid(code, cache, stats):
-    """Igaz, ha a minta érvényes; a tárolt eredményt használja, amíg lehet."""
+    """True: érvényes, False: nem érvényes, None: nem sikerült megtudni (a PRADO nem adta ki az adatlapot)."""
     c = cache.get(code)
     today = datetime.date.today()
     if c:
@@ -106,7 +106,9 @@ def doc_valid(code, cache, stats):
     page = get(BASE + code + '/index.html')
     if page is None:
         with SLOCK: stats['hiba'] += 1
-        return c.get('v') != 'no' if c else True                # nem elérhető: a korábbi állapot (vagy érvényes) marad
+        if c and c.get('v') in ('yes', 'no'):
+            return c['v'] == 'yes'                               # korábban már ismert: az az állapot marad
+        return None                                              # nem tudjuk: nem számoljuk érvényesnek
     v, until = parse_validity(page)
     if until and expired(until):
         v = 'no'                                                 # a lejárati dátum elmúlt: nem érvényes, bármit mutat a jelölés
@@ -206,6 +208,17 @@ def main():
     out, failed = {}, []
     stats = {'letoltve': 0, 'hiba': 0, 'ismeretlen': 0}
     t0 = time.time()
+    status, cdocs = {}, {}                                       # minta -> True/False/None ; ország -> minták
+
+    def count(c):
+        cats = {}
+        for d in cdocs[c]:
+            e = cats.setdefault(d[4], {'v': 0, 'n': 0})          # pl. HUN-AO-02001 -> A (útlevél)
+            e['n'] += 1
+            if status[d] is True: e['v'] += 1
+            elif status[d] is None: e['u'] = e.get('u', 0) + 1  # ismeretlen állapotú minta
+        return cats
+
     for i, c in enumerate(codes, 1):
         docs = country_docs(c)
         if not docs:
@@ -213,7 +226,7 @@ def main():
             if c in (old.get('countries') or {}): out[c] = old['countries'][c]
             log('[%d/%d] %s: nem elérhető' % (i, len(codes), c)); continue
         docs = [d for d in docs if d[4] in wanted(c)]       # csak az appban megjelenő kategóriák
-        cats = {}
+        cdocs[c] = docs
         done = [0]; lock = threading.Lock()
         def one(d):
             v = doc_valid(d, cache, stats)
@@ -225,21 +238,33 @@ def main():
         with ThreadPoolExecutor(THREADS) as ex:
             res = list(ex.map(one, docs))
         print('\r', end='')
-        for d, v in res:
-            k = d[4]                                             # pl. HUN-AO-02001 -> A (útlevél)
-            e = cats.setdefault(k, {'v': 0, 'n': 0})
-            e['n'] += 1
-            if v: e['v'] += 1
-        out[c] = cats
-        log('[%d/%d] %s: %d minta, ebből érvényes %d  (%.0f perc)' % (i, len(codes), c, len(docs), sum(x['v'] for x in cats.values()), (time.time() - t0) / 60))
+        for d, v in res: status[d] = v
+        out[c] = count(c)
+        unk = sum(1 for d in docs if status[d] is None)
+        log('[%d/%d] %s: %d minta, ebből érvényes %d%s  (%.0f perc)' % (i, len(codes), c, len(docs), sum(x['v'] for x in out[c].values()), (', ismeretlen %d (később újra)' % unk) if unk else '', (time.time() - t0) / 60))
         with open(CACHE, 'w', encoding='utf-8') as f: json.dump(dict(cache), f)   # minden ország után mentjük: megszakítás után innen folytatja
     with open(CACHE, 'w', encoding='utf-8') as f: json.dump(cache, f)
+
+    # Pótló kör: amit a PRADO elsőre nem adott ki, azt a végén, pihenő után, lassan, egyesével még egyszer megkérjük.
+    todo = [d for d, v in status.items() if v is None]
+    if todo:
+        log('Pótló kör: %d adatlap, 2 perc pihenő után egyesével...' % len(todo))
+        time.sleep(120 * WAIT_K)
+        for j, d in enumerate(todo, 1):
+            status[d] = doc_valid(d, cache, stats)
+            if j % 10 == 0 or j == len(todo):
+                print('\r   pótlás: %d/%d' % (j, len(todo)), end='', flush=True)
+        print('\r', end='')
+        for c in cdocs: out[c] = count(c)
+        with open(CACHE, 'w', encoding='utf-8') as f: json.dump(cache, f)
+        left = sum(1 for d in todo if status[d] is None)
+        log('Pótló kör kész: %d adatlap állapota maradt ismeretlen (a következő futás újra megpróbálja).' % left)
 
     if not a.orszag and len(failed) > max(5, len(codes) * 0.3):
         log('Túl sok ország nem volt elérhető (%d/%d): az index nem frissül.' % (len(failed), len(codes))); return 1
     if a.orszag:                                                 # részleges futás: a többi ország marad a régiből
         merged = dict(old.get('countries') or {}); merged.update(out); out = merged
-    res = {'updated': datetime.date.today().isoformat(), 'source': BASE, 'format': 'v/n = érvényes / összes minta kategóriánként',
+    res = {'updated': datetime.date.today().isoformat(), 'source': BASE, 'format': 'v/n/u = érvényes / összes / ismeretlen állapotú minta kategóriánként',
            'countries': dict(sorted(out.items())), 'failed': failed}
     body = json.dumps(res, ensure_ascii=False, indent=0)
     with open(os.path.join(HERE, 'prado-index.json'), 'w', encoding='utf-8') as f: f.write(body)
