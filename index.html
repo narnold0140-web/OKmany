@@ -53,6 +53,7 @@
   .is-frozen #sharpView, .up #sharpView, .is-frozen #stabView { display: none; }
   #frozen { display: none; }
   .is-frozen #video { display: none; }
+  .mrz-wait #mrzBand { visibility: hidden; }
   /* Mód- és objektívváltáskor az utolsó kép marad kint, és lágyan úszik át az új kamerakép: nincs fekete villanás */
   /* a méretét a kód számolja ki (kitöltés, mint a videónál): a Safari a vászonra nem mindig alkalmazza az object-fit-et */
   #swapCv { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 1; transition: opacity .22s ease; }
@@ -668,7 +669,7 @@
     <p class="welcome">Te vagy a határ első bástyája. Éles szemed és türelmed másokat véd: minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele együtt az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne engedd, hogy a rutin felülírja a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Élő kamerakép nagyítással. A pillanatképet az app nem menti el és nem tölti fel sehova. Csak akkor kerül a telefonodra, ha te nyomod meg a Mentés gombot.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v83</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v84</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Appként használd: <b>Megosztás</b> gomb, majd <b>Hozzáadás a Kezdőképernyőhöz</b>. Így teljes képernyőn indul.</div>
   </section>
@@ -1067,7 +1068,24 @@
     resTimer = setTimeout(function () { setRes(want); }, want === 'uhd' ? 350 : 2000);   // fel gyorsan, vissza késleltetve
   }
 
-  var camGen = 0;
+  // Megvárja, amíg a kamera képe beáll: legalább 4 képkocka lement, és a képméret 0,4 mp óta nem változott (legfeljebb 2 mp).
+  // Ha stream is meg van adva, addig a videót rejtve tartja (indításkor az iPhone rossz méretben is rajzolhat).
+  function stableWait(stream) {
+    return new Promise(function (resolve) {
+      var n = 0, lw = 0, lh = 0, since = performance.now(), shown = false;
+      var show = function () { if (!shown) { shown = true; if (stream && video.srcObject === stream) video.style.opacity = ''; resolve(); } };
+      if (video.requestVideoFrameCallback) {
+        var st = function () {
+          n++; var w = video.videoWidth, h = video.videoHeight, now = performance.now();
+          if (!w || w !== lw || h !== lh) { since = now; lw = w; lh = h; }
+          if (n >= 4 && w && now - since >= 400) show(); else try { video.requestVideoFrameCallback(st); } catch (e) { show(); }
+        };
+        try { video.requestVideoFrameCallback(st); } catch (e) { show(); }
+      }
+      setTimeout(show, video.requestVideoFrameCallback ? 2000 : 300);
+    });
+  }
+  var camGen = 0, camReady = Promise.resolve();   // camReady: teljesül, amikor az új kamera képe beállt (méret stabil)
   // 60 fps mód: 4K 60 képkockával. Okmányolvasás (Scan) alatt Full HD 60: azon van bemérve az olvasó, és gyorsabb.
   var fluidLite = false, fluidNo60 = {};
   function fluidSoft() { return fluidLite ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } } : { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 60 } }; }
@@ -1125,11 +1143,9 @@
     video.style.opacity = '0';
     video.srcObject = stream;
     try { await video.play(); } catch (e) { /* a muted autoplay általában elindul */ }
-    (function () {
-      var n = 0, shown = false, show = function () { if (!shown && video.srcObject === stream) { shown = true; video.style.opacity = ''; } };
-      if (video.requestVideoFrameCallback) { var st = function () { if (++n >= 3) show(); else try { video.requestVideoFrameCallback(st); } catch (e) { show(); } }; try { video.requestVideoFrameCallback(st); } catch (e) { show(); } }
-      setTimeout(show, video.requestVideoFrameCallback ? 700 : 250);
-    })();
+    // A kép csak akkor jelenik meg, ha már legalább 4 képkocka lement ÉS a képméret 0,4 mp óta nem változott:
+    // indításkor az iPhone néha méretet vált (és rossz méretben rajzol), ez okozta az ugráló képet.
+    camReady = stableWait(stream);
     track = stream.getVideoTracks()[0];
     var settings = (track && track.getSettings) ? track.getSettings() : {};
     currentDeviceId = id || settings.deviceId || null;
@@ -1354,13 +1370,10 @@
       swapCv.classList.add('fade'); clearTimeout(swapT);
       swapT = setTimeout(function () { if (g === swapGen) { swapCv.hidden = true; swapCv.classList.remove('fade'); } }, 240);
     };
-    // Az iPhone az új kamera első képkockáit néha rossz méretben (összezsugorítva) rajzolja ki, és csak pár képkocka után
-    // igazítja ki (WebKit-hiba). Ezért az átúsztatás csak a 4. megjelenített képkocka után kezdődik.
-    if (video.requestVideoFrameCallback) {
-      var n = 0, step = function () { if (++n >= 4) setTimeout(go, 30); else try { video.requestVideoFrameCallback(step); } catch (e) { go(); } };
-      try { video.requestVideoFrameCallback(step); } catch (e) {}
-      setTimeout(go, 1500);
-    } else setTimeout(go, 300);
+    // Az iPhone az új kamera első képkockáit néha rossz méretben rajzolja ki, és indításkor méretet is válthat (WebKit-hiba).
+    // Ezért az átúsztatás csak akkor kezdődik, amikor az új kép mérete már beállt (camReady), legkésőbb 2,5 mp után.
+    camReady.then(function () { setTimeout(go, 30); });
+    setTimeout(go, 2500);
   }
 
   async function switchLens(id) {
@@ -2528,7 +2541,7 @@
         swapHold();
         // először újraindítás nélkül vált (nincs kiesés); ha a kamera így nem adja a kért módot, csak akkor indul újra
         var ok = false;
-        try { await track.applyConstraints(target === 'fluid' ? fluidC() : resConstraints('hd')); ok = true; } catch (e) {}
+        try { await track.applyConstraints(target === 'fluid' ? fluidC() : resConstraints('hd')); ok = true; camReady = stableWait(null); } catch (e) {}
         if (ok && target === 'fluid') {
           // a képkockaszám beállása időbe telik: legfeljebb 0,8 mp-ig várunk rá, mielőtt újraindítás mellett döntenénk
           var t0 = Date.now(), fr = 0;
@@ -3500,7 +3513,7 @@
 
   /* ----- Saját gépisor-olvasó az app kamerájával ----- */
   var MRZ_OCR_B64 = 'AAAAAANz2Pb21WsBAAAAAAAAAAa3////////ngAAAAAAAABw///OlZjT//9TAAAAAAAA2f+3AwAABLz/ygAAAAAAIv//PwAAAABH//8WAAAAAFH/+AYAAAAAC/3/QwAAAABv/9YAAAAAAADm/2AAAAAAgP/BAAAAAAAA0/9xAAAAAIr/tQAAAAAAAMr/egAAAACO/7AAAAAAAADG/38AAAAAjv+vAAAAAAAAxP+BAAAAAIv/sgAAAAAAAMX/gAAAAACB/7oAAAAAAADM/3kAAAAAa//VAAAAAAAA5P9jAAAAAEn/+gkAAAAAEf7/QQAAAAAX/v9KAAAAAFb//REAAAAAAMn/xQgAAAvN/7kAAAAAAABZ///era3i//49AAAAAAAAAZz///////+CAAAAAAAAAAAAXsbj48BSAAAAAAAAAAAAAAAAhOGRAAAAAAAAAAAAAAABj///+gAAAAAAAAAAAAAAkv////wAAAAAAAAAAAAEnf//2P/9AAAAAAAAAAAAlP//uzf//QAAAAAAAAAAAM3/tgov//4AAAAAAAAAAAA0cgYAL//+AAAAAAAAAAAAAAAAAC///gAAAAAAAAAAAAAAAAAv//4AAAAAAAAAAAAAAAAAL//+AAAAAAAAAAAAAAAAAC///gAAAAAAAAAAAAAAAAAv//4AAAAAAAAAAAAAAAAALv/+AAAAAAAAAAAAAAAAAC7//gAAAAAAAAAAAAAAAAAt//4AAAAAAAAAAAAAAAAALP/9AAAAAAAAAAAAAAAAACz//QAAAAAAAAAAAAAAAAAr//sAAAAAAAAAAAAAAAAAKP/1AAAAAAAAAAAAAAAAAAKkgAAAAAAAAAAAAAApldr27K0vAAAAAAAAAAGP/P//////+FgAAAAAAAAi///7vZen9f/3JAAAAAAABbKnIwAAACPk/5kAAAAAAAAAAAAAAAAAdf/aAAAAAAAAAAAAAAAAAFv/6gAAAAAAAAAAAAAAAACN/8wAAAAAAAAAAAAAAAAp8/96AAAAAAAAAAAAAAAr5P/mDQAAAAAAAAAAAABP8f/9SwAAAAAAAAAAAASa///1TAAAAAAAAAAAAAKo///gMgAAAAAAAAAAAACL//+xEgAAAAAAAAAAAAAw/v+sAgAAAAAAAAAAAAAAk//iDQAAAAAAAAAAAAAAAM//ggAAAAAAAAAAAAAAAADq/1wGBgYGBgQAAAAAAAAA8f//////////vgAAAAAAAOD///////////gGAAAAAAA7hYeHh4eHh4VIAAAAAAAPipmampqampqXJgAAAAAAbv///////////6wAAAAAADHj7/Hy8/P2//+0AAAAAAAAAAAAAAAEt//7SwAAAAAAAAAAAAAAjf//dAAAAAAAAAAAAAAAX/7/oQEAAAAAAAAAAAAANfj/yQcAAAAAAAAAAAAAGOL//UMAAAAAAAAAAAAAAHD////+pA0AAAAAAAAAAAAq2/v////EBgAAAAAAAAAAAAAAIpj//5AAAAAAAAAAAAAAAAAAk//0CQAAAAAAAAAAAAAAABz//zgAAAAAAAAAAAAAAAAA9/9MAAAAAAAAAAAAAAAAEf7/PAAAAAAAAAAAAAAAAG7/+Q0AAAAACmEmAAAAAln0/6AAAAAAAHn//9mur+H//+gWAAAAAABR/P///////9ktAAAAAAAAACV/vt/dt2cHAAAAAAAAAAAAAAAAW9EgAAAAAAAAAAAAAAAAA9//YQAAAAAAAAAAAAAAAEz//BoAAAAAAAAAAAAAAAC0/7AAAAAAAAAAAAAAAAAf/f9JAAAAAAAAAAAAAAAAhf/eAwAAAAAAAAAAAAAABef/egAAAAAAAAAAAAAAAF3/+RkAAAAAAAAAAAAAAADO/6sAAB0qAAAAAAAAAAA1//9JAADc9REAAAAAAAAAov/aAQAA/v8qAAAAAAAADvX/eQAAAv//LQAAAAAAAGb//DUcHB7//0QSAAAAAACN/////////////kgAAAAAd/////////////9pAAAAAAhjbm5ubm///4hhBgAAAAAAAAAAAAAC//8tAAAAAAAAAAAAAAAAAv//LAAAAAAAAAAAAAAAAAD7/ycAAAAAAAAAAAAAAAAAhKQCAAAAAAAAAAFwlpqbm5qXhAoAAAAAAAAz//////////9mAAAAAAAASP//9PPz8/LfKQAAAAAAAFb/7gAAAAAAAAAAAAAAAABj/+EAAAAAAAAAAAAAAAAAb//VAAAAAAAAAAAAAAAAAHz/4GJHEQAAAAAAAAAAAACG//////uvJgAAAAAAAAAAY////////+8pAAAAAAAAAAAtLC1Mnvz/vwAAAAAAAAAAAAAAAABI//8zAAAAAAAAAAAAAAAAANb/cQAAAAAAAAAAAAAA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ISkrLCwsLCoTAAAAAAAAXf//////////8xoAAAAAAIv///////////0oAAAAAACN/9FcXFxcXFs2AAAAAAAAjv+3AAAAAAAAAAAAAAAAAI//twAAAAAAAAAAAAAAAACP/7cAAAAAAAAAAAAAAAAAkP+3AAAAAAAAAAAAAAAAAJD/+u3t7e3rtAEAAAAAAACQ//////////4SAAAAAAAAkP/koKCgoJ5pAAAAAAAAAJD/twAAAAAAAAAAAAAAAACP/7cAAAAAAAAAAAAAAAAAj/+3AAAAAAAAAAAAAAAAAI7/twAAAAAAAAAAAAAAAACN/7kGBgYGBgQAAAAAAAAAjP//////////3RAAAAAAAH7///////////8xAAAAAAAPeoKEhoeHh4ZiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCotLi4sJgQAAAAAAAAAMvr///////+oAAAAAAAAAF3/////////vgAAAAAAAABd/+RcXFxcWBMAAAAAAAAAXv/UAAAAAAAAAAAAAAAAAF//1AAAAAAAAAAAAAAAAABg/9QAAAAAAAAAAAAAAAAAYP/UAAAAAAAAAAAAAAAAAGH//O3t7epsAAAAAAAAAABi////////vAAAAAAAAAAAYv/voKCgnTkAAAAAAAAAAGL/1AAAAAAAAAAAAAAAAABi/9QAAAAAAAAAAAAAAAAAYv/UAAAAAAAAAAAAAAAAAGL/1AAAAAAAAAAAAAAAAABh/9QAAAAAAAAAAAAAAAAAX//TAAAAAAAAAAAAAAAAAFn/zQAAAAAAAAAAAAAAAAATuWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD1Z2ZBoAAAAAAAAAAAAAWu/////5dAAAAAAAAAAAZ/3///////97AAAAAAAAJvr/2kQLM8r/4wAAAAAAAJb/6xoAAAAPoV8AAAAAAADl/4AAAAAAAAAAAAAAAAAb//81AAAAAAAAAAAAAAAAO///CgAAAAAAAAAAAAAAAE3/+AAAAAAAAAAAAAAAAABO//YAAGj+////zgQAAAAARf/8AQCf//////8aAAAAADL//xMAI4mNnv//HgAAAAAU//83AAAAACf//x4AAAAAAOX/bwAAAAAn//8eAAAAAACl/8YAAAAAJ///HgAAAAAATv//cwEAACv//x4AAAAAAAHE///W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AACO/7AA1P//xQDC/4MAAAAAjv+wAJT//4YAwv+DAAAAAI7/rwBQ//9CAMH/gwAAAACO/68ADvTvBgDB/4MAAAAAjv+vAAAwLAAAwP+CAAAAAI7/rwAAAAAAAL//ggAAAACN/68AAAAAAAC+/4IAAAAAi/+vAAAAAAAAvf+AAAAAAIb/rAAAAAAAALv/egAAAAAuxEAAAAAAAABQwSYAAAAAAAAAAAAAAAAAAAAAAAAAAABQbSQAAAAAAD5GAAAAAAAp///PAAAAAAn4/RsAAAAAPP///zsAAAAS//8tAAAAAD////+kAAAAE///LgAAAABA////9xYAABP//y4AAAAAQP//7/93AAAU//8vAAAAAED//4//3QMAFf//LwAAAABA//8p/f9KABb//y8AAAAAQP//CLr/rgAW//8vAAAAAED//wdN//0gFv//LwAAAABA//8GBOX/ghb//y8AAAAAQP//BQCB/+Yc//8vAAAAAED//wUAG/v/bf//LwAAAABA//8FAACs/9b//y8AAAAAQP//BQAAQv////8uAAAAAD///wUAAAHV////LgAAAAA+//8FAAAAbP///y0AAAAAOP/9BAAAAA7x//8nAAAAAAewggAAAAAAatCiAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVOamk4AAAAAAAAAAAAABKv/////oAIAAAAAAAAAAJj//+rs//97AAAAAAAAADn//6AFB6n/9xsAAAAAAACl/90IAAAM5f+JAAAAAAAE8v9xAAAAAH3/4wAAAAAAMv//JAAAAAAw//8kAAAAAFr/8AAAAAAAA/r/TgAAAABx/88AAAAAAADf/2UAAAAAev/FAAAAAAAA1v9uAAAAAHP/zQAAAAAAAN3/ZgAAAABb/+0BAAAAAAP3/08AAAAANP//IgAAAAAt//8nAAAAAAbz/2sAAAAAd//oAgAAAAAAq//TAgAABNz/kwAAAAAAAET//3wAAIf/+ycAAAAAAAAAsf//w8f//5QAAAAAAAAAABDM/////8MLAAAAAAAAAAAACobW1IAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACSgrLS81IAAAAAAAAAAAAL3////////MNQAAAAAAAADq//////////dGAAAAAAAA6/+VXFlTfO//5wgAAAAAAOz/WQAAAAAx/P9PAAAAAADs/1kAAAAAANH/egAAAAAA7P9ZAAAAAADM/3oAAAAAAOz/WQAAAAAf+v9YAAAAAADs/3cuMTdm3v/0EQAAAAAA7P/////////9WAAAAAAAAOz////////iUgAAAAAAAADs/5FWVU4vAwAAAAAAAAAA7P9ZAAAAAAAAAAAAAAAAAOz/WQAAAAAAAAAAAAAAAADr/1kAAAAAAAAAAAAAAAAA6/9ZAAAAAAAAAAAAAAAAAOn/WAAAAAAAAAAAAAAAAADj/1IAAAAAAAAAAAAAAAAAc7cRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAROe2sZAAAAAAAAAAAAAB/Q////9EsAAAAAAAAAABHd///////1KQAAAAAAAACI//5uBzXp/7EAAAAAAAAF6/+TAAAAUv/9IAAAAAAAOP//JwAAAAHh/3AAAAAAAGH/5gAAAAAAn/+pAAAAAABw/9IAAAAAAHX/zQAAAAAAcv/SAAAAAABl/98AAAAAAG3/1QABZzMAZP/iAAAAAABl/9sAO//lEW//1AAAAAAAVf/vABz0/6WS/7UAAAAAADf//x4Ab///7/+EAAAAAAAI9f93AALB////OwAAAAAAAKP/9DYAMP//5AEAAAAAAAAk8v/7zuv///9dAAAAAAAAAEDw/////+n/9B8AAAAAAAAAHoi2oEQi8v9zAAAAAAAAAAAAAAAAAFbAJQAAAAAAAAAAAAAAAAAAAAAAAAAAAAEjKy0sGgAAAAAAAAAAAAB+///////XYgEAAAAAAAAArP////////+yBwAAAAAAAK7/vFxdedn//4AAAAAAAACv/5YAAAAFov/RAAAAAAAAsP+WAAAAAGn/2QAAAAAAALD/lgAAAACF/8EAAAAAAACx/5YAAAABzP+RAAAAAAAAsf+pLjA8nf//PwAAAAAAALH/////////qAAAAAAAAACw////////qQsAAAAAAAAAsP+5Vo//9hkAAAAAAAAAALD/lgAH5v+OAAAAAAAAAACv/5YAAG7/9BgAAAAAAAAArv+WAAAI5v+NAAAAAAAAAKz/lgAAAHH/9RsAAAAAAACr/5UAAAAJ6f+ZAAAAAAAApf+PAAAAAHP/9QAAAAAAAETGMwAAAAAIsXwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABPnZ7TgYAAAAAAAAAAAATwP/////UHQAAAAAAAAAHzf///////80EAAAAAAAAY///gg4Ia/7/UgAAAAAAAKH/uAAAAACw/3IAAAAAAACi/6QAAAAAHnULAAAAAAAAeP/vJQAAAAAAAAAAAAAAABz3/+5hAQAAAAAAAAAAAAAAXPz//8IrAAAAAAAAAAAAAAA01////pQEAAAAAAAAAAAAAAd99v//lgAAAAAAAAAAAAAAAB+0//44AAAAAAAAAAAAAAAAAs3/kgAAAAAAAE6oGwAAAACO/7MAAAAAAADE/3oAAAAAnP+rAAAAAAAAnf/dEgAAKvD/cQAAAAAAADn+/+WZsPn/7xIAAAAAAAAAff7/////9E0AAAAAAAAAAABMxfTjnCMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjKissLS0tLSwgAAAAAABe/////////////08AAAAAc/////////////9kAAAAAAVTXFxw//9mXFxPAwAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w8AAAAAAAAAAAAAAAAf//8PAAAAAAAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w8AAAAAAAAAAAAAAAAf//8PAAAAAAAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w8AAAAAAAAAAAAAAAAf//8PAAAAAAAAAAAAAAAAH///DwAAAAAAAAAAAAAAAB///w4AAAAAAAAAAAAAAAAf//8OAAAAAAAAAAAAAAAAHf//DAAAAAAAAAAAAAAAABf//gcAAAAAAAAAAAAAAAAAnI4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAyAAAAAAAAPkUAAAAAACr/7wIAAAAACvj9GgAAAAA9//8FAAAAABb//ywAAAAAP///BQAAAAAW//8uAAAAAED//wUAAAAAFv//LwAAAABA//8FAAAAABb//y8AAAAAQP//BQAAAAAW//8vAAAAAED//wUAAAAAFv//LwAAAABA//8GAAAAABb//y8AAAAAP///BwAAAAAW//8vAAAAAD7//wgAAAAAFv//LwAAAAA9//8JAAAAABb//y8AAAAAPP//CQAAAAAW//8vAAAAADr//woAAAAAFv//LQAAAAAt//8sAAAAADf//x4AAAAABOf/twsAAA7A/9gAAAAAAAB1///qs7Tt//9aAAAAAAAABKD///////+K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';
-  var mrzPrevView = null, mrzPrevLens = null;
+  var mrzPrevView = null, mrzPrevLens = null, mrzVW = 0, mrzVH = 0;
   var MRZ_CAM_MAX = window.__dnScanMax || 10000, mrzPrevMode = null, mrzM = null, mrzOkCount = {}, mrzCamOn = false, mrzCamT = 0, mrzCamT0 = 0, mrzReads = [], mrzPrevOk = '', mrzPrevVote = '', mrzSrc = '', mrzCv = null;
   function mrzCamMsg(t) { $('mrzCamMsg').textContent = t; }
   async function mrzCamStart() {
@@ -3525,10 +3538,17 @@
     // egyetlen újraindítás elég: objektív és mód egyszerre áll be
     if (camMode !== 'fluid') { camMode = 'fluid'; if (camOn) { if (needLens) swapHold(); try { await startCamera(currentDeviceId, true); } catch (e) {} swapRelease(); } }
     else if (camOn) { if (needLens) { swapHold(); try { await startCamera(currentDeviceId, true); } catch (e) {} swapRelease(); } else await fluidApply(); }
+    // a Scan-réteg rögtön látszik, de amíg a kamera képe be nem áll, a keret rejtve, és nem olvasunk
+    $('mrzCam').hidden = false; app.classList.add('mrz-reading'); app.classList.add('mrz-wait'); $('mrzBand').classList.remove('hit');
+    mrzCamMsg('Kamera indul…');
+    mrzCamOn = true; clearTimeout(mrzCamT);          // már most „fut”: a Mégse gomb a várakozás alatt is rendesen leállít
     if (!camOn) await camTurnOn();
     if (camPaused) camResume();
-    mrzCamOn = true; mrzReads = []; mrzPrevOk = ''; mrzOkCount = {}; mrzPrevVote = ''; mrzCamT0 = Date.now();
-    $('mrzCam').hidden = false; app.classList.add('mrz-reading'); $('mrzBand').classList.remove('hit');
+    try { await camReady; } catch (e) {}
+    app.classList.remove('mrz-wait');
+    if (!mrzCamOn) return;                           // közben bezárták
+    mrzVW = video.videoWidth; mrzVH = video.videoHeight;
+    mrzReads = []; mrzPrevOk = ''; mrzOkCount = {}; mrzPrevVote = ''; mrzCamT0 = Date.now();
     $('mrzCamTorch').hidden = torchBtn.hidden; $('mrzCamTorch').classList.toggle('on', torchOn);
     // A keskeny keret csak 4K képnél jó (ott van elég képpont a kisebb gépi sorhoz). Ha a telefon nem ad 4K-t,
     // a régi, széles keret marad, hogy az olvasás pontossága ne romoljon.
@@ -3541,7 +3561,7 @@
   function mrzCamStop() {
     if (!mrzCamOn) return;
     mrzCamOn = false; clearTimeout(mrzCamT);
-    $('mrzCam').hidden = true; app.classList.remove('mrz-reading');
+    $('mrzCam').hidden = true; app.classList.remove('mrz-reading'); app.classList.remove('mrz-wait');
     if (torchOn) torchBtn.click();               // a lámpa ne maradjon égve
     var restore = mrzPrevMode && mrzPrevMode !== camMode; if (mrzPrevMode) camMode = mrzPrevMode; mrzPrevMode = null;
     fluidLite = false;
@@ -3563,7 +3583,7 @@
     var big = Math.max(st.width || 0, st.height || 0) > 2500;
     if (big === !fluidLite) return;                 // már jó felbontáson fut
     swapHold();
-    try { await track.applyConstraints(fluidC()); }
+    try { await track.applyConstraints(fluidC()); camReady = stableWait(null); }
     catch (e) { try { await startCamera(currentDeviceId, true); } catch (e2) {} }
     swapRelease(); stabReset();
   }
@@ -3590,6 +3610,11 @@
   function mrzCamStep() {
     if (!mrzCamOn) return;
     markActive();
+    // ha olvasás közben megváltozik a képméret (a kamera átkonfigurálta magát), az addigi olvasatok nem összevethetők
+    if (video.videoWidth !== mrzVW || video.videoHeight !== mrzVH) {
+      mrzVW = video.videoWidth; mrzVH = video.videoHeight; mrzReads = []; mrzOkCount = {}; mrzPrevOk = ''; mrzPrevVote = '';
+      clearTimeout(mrzCamT); mrzCamT = setTimeout(mrzCamStep, 250); return;
+    }
     var t = Date.now(), done = false;
     try {
       var tg = performance.now(), im = mrzGrab(), tg2 = performance.now(), r = im ? ocrRead(im.g, im.w, im.h) : null, to2 = performance.now();

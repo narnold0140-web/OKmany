@@ -99,6 +99,8 @@ A kamera és az élő kép feldolgozása sok energiát kér, ezért az app csak 
 
 **Scan kamera (v81-től):** olvasás közben az app mindig a fő (1×) objektívet használja 4K-ban, 1×-es nézettel (a korábbi nagyítás és objektív a Scan után visszaáll). A keret valamivel keskenyebb a régi teljes szélességnél (80%), ezért a telefont kb. 15 cm-re kell tartani (v82: 20 cm helyett): közelebbről a Pro iPhone-ok fő kamerája nem tud élesre állni, és a gépi sor homályos maradt. Ha a telefon nem ad 4K képet, a régi, széles keret marad.
 
+**Scan indulás (v84-től):** a Scan indításakor „Kamera indul…” felirat látszik, és a keret csak akkor jelenik meg, amikor a kamera képe már nem változik (kb. fél másodperc). Ha olvasás közben a kép mérete mégis megváltozik, az app az addigi olvasásokat eldobja és újrakezdi. Ugyanez a várakozás védi a kamera- és módváltást is, így indításkor nem ugrál a kép.
+
 A felső sávban az igazolvány ikonnal nyílik. Az app a gépi sorból (MRZ, az okmány alján a << jeleket tartalmazó sorok) felismeri az okmányt, ellenőrzi, és a megfelelő PRADO-oldalra visz.
 
 1. Koppints a **Scan** gombra (v54-től ez az app saját kamerás olvasója; az Élő szöveges beolvasás kikerült).
