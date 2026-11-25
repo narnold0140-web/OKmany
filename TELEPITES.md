@@ -49,6 +49,13 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 - **Rács:** a Rács kapcsoló harmadoló vonalakat rajzol a képre. Csak a képernyőn látszik, a mentett képen nincs rajta.
 - **Visszaállás a v85-re:** ha valami nem tetszik, a GitHubon a Commits listában a `4e3b427` jelű (v85) változatra lehet visszaállni.
 
+## Alnyomat-nézet változásai (v87)
+
+- Új **Eredeti** gomb a Kiemelt, Vonal és Domborzat mellett: szűretlen kép az összehasonlításhoz.
+- A kapcsolók alatt egysoros magyarázat írja, mit csinál az éppen kijelölt mód.
+- Élő képnél kisebb a számítási felbontás, és a Kiemelt mód kevesebb mintát olvas, hogy ne akadozzon. A rögzített és mentett kép minősége nem változott.
+- Az élő Kiemelt kép finom részletekben kissé eltérhet a rögzítés utáni képtől.
+
 ## Alnyomat-nézet
 
 A felső sávban a hullámvonal ikonnal kapcsolható. Közeli, mikroszerkezeti vizsgálathoz való (alnyomat, mikroszöveg, guilloche).

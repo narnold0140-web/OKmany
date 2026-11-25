@@ -211,6 +211,7 @@
   .up #chipRow { display: none; }
   #upRow[hidden], #upSetRow[hidden] { display: none; }
   #upSetRow { justify-content: center; flex-wrap: wrap; gap: 6px 12px; }
+  #upHint { flex: 1 0 100%; margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
   .upset { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
   .upset input { width: 96px; }
   /* Nyomtatási technika segédtábla */
@@ -625,6 +626,7 @@
     <button class="handle" id="panelToggle" aria-label="Vezérlők elrejtése vagy megjelenítése" aria-expanded="true"><span></span></button>
     <div class="row" id="upRow" hidden>
       <div id="upModes">
+        <button class="chip" data-u="orig" aria-pressed="false">Eredeti</button>
         <button class="chip" data-u="sharp" aria-pressed="true">Kiemelt</button>
         <button class="chip" data-u="line" aria-pressed="false">Vonal</button>
         <button class="chip" data-u="relief" aria-pressed="false">Domborzat</button>
@@ -634,6 +636,7 @@
       <button class="step" id="upClose" aria-label="Alnyomat-nézet bezárása">×</button>
     </div>
     <div class="row" id="upSetRow" hidden>
+      <p id="upHint" aria-live="polite"></p>
       <label class="upset"><span>Erősség</span><input type="range" id="upGain" min="30" max="300" value="100" aria-label="A kiemelés erőssége"></label>
       <label class="upset"><span>Finomság</span><input type="range" id="upRad" min="10" max="40" value="10" aria-label="A kiemelt vonalak vastagsága"></label>
       <button class="mini" id="upSetReset">Alap</button>
@@ -706,7 +709,7 @@
     <p class="welcome">Minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne hagyd, hogy a rutin elaltassa a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Az app nagyítható élő képet mutat. A pillanatkép nem kerül fel sehova, és csak akkor mentődik a telefonodra, ha a Mentés gombot te nyomod meg.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v86</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v87</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Tedd a Kezdőképernyőre: Megosztás gomb, Hozzáadás a Kezdőképernyőhöz. Onnan teljes képernyőn indul.</div>
   </section>
@@ -2127,6 +2130,7 @@
     var n = w * h, i, j, l;
     if (!uL || uL.length !== n) { uL = new Float32Array(n); uT = new Float32Array(n); uB = new Float32Array(n); uM = new Float32Array(n); uQ = new Float32Array(n); }
     for (i = 0, j = 0; i < d.length; i += 4, j++) uL[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    if (mode === 'orig') { if (upInv) { for (i = 0; i < d.length; i += 4) { d[i] = 255 - d[i]; d[i + 1] = 255 - d[i + 1]; d[i + 2] = 255 - d[i + 2]; } } return; }
     if (mode === 'relief') {
       /* Domborzat: a súrlófényben keletkező fény–árnyék átmeneteket erősíti. Szürke kép (a nyomat színe ne zavarjon),
          közepes léptékű kiemelés (a dombornyomás szélesebb a nyomtatott vonalnál) és helyi kontraszt-kiegyenlítés. */
@@ -2163,12 +2167,19 @@
   /* PURE-END */
 
 
+  var UP_HINT = {
+    orig: 'Szűretlen kamerakép, az összehasonlításhoz.',
+    sharp: 'Élesítés és helyi kontraszt, a színek változatlanok.',
+    line: 'Szürke vonalrajz, csak a finom vonalakat mutatja.',
+    relief: 'Szürke kép a súrlófényes dombornyomás kiemeléséhez.'
+  };
   function setUpMode(m) {
     var was = upMode;
     upMode = m; upKey = '';
     var ch = $('upModes').children;
     for (var i = 0; i < ch.length; i++) ch[i].setAttribute('aria-pressed', String(ch[i].dataset.u === m));
     $('rlRow').hidden = m !== 'relief';
+    $('upHint').textContent = UP_HINT[m] || '';
     if (m === 'relief' && was !== 'relief') {
       rlTorchRender(); botHSet();
       var seen = false; try { seen = localStorage.getItem('dn-relief-guide') === '1'; } catch (e) {}
@@ -2254,12 +2265,12 @@
   function glOk(g) { try { return g.getError() === g.NO_ERROR && !g.isContextLost(); } catch (e) { return false; } }
 
   // A látott terület a kamera natív képén, a kirajzolás mérete (legfeljebb a kijelző felbontása) és a stabilizálás eltolása.
-  function glCrop(capOverride) {
+  function glCrop(capOverride, maxCap) {
     var sw = video.videoWidth, sh = video.videoHeight;
     if (!sw || !sh || video.readyState < 2) return null;
     var r = viewport.getBoundingClientRect(), a = screenToSrc(r.left, r.top, sw, sh), b = screenToSrc(r.right, r.bottom, sw, sh);
     var rw = Math.max(8, b.x - a.x), rh = Math.max(8, b.y - a.y), q = Math.min(2, window.devicePixelRatio || 1);
-    var cap = capOverride || Math.min(1500000, r.width * r.height * q * q);   // a kijelzőnél finomabbra nem érdemes számolni; a felvétel ennél nagyobbat kér
+    var cap = capOverride || Math.min(maxCap || 1500000, r.width * r.height * q * q);   // a kijelzőnél finomabbra nem érdemes számolni; a felvétel ennél nagyobbat kér
     var f = Math.min(1, Math.sqrt(cap / (rw * rh)));
     var ow = Math.max(8, Math.round(rw * f)), oh = Math.max(8, Math.round(rh * f));
     var sf = rw / r.width, ox = a.x, oy = a.y;                              // stabilizálás: a kivágás eltolása a korrekcióval
@@ -2276,10 +2287,12 @@
         ' vec2 uv=org+vec2(p.x,1.0-p.y)*siz; vec3 c=texture2D(t,uv).rgb; float l=dot(c,vec3(0.299,0.587,0.114)); float s=0.0;',
         ' if(mode==0){',
         '  for(int j=-1;j<=1;j++){for(int i=-1;i<=1;i++){s+=L(uv+vec2(float(i),float(j))*px*rad);}}',
-        '  float m=0.0,q=0.0; for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){float v=L(uv+vec2(float(i),float(j))*px*rad*5.0);m+=v;q+=v*v;}}',
-        '  m/=25.0; float sd=sqrt(max(q/25.0-m*m,0.0)); float a=min(1.0,0.75*gain);',
+        '  float m=0.0,q=0.0; for(int j=-1;j<=1;j++){for(int i=-1;i<=1;i++){float v=L(uv+vec2(float(i),float(j))*px*rad*7.0);m+=v;q+=v*v;}}',
+        '  m/=9.0; float sd=sqrt(max(q/9.0-m*m,0.0)); float a=min(1.0,0.75*gain);',
         '  float nl=l+a*(0.5+0.17*(l-m)/(sd+0.04)-l)+2.2*gain*(l-s/9.0);',
         '  gl_FragColor=vec4(clamp(nl+(c-l),0.0,1.0),1.0);',   // a színek eredetiek maradnak (nincs színerősítés)
+        ' }else if(mode==3){',
+        '  gl_FragColor=vec4(c,1.0);',
         ' }else if(mode==2){',
         '  for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){s+=L(uv+vec2(float(i),float(j))*px*rad*1.6);}}',
         '  float m=0.0,q=0.0; for(int j=-2;j<=2;j++){for(int i=-2;i<=2;i++){float v=L(uv+vec2(float(i),float(j))*px*rad*5.0);m+=v;q+=v*v;}}',
@@ -2304,7 +2317,7 @@
   }
 
   function renderUpGl(capOverride) {
-    var k = glCrop(capOverride); if (!k) return false;
+    var k = glCrop(capOverride, 700000); if (!k) return false;   // élő kép: kisebb számítási felbontás, hogy ne akadozzon
     if (!upGlInit()) return false;
     if (k.sw > glMax || k.sh > glMax) { glFail = true; gl = null; return false; }   // a kamera képe nem fér textúrába: marad a processzoros út
     if (upGl.width !== k.ow || upGl.height !== k.oh) { upGl.width = k.ow; upGl.height = k.oh; }
@@ -2314,7 +2327,7 @@
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video);
       gl.uniform2f(glU.org, k.ox / k.sw, k.oy / k.sh); gl.uniform2f(glU.siz, k.rw / k.sw, k.rh / k.sh);
       gl.uniform2f(glU.px, (k.rw / k.sw) / k.ow, (k.rh / k.sh) / k.oh);
-      gl.uniform1i(glU.mode, upMode === 'line' ? 1 : upMode === 'relief' ? 2 : 0); gl.uniform1f(glU.gain, upGain); gl.uniform1f(glU.rad, upRad); gl.uniform1f(glU.inv, upInv ? 1 : 0);
+      gl.uniform1i(glU.mode, upMode === 'line' ? 1 : upMode === 'relief' ? 2 : upMode === 'orig' ? 3 : 0); gl.uniform1f(glU.gain, upGain); gl.uniform1f(glU.rad, upRad); gl.uniform1f(glU.inv, upInv ? 1 : 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       if (!glChecked) { glChecked = true; if (!glOk(gl)) throw new Error('webgl hiba'); }
       if (window.__dnAfterUp) window.__dnAfterUp(upGl);   // csak az automata tesztek használják: a frissen kirajzolt kép mérése
@@ -2411,6 +2424,7 @@
     if (upOn) return;
     upOn = true; upKey = '';
     app.classList.add('up');
+    $('upHint').textContent = UP_HINT[upMode] || '';
     if (!isFrozen() && camOn) $('modeLabel').textContent = 'Alnyomat';
     $('upRow').hidden = false; $('upSetRow').hidden = false; $('upBtn').classList.add('on'); $('upBtn').setAttribute('aria-pressed', 'true');
     $('rlRow').hidden = upMode !== 'relief'; if (upMode === 'relief') { rlLvl = 0; rlTorchRender(); }
