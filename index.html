@@ -414,6 +414,36 @@
   .btn svg { width: 20px; height: 20px; }
   .btn:active { filter: brightness(.85); }
 
+  /* v86: szakmaibb elrendezés. Szögletesebb kezelőelemek, vékony határvonalak, számok fix szélességű betűvel, szegmentált nagyításválasztó. */
+  :root { --line: rgba(255,255,255,.13); --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  .pill { border-radius: 10px; border: 1px solid var(--line); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+  .pill small { font-size: 12px; letter-spacing: .04em; }
+  .pill small.res { font-family: var(--mono); letter-spacing: 0; text-transform: none; }
+  .round { border-radius: 12px; border: 1px solid var(--line); }
+  #bottom { border-radius: 18px 18px 0 0; border-top: 1px solid var(--line); }
+  .chip { border-radius: 8px; }
+  .step { border-radius: 8px; border: 1px solid var(--line); }
+  .btn { border-radius: 14px; border: 1px solid var(--line); }
+  .btn.primary { border-color: var(--accent); }
+  #zoomLabel { font-family: var(--mono); }
+  #presets { gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  #presets .chip { border-radius: 0; border-right: 1px solid var(--line); min-width: 48px; padding: 7px 12px; background: transparent; font-family: var(--mono); }
+  #presets .chip:last-child { border-right: 0; }
+  #presets .chip.active { background: var(--accent); color: var(--on-accent); }
+  #guide i { border-color: var(--accent); border-radius: 0 !important; width: 26px; height: 26px; border-width: 2px; }
+
+  /* v86: rács (harmadoló vonalak) és fényerő-állítás */
+  #grid {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s;
+    background-image:
+      linear-gradient(to right, transparent calc(33.333% - .5px), rgba(255,255,255,.3) calc(33.333% - .5px), rgba(255,255,255,.3) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgba(255,255,255,.3) calc(66.666% - .5px), rgba(255,255,255,.3) calc(66.666% + .5px), transparent calc(66.666% + .5px)),
+      linear-gradient(to bottom, transparent calc(33.333% - .5px), rgba(255,255,255,.3) calc(33.333% - .5px), rgba(255,255,255,.3) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgba(255,255,255,.3) calc(66.666% - .5px), rgba(255,255,255,.3) calc(66.666% + .5px), transparent calc(66.666% + .5px));
+  }
+  .show-grid #grid { opacity: 1; }
+  #brRow { gap: 10px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  #brRow output { min-width: 44px; text-align: right; font-family: var(--mono); letter-spacing: 0; color: var(--text); }
+  .up #brRow { display: none; }
+
   /* Teljes képernyős üzenetek */
   .screen {
     position: absolute; inset: 0; z-index: 5; background: #05090a; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; gap: 16px;
@@ -524,11 +554,12 @@
   <div id="specPane" hidden><div id="specStage"><img id="specImg" alt=""></div></div>
 
   <div id="guide" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+  <div id="grid" aria-hidden="true"></div>
   <div id="flash"></div>
   <canvas id="lupe" width="264" height="264" hidden></canvas>
 
   <div id="top">
-    <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small class="nosave">· nincs mentve</small></div>
+    <div class="pill"><span class="dot"></span><span id="modeLabel">Élő kép</span><small class="nosave">· nincs mentve</small><small class="res" id="resInfo"></small></div>
     <div class="tools">
       <button class="round on" id="camToggle" aria-label="Kamera kikapcsolása" aria-pressed="true">
         <svg class="cam-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10.5 20.5 7v10L15 13.5"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>
@@ -628,10 +659,16 @@
           <button class="chip" data-fx="sharp" aria-pressed="false">Élesítés</button>
           <button class="chip" data-fx="gray" aria-pressed="false">Szürke</button>
           <button class="chip" data-fx="invert" aria-pressed="false">Inverz</button>
+          <button class="chip" id="gridChip" aria-pressed="false">Rács</button>
           <button class="chip" id="stabChip" aria-pressed="true">Stabil</button>
           <button class="chip" id="camChip" aria-pressed="false">60 fps</button>
         </div>
       </div>
+    </div>
+    <div class="row" id="brRow">
+      <span>Fényerő</span>
+      <input type="range" id="fxBright" min="0.5" max="2" step="0.01" value="1" aria-label="Fényerő">
+      <output id="fxBrightOut">100%</output>
     </div>
     <div class="row presets">
       <div class="group" id="presets">
@@ -669,7 +706,7 @@
     <p class="welcome">Minden leleplezett hamisítvánnyal biztonságosabb lesz a határ, és vele az ország is. Nézd át alaposan az okmányokat, bízz a szakmai megérzésedben, és ne hagyd, hogy a rutin elaltassa a figyelmedet. Jó munkát a mai szolgálathoz!</p>
     <p class="privacy">Az app nagyítható élő képet mutat. A pillanatkép nem kerül fel sehova, és csak akkor mentődik a telefonodra, ha a Mentés gombot te nyomod meg.</p>
     <button class="btn primary" id="startBtn">Kamera indítása</button>
-    <p class="credit">Készítette: N. A. · <span id="appVer">v85</span></p>
+    <p class="credit">Készítette: N. A. · <span id="appVer">v86</span></p>
     <div id="devInfo" hidden><span id="devName"></span><div id="devPick" hidden></div></div>
     <div class="tip" id="installTip" hidden>Tedd a Kezdőképernyőre: Megosztás gomb, Hozzáadás a Kezdőképernyőhöz. Onnan teljes képernyőn indul.</div>
   </section>
@@ -800,7 +837,7 @@
   var lupe = $('lupe'), lupeCtx = lupe.getContext('2d');
   var frozenRaw = document.createElement('canvas'), capturing = false;
   var sCv = document.createElement('canvas'), sCtx = sCv.getContext('2d', { willReadFrequently: true });
-  var fx = { contrast: false, sharp: false, gray: false, invert: false };
+  var fx = { contrast: false, sharp: false, gray: false, invert: false, bright: 1 };
   var specPane = $('specPane'), specStage = $('specStage'), ovImg = $('overlayImg'), specImg = $('specImg');
   var ovWrap = $('ovWrap'), listCard = $('listCard');
   var splitOn = false, frameOverride = null, activeSpec = null, specUrl = null, cmpMode = 'overlay';
@@ -1702,6 +1739,7 @@
 
   function applyLiveFx() {
     var f = [];
+    if (fx.bright !== 1) f.push('brightness(' + fx.bright + ')');
     if (fx.contrast) f.push('contrast(1.6)');
     if (fx.gray) f.push('grayscale(1)');
     if (fx.invert) f.push('invert(1)');
@@ -1713,7 +1751,7 @@
     var w = rawCv.width, h = rawCv.height;
     if (outCv.width !== w || outCv.height !== h) { outCv.width = w; outCv.height = h; }
     var octx = outCv.getContext('2d');
-    if (!fx.sharp && !fx.contrast && !fx.gray && !fx.invert) { octx.drawImage(rawCv, 0, 0); return; }
+    if (!fx.sharp && !fx.contrast && !fx.gray && !fx.invert && fx.bright === 1) { octx.drawImage(rawCv, 0, 0); return; }
     var img = rawCv.getContext('2d').getImageData(0, 0, w, h), d = img.data, out = d;
     if (fx.sharp) {
       var o = new Uint8ClampedArray(d.length), a = 1.0, c = 1 + 4 * a, stride = w * 4;   // a = élesítés erőssége (korábban 0,8)
@@ -1729,10 +1767,11 @@
       }
       out = o; img = new ImageData(o, w, h);
     }
-    if (fx.contrast || fx.gray || fx.invert) {
-      var ct = fx.contrast, gy = fx.gray, iv = fx.invert;
+    if (fx.contrast || fx.gray || fx.invert || fx.bright !== 1) {
+      var ct = fx.contrast, gy = fx.gray, iv = fx.invert, br = fx.bright;
       for (var k = 0; k < out.length; k += 4) {
         var r = out[k], g = out[k + 1], b = out[k + 2];
+        if (br !== 1) { r = Math.min(255, r * br); g = Math.min(255, g * br); b = Math.min(255, b * br); }
         if (ct) { r = (r - 128) * 1.6 + 128; g = (g - 128) * 1.6 + 128; b = (b - 128) * 1.6 + 128; }
         if (gy) { var l = 0.2126 * r + 0.7152 * g + 0.0722 * b; r = l; g = l; b = l; }
         if (iv) { r = 255 - r; g = 255 - g; b = 255 - b; }
@@ -1754,6 +1793,31 @@
       if (key === 'sharp' && fx.sharp) setTimeout(function () { if (fx.sharp && sharpFail && !isFrozen()) toast('Ezen az eszközön az élesítés csak a rögzített képen látszik.'); }, 500);
     }
   });
+
+  /* ----- Fényerő, rács, felbontás-kijelzés (v86) ----- */
+
+  var brTimer = 0;
+  $('fxBright').addEventListener('input', function () {
+    fx.bright = Number(this.value);
+    $('fxBrightOut').textContent = Math.round(fx.bright * 100) + '%';
+    if (isFrozen()) {
+      // a rögzített képen a számítás nehezebb: a csúszka mozgatása közben ritkábban frissül
+      if (!brTimer) brTimer = setTimeout(function () { brTimer = 0; processImage(frozenRaw, frozen); }, 120);
+    } else applyLiveFx();
+  });
+
+  $('gridChip').addEventListener('click', function () {
+    var on = app.classList.toggle('show-grid');
+    this.setAttribute('aria-pressed', String(on));
+  });
+
+  function updateRes() {
+    var w = video.videoWidth, h = video.videoHeight;
+    $('resInfo').textContent = (w > 1 && h > 1) ? ('· ' + w + '×' + h) : '';
+  }
+  video.addEventListener('loadedmetadata', updateRes);
+  video.addEventListener('resize', updateRes);
+  video.addEventListener('playing', updateRes);
 
   /* ----- Váltható keret ----- */
 
