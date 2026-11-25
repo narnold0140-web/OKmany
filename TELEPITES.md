@@ -47,7 +47,7 @@ Alternatívák: GitHub Pages vagy Cloudflare Pages (mindkettő ingyenes és tart
 - **Szakmaibb elrendezés:** szögletesebb gombok és sávok, vékony határvonalak, a számok fix szélességű betűvel. A nagyításválasztó (1×, 2×, 4×, 8×) egy összefüggő szegmentált sáv. A felső címkén látszik a kamera felbontása is.
 - **Fényerő:** a szűrők alatti csúszka (50% és 200% között). Az élő képre és a rögzített képre is hat, és a mentett képen is látszik, a Kontraszt, Szürke és Inverz kapcsolókkal együtt.
 - **Rács:** a Rács kapcsoló harmadoló vonalakat rajzol a képre. Csak a képernyőn látszik, a mentett képen nincs rajta.
-- **Visszaállás a v85-re:** ha valami nem tetszik, a repóban a `v85` címkéből a korábbi állapot visszaállítható.
+- **Visszaállás a v85-re:** ha valami nem tetszik, a GitHubon a Commits listában a `4e3b427` jelű (v85) változatra lehet visszaállni.
 
 ## Alnyomat-nézet
 
